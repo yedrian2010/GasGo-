@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#00C853" />
+  <title>GasGo</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #090b0b;
+      color: white;
+      min-height: 100vh;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      margin: auto;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(0,200,83,.13), transparent 35%),
+        #0f1111;
+      padding: 22px 18px 100px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .brand {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+    }
+
+    .brand span {
+      color: #00C853;
+    }
+
+    .demo {
+      background: rgba(0,200,83,.12);
+      color: #49e183;
+      border: 1px solid rgba(0,200,83,.35);
+      padding: 7px 11px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .hello {
+      color: #a7a7a7;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 22px;
+      letter-spacing: -1px;
+    }
+
+    .range-card {
+      background: linear-gradient(135deg, #00C853, #00a944);
+      color: #06140b;
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 14px;
+      box-shadow: 0 15px 40px rgba(0,200,83,.15);
+    }
+
+    .range-label {
+      font-size: 13px;
+      font-weight: 800;
+      opacity: .75;
+    }
+
+    .range {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.05;
+      margin-top: 5px;
+    }
+
+    .range small {
+      font-size: 22px;
+    }
+
+    .fuel-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .bar {
+      height: 7px;
+      background: rgba(0,0,0,.22);
+      border-radius: 20px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .bar div {
+      width: 68%;
+      height: 100%;
+      background: #07140b;
+      border-radius: 20px;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin: 23px 0 12px;
+    }
+
+    .station {
+      background: #181b1b;
+      border: 1px solid #272b2b;
+      border-radius: 20px;
+      padding: 17px;
+    }
+
+    .station-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .station-name {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .station-distance {
+      color: #999;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .price {
+      font-size: 22px;
+      color: #00C853;
+      font-weight: 900;
+    }
+
+    .price small {
+      display: block;
+      font-size: 10px;
+      color: #777;
+      text-align: right;
+    }
+
+    .make-it {
+      width: 100%;
+      border: 0;
+      background: #00C853;
+      color: #06140b;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 900;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    .quick {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .quick button {
+      border: 1px solid #272b2b;
+      background: #181b1b;
+      color: white;
+      padding: 18px 10px;
+      border-radius: 18px;
+      text-align: left;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .quick span {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(430px, 100%);
+      background: rgba(15,17,17,.96);
+      backdrop-filter: blur(15px);
+      border-top: 1px solid #262929;
+      padding: 12px 12px 20px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .nav {
+      background: none;
+      border: 0;
+      color: #777;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 25%;
+    }
+
+    .nav span {
+      display: block;
+      font-size: 21px;
+      margin-bottom: 3px;
+    }
+
+    .nav.active {
+      color: #00C853;
+    }
+
+    .back {
+      border: 0;
+      background: #202424;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 12px;
+      margin-bottom: 22px;
+      cursor: pointer;
+    }
+
+    .result {
+      margin-top: 20px;
+      background: #181b1b;
+      border-radius: 24px;
+      padding: 22px;
+      border: 1px solid #292d2d;
+    }
+
+    .success {
+      font-size: 27px;
+      color: #00C853;
+      font-weight: 900;
+      margin: 8px 0;
+    }
+
+    .muted {
+      color: #999;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .big-stat {
+      font-size: 40px;
+      font-weight: 900;
+      margin: 10px 0;
+    }
+
+    .reward {
+      background: #181b1b;
+      border-radius: 18px;
+      padding: 17px;
+      margin-bottom: 10px;
+      border: 1px solid #292d2d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .points {
+      color: #00C853;
+      font-weight: 900;
+    }
+
+    .vehicle {
+      background: #181b1b;
+      border: 1px solid #292d2d;
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .connected {
+      color: #00C853;
+      font-weight: 800;
+    }
+
+    .disclaimer {
+      margin-top: 18px;
+      color: #666;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HOME -->
+  <section id="home" class="screen active">
+
+    <div class="top">
+      <div class="brand">Gas<span>Go</span></div>
+      <div class="demo">DEMO MODE</div>
+    </div>
+
+    <div class="hello">Good afternoon 👋</div>
+    <h1>Where are we going?</h1>
+
+    <div class="range-card">
+      <div class="range-label">ESTIMATED RANGE</div>
+      <div class="range">47 <small>mi</small></div>
+
+      <div class="fuel-row">
+        <span>⛽ Fuel level</span>
+        <span>68%</span>
+      </div>
+
+      <div class="bar">
+        <div></div>
+      </div>
+    </div>
+
+    <div class="section-title">Best nearby option</div>
+
+    <div class="station">
+      <div class="station-top">
+        <div>
+          <div class="station-name">Puma</div>
+          <div class="station-distance">📍 1.2 mi away</div>
+        </div>
+
+        <div class="price">
+          $0.94
+          <small>per liter · demo</small>
+        </div>
+      </div>
+
+      <button class="make-it" onclick="showScreen('rangeCheck')">
+        CAN I MAKE IT? →
+      </button>
+    </div>
+
+    <div class="section-title">Quick actions</div>
+
+    <div class="quick">
+      <button onclick="showScreen('stations')">
+        <span>⛽</span>
+        Find Gas
+      </button>
+
+      <button onclick="showScreen('stations')">
+        <span>⚡</span>
+        Find Chargers
+      </button>
+
+      <button onclick="showScreen('stations')">
+        <span>💲</span>
+        Compare Prices
+      </button>
+
+      <button onclick="showScreen('rewards')">
+        <span>🎁</span>
+        Rewards
+      </button>
+    </div>
+
+    <p class="disclaimer">
+      Prototype data for demonstration purposes. Vehicle range is an estimate
+      and may change based on driving conditions.
+    </p>
+
+  </section>
+
+
+  <!-- STATIONS -->
+  <section id="stations" class="screen">
+
+    <div class="top">
+      <div class="brand">Nearby</div>
+      <div class="demo">LIVE DEMO</div>
+    </div>
+
+    <h1>Stations near you</h1>
+
+    <div class="station" style="margin-bottom:10px;">
+      <div class="station-top">
+        <div>
+          <div class="station-name">Puma</div>
+          <div class="station-distance">1.2 mi · Best value</div>
+        </div>
+        <div class="price">$0.94<small>/L demo</small></div>
+      </div>
+
+      <button class="make-it" onclick="showScreen('rangeCheck')">
+        Check Range
+      </button>
+    </div>
+
+    <div class="station" style="margin-bottom:10px;">
+      <div class="station-top">
+        <div>
+          <div class="station-name">Shell</div>
+          <div class="station-distance">2.7 mi</div>
+        </div>
+        <div class="price">$0.96<small>/L demo</small></div>
+      </div>
+    </div>
+
+    <div class="station" style="margin-bottom:10px;">
+      <div class="station-top">
+        <div>
+          <div class="station-name">EV Fast Charge</div>
+          <div class="station-distance">⚡ 4.1 mi · Fast charger</div>
+        </div>
+        <div class="price">150<small>kW demo</small></div>
+      </div>
+    </div>
+
+    <p class="disclaimer">
+      Prices, locations and charger information shown in this prototype are
+      simulated.
+    </p>
+
+  </section>
+
+
+  <!-- CAN I MAKE IT -->
+  <section id="rangeCheck" class="screen">
+
+    <button class="back" onclick="showScreen('home')">
+      ← Back
+    </button>
+
+    <div class="brand">Can I Make It?</div>
+
+    <div class="result">
+      <div class="muted">Destination</div>
+      <h2 style="margin-top:5px;">Puma Station</h2>
+
+      <div style="margin-top:25px;" class="muted">
+        Estimated vehicle range
+      </div>
+
+      <div class="big-stat">47 mi</div>
+
+      <div class="muted">Distance to station</div>
+      <div class="big-stat">1.2 mi</div>
+
+      <hr style="border-color:#292d2d;margin:20px 0;">
+
+      <div class="success">✓ You can make it.</div>
+
+      <div class="muted">
+        Estimated remaining range after arrival:
+        <strong style="color:white;">45.8 mi</strong>
+      </div>
+    </div>
+
+    <div class="result">
+      <strong>GasGo Safety Margin</strong>
+
+      <p class="muted" style="margin-top:8px;">
+        GasGo compares your estimated vehicle range with the distance to your
+        selected station and keeps a safety margin before recommending the trip.
+      </p>
+    </div>
+
+    <p class="disclaimer">
+      Estimated range is not a guarantee. Weather, traffic, driving behavior,
+      terrain and vehicle conditions may affect actual range.
+    </p>
+
+  </section>
+
+
+  <!-- REWARDS -->
+  <section id="rewards" class="screen">
+
+    <div class="top">
+      <div class="brand">Rewards</div>
+      <div class="demo">DEMO</div>
+    </div>
+
+    <h1>Your points</h1>
+
+    <div class="reward">
+      <div>
+        <strong>Puma Rewards</strong>
+        <div class="muted">Favorite station</div>
+      </div>
+      <div class="points">750 pts</div>
+    </div>
+
+    <div class="reward">
+      <div>
+        <strong>Shell Rewards</strong>
+        <div class="muted">Member</div>
+      </div>
+      <div class="points">420 pts</div>
+    </div>
+
+    <div class="section-title">Available reward</div>
+
+    <div class="station">
+      <strong>🚗 Car Wash Discount</strong>
+      <p class="muted" style="margin-top:7px;">
+        Redeem your participating partner points for discounts and benefits.
+      </p>
+    </div>
+
+  </section>
+
+
+  <!-- MY CAR -->
+  <section id="car" class="screen">
+
+    <div class="top">
+      <div class="brand">My Car</div>
+      <div class="demo">DEMO</div>
+    </div>
+
+    <h1>Vehicle</h1>
+
+    <div class="vehicle">
+      <div class="muted">Current vehicle</div>
+      <h2 style="margin:6px 0;">Demo Vehicle</h2>
+      <div class="muted">Gasoline · OBD-II compatible</div>
+    </div>
+
+    <div class="vehicle">
+      <div class="muted">GasGo Link</div>
+      <h2 class="connected" style="margin-top:6px;">
+        ● Connected
+      </h2>
+
+      <p class="muted" style="margin-top:10px;">
+        GasGo Link can use compatible vehicle data to improve range and
+        efficiency estimates.
+      </p>
+    </div>
+
+    <div class="vehicle">
+      <div class="muted">Average efficiency</div>
+      <div class="big-stat">27.4 MPG</div>
+    </div>
+
+    <p class="disclaimer">
+      Available vehicle information depends on year, make, model and supported
+      OBD-II data.
+    </p>
+
+  </section>
+
+</div>
+
+
+<nav class="bottom">
+
+  <button class="nav active" onclick="navTo('home',this)">
+    <span>⌂</span>
+    Home
+  </button>
+
+  <button class="nav" onclick="navTo('stations',this)">
+    <span>⌖</span>
+    Stations
+  </button>
+
+  <button class="nav" onclick="navTo('rewards',this)">
+    <span>★</span>
+    Rewards
+  </button>
+
+  <button class="nav" onclick="navTo('car',this)">
+    <span>🚗</span>
+    My Car
+  </button>
+
+</nav>
+
+
+<script>
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen")
+      .forEach(screen => screen.classList.remove("active"));
+
+    document.getElementById(id).classList.add("active");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+
+  function navTo(id, button) {
+
+    showScreen(id);
+
+    document.querySelectorAll(".nav")
+      .forEach(nav => nav.classList.remove("active"));
+
+    button.classList.add("active");
+  }
+
+</script>
+
+</body>
+</html>
