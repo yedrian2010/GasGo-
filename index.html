@@ -31,11 +31,11 @@
   >
 
 
-  <!-- GASGO DESIGN -->
+  <!-- GASGO -->
 
   <link
     rel="stylesheet"
-    href="style.css?v=5.1"
+    href="style.css?v=5.2"
   >
 
 </head>
@@ -85,6 +85,7 @@
           go?
         </span>
       </h1>
+
 
 
       <!-- RANGE HERO -->
@@ -149,6 +150,7 @@
       </article>
 
 
+
       <!-- SMART STOP -->
 
       <div class="section-title">
@@ -183,6 +185,87 @@
       </article>
 
 
+
+      <!-- =================================================
+           PLAN MY STOP — NEW V5.2
+           ================================================= -->
+
+      <div class="section-title">
+
+        <span>
+          Plan My Stop
+        </span>
+
+        <span class="muted">
+          Smart fuel planner
+        </span>
+
+      </div>
+
+
+      <article class="card smart-stop">
+
+
+        <div class="eyebrow">
+          HOW MUCH ARE YOU ADDING?
+        </div>
+
+
+        <div class="chips mt-12">
+
+
+          <button
+            class="chip plan-amount"
+            onclick="GasGoApp.planMyStop(10, this)"
+          >
+            $10
+          </button>
+
+
+          <button
+            class="chip plan-amount active"
+            onclick="GasGoApp.planMyStop(20, this)"
+          >
+            $20
+          </button>
+
+
+          <button
+            class="chip plan-amount"
+            onclick="GasGoApp.planMyStop(30, this)"
+          >
+            $30
+          </button>
+
+
+          <button
+            class="chip plan-amount"
+            onclick="GasGoApp.planMyStop('fill', this)"
+          >
+            Fill tank
+          </button>
+
+
+        </div>
+
+
+        <div
+          id="planMyStopResult"
+          class="mt-15"
+        >
+
+          <div class="muted">
+            Choose an amount and GasGo will calculate
+            your recommended fuel stop.
+          </div>
+
+        </div>
+
+
+      </article>
+
+
+
       <!-- PRICE SNAPSHOT -->
 
       <div class="section-title">
@@ -202,6 +285,7 @@
 
 
       <div class="price-grid">
+
 
         <div class="price-box">
 
@@ -253,7 +337,9 @@
 
         </div>
 
+
       </div>
+
 
 
       <!-- QUICK ACTIONS -->
@@ -325,6 +411,7 @@
       </div>
 
 
+
       <div class="notice mt-20">
 
         GasGo is currently a prototype.
@@ -340,7 +427,7 @@
 
 
     <!-- ===================================================
-         STATIONS / MAP
+         STATIONS
          =================================================== -->
 
     <section
@@ -371,6 +458,7 @@
       </header>
 
 
+
       <!-- SEARCH -->
 
       <div class="search-wrap">
@@ -379,6 +467,7 @@
           🔎
         </span>
 
+
         <input
           id="stationSearch"
           class="search-input"
@@ -386,6 +475,7 @@
           placeholder="Search station, brand or municipality"
           autocomplete="off"
         >
+
 
         <button
           class="search-clear"
@@ -399,9 +489,11 @@
       </div>
 
 
-      <!-- FUEL -->
+
+      <!-- FUEL TYPE -->
 
       <div class="chips">
+
 
         <button
           class="chip active"
@@ -411,6 +503,7 @@
           Regular
         </button>
 
+
         <button
           class="chip"
           data-fuel="premium"
@@ -418,6 +511,7 @@
         >
           Premium
         </button>
+
 
         <button
           class="chip"
@@ -427,7 +521,9 @@
           Diesel
         </button>
 
+
       </div>
+
 
 
       <!-- SORT -->
@@ -483,7 +579,8 @@
       </div>
 
 
-      <!-- BRAND FILTERS -->
+
+      <!-- BRAND FILTER -->
 
       <div class="map-filter">
 
@@ -554,6 +651,7 @@
       </div>
 
 
+
       <!-- MAP -->
 
       <div class="map-wrap">
@@ -569,6 +667,7 @@
         </div>
 
       </div>
+
 
 
       <!-- MAP ACTIONS -->
@@ -603,6 +702,7 @@
       </div>
 
 
+
       <!-- SELECTED STATION -->
 
       <article
@@ -612,6 +712,7 @@
 
 
         <div class="row">
+
 
           <div class="flex-1">
 
@@ -643,10 +744,12 @@
             —
           </div>
 
+
         </div>
 
 
-        <!-- STATION PRICES -->
+
+        <!-- PRICES -->
 
         <div class="station-price-grid">
 
@@ -705,7 +808,8 @@
         </div>
 
 
-        <!-- RANGE RESULT -->
+
+        <!-- RANGE -->
 
         <div
           id="rangeResult"
@@ -713,6 +817,7 @@
         >
           Select a station to estimate range.
         </div>
+
 
 
         <div class="button-row mt-12">
@@ -737,6 +842,7 @@
         </div>
 
 
+
         <button
           class="ghost full-button mt-10"
           onclick="GasGoApp.openFuelLogModal()"
@@ -746,6 +852,7 @@
 
 
       </article>
+
 
 
       <!-- STATION LIST -->
@@ -781,6 +888,7 @@
         </div>
 
       </div>
+
 
 
       <div class="notice mt-20">
@@ -830,6 +938,7 @@
       </header>
 
 
+
       <div class="card savings-card">
 
         <div class="eyebrow">
@@ -849,6 +958,7 @@
         </div>
 
       </div>
+
 
 
       <div class="section-title">
@@ -908,7 +1018,6 @@
       </header>
 
 
-      <!-- STATS -->
 
       <div class="dashboard-grid">
 
@@ -1003,7 +1112,6 @@
       </div>
 
 
-      <!-- AVERAGE -->
 
       <div class="card mt-12">
 
@@ -1034,7 +1142,6 @@
       </div>
 
 
-      <!-- CHART -->
 
       <div class="section-title">
         Spending
@@ -1057,6 +1164,7 @@
 
           </div>
 
+
           <span class="badge">
             HISTORY
           </span>
@@ -1072,7 +1180,6 @@
       </article>
 
 
-      <!-- LOGS -->
 
       <div class="section-title">
 
@@ -1132,6 +1239,7 @@
       </header>
 
 
+
       <article class="card hero">
 
         <div class="hero-title">
@@ -1160,6 +1268,7 @@
         </div>
 
       </article>
+
 
 
       <div class="section-title">
@@ -1227,7 +1336,6 @@
       </header>
 
 
-      <!-- VEHICLE -->
 
       <article class="card">
 
@@ -1263,7 +1371,6 @@
       </article>
 
 
-      <!-- VEHICLE STATS -->
 
       <div class="section-title">
         Vehicle estimate
@@ -1312,8 +1419,6 @@
         </div>
 
 
-        <!-- NEW: SAME DESIGN, NOW SHOWS TANK CAPACITY -->
-
         <div class="vehicle-stat">
 
           <div class="eyebrow">
@@ -1330,7 +1435,6 @@
       </div>
 
 
-      <!-- GASGO LINK -->
 
       <div class="section-title">
         GasGo Link
@@ -1409,7 +1513,6 @@
       </article>
 
 
-      <!-- RANGE EXPLANATION -->
 
       <div class="section-title">
         How range works
@@ -1487,10 +1590,9 @@
       </div>
 
 
+
       <div class="form-grid">
 
-
-        <!-- YEAR -->
 
         <div class="field">
 
@@ -1503,7 +1605,6 @@
         </div>
 
 
-        <!-- MAKE -->
 
         <div class="field">
 
@@ -1519,7 +1620,6 @@
         </div>
 
 
-        <!-- MODEL -->
 
         <div class="field full">
 
@@ -1532,7 +1632,6 @@
         </div>
 
 
-        <!-- POWERTRAIN -->
 
         <div class="field full">
 
@@ -1565,6 +1664,7 @@
           </select>
 
         </div>
+
 
 
         <!-- CURRENT LEVEL -->
@@ -1613,6 +1713,7 @@
         </div>
 
 
+
         <!-- FULL RANGE -->
 
         <div class="field full">
@@ -1659,10 +1760,8 @@
         </div>
 
 
-        <!-- =================================================
-             NEW: TANK CAPACITY
-             Same visual style as the other vehicle sliders.
-             ================================================= -->
+
+        <!-- TANK CAPACITY -->
 
         <div class="field full">
 
@@ -1712,6 +1811,7 @@
 
 
       </div>
+
 
 
       <div class="notice mt-15">
@@ -1777,10 +1877,9 @@
       </div>
 
 
+
       <div class="form-grid">
 
-
-        <!-- DATE -->
 
         <div class="field">
 
@@ -1796,7 +1895,6 @@
         </div>
 
 
-        <!-- FUEL -->
 
         <div class="field">
 
@@ -1823,7 +1921,6 @@
         </div>
 
 
-        <!-- STATION -->
 
         <div class="field full">
 
@@ -1840,7 +1937,6 @@
         </div>
 
 
-        <!-- LITERS -->
 
         <div class="field">
 
@@ -1861,7 +1957,6 @@
         </div>
 
 
-        <!-- PRICE -->
 
         <div class="field">
 
@@ -1882,7 +1977,6 @@
         </div>
 
 
-        <!-- ODOMETER -->
 
         <div class="field full">
 
@@ -1905,7 +1999,8 @@
       </div>
 
 
-      <!-- TOTAL + NEW FUEL LEVEL PREVIEW -->
+
+      <!-- TOTAL + FUEL LEVEL -->
 
       <div class="fuel-summary">
 
@@ -1939,12 +2034,12 @@
       </div>
 
 
+
       <div class="notice mt-15">
 
-        When you save a gasoline or diesel fill-up,
-        GasGo uses the liters added and your saved tank
-        capacity to update the estimated fuel level.
-        Savings and fuel levels remain prototype estimates.
+        GasGo estimates the new fuel level using the
+        liters added and your saved tank capacity.
+        Fuel level, range and savings remain estimates.
 
       </div>
 
@@ -1964,7 +2059,7 @@
 
 
   <!-- =====================================================
-       BOTTOM NAVIGATION
+       BOTTOM NAV
        ===================================================== -->
 
   <nav class="bottom">
@@ -2049,7 +2144,7 @@
 
 
 
-  <!-- TOASTS -->
+  <!-- TOAST -->
 
   <div
     id="toastContainer"
@@ -2067,10 +2162,10 @@
   ></script>
 
 
-  <script src="stations.js?v=5.1"></script>
+  <script src="stations.js?v=5.2"></script>
 
 
-  <script src="app.js?v=5.1"></script>
+  <script src="app.js?v=5.2"></script>
 
 
 </body>
