@@ -1,896 +1,1136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f1111" />
-  <title>GasGo — Puerto Rico</title>
-
-  <link rel="preconnect" href="https://unpkg.com" />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <style>
-    :root {
-      --green:#00c853;
-      --green2:#00a846;
-      --bg:#0b0d0d;
-      --panel:#141717;
-      --panel2:#1a1e1e;
-      --border:#272c2c;
-      --text:#f7f8f8;
-      --muted:#949b9b;
-      --danger:#ff6b6b;
-      --warn:#ffc857;
-    }
-
-    * { box-sizing:border-box; }
-
-    html { background:var(--bg); }
-
-    body {
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      min-height:100vh;
-    }
-
-    button,input,select { font:inherit; }
-    button { cursor:pointer; }
-
-    .app {
-      width:100%;
-      max-width:520px;
-      margin:auto;
-      min-height:100vh;
-      background:
-        radial-gradient(circle at 100% 0,rgba(0,200,83,.12),transparent 28%),
-        var(--bg);
-      padding:18px 16px 104px;
-    }
-
-    .screen { display:none; }
-    .screen.active { display:block; }
-
-    .top {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:22px;
-    }
-
-    .brand {
-      font-size:29px;
-      font-weight:950;
-      letter-spacing:-1.6px;
-    }
-
-    .brand span { color:var(--green); }
-
-    .badge {
-      font-size:10px;
-      font-weight:900;
-      letter-spacing:.5px;
-      color:#53e68e;
-      border:1px solid rgba(0,200,83,.32);
-      background:rgba(0,200,83,.1);
-      padding:7px 10px;
-      border-radius:999px;
-    }
-
-    .eyebrow {
-      color:var(--muted);
-      font-size:13px;
-      font-weight:700;
-    }
-
-    .title {
-      font-size:29px;
-      line-height:1.08;
-      letter-spacing:-1px;
-      margin:5px 0 18px;
-    }
-
-    .card {
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:22px;
-      padding:18px;
-    }
-
-    .hero {
-      background:linear-gradient(135deg,var(--green),#16df6a);
-      color:#041109;
-      border:none;
-      padding:22px;
-      box-shadow:0 16px 40px rgba(0,200,83,.12);
-    }
-
-    .hero .label {
-      font-size:11px;
-      font-weight:900;
-      letter-spacing:.7px;
-      opacity:.72;
-    }
-
-    .range {
-      font-size:52px;
-      font-weight:950;
-      line-height:1;
-      margin:6px 0 18px;
-    }
-
-    .range small { font-size:20px; }
-
-    .row {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-
-    .meter {
-      height:7px;
-      border-radius:999px;
-      background:rgba(0,0,0,.2);
-      overflow:hidden;
-      margin-top:8px;
-    }
-
-    .meter > div {
-      height:100%;
-      width:68%;
-      background:#07130b;
-      border-radius:999px;
-    }
-
-    .section-title {
-      font-size:17px;
-      font-weight:900;
-      margin:23px 0 11px;
-    }
-
-    .station { margin-bottom:10px; }
-
-    .station-name {
-      font-weight:900;
-      font-size:17px;
-    }
-
-    .muted {
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.45;
-    }
-
-    .price {
-      color:var(--green);
-      font-size:21px;
-      font-weight:950;
-      text-align:right;
-    }
-
-    .price small {
-      display:block;
-      color:var(--muted);
-      font-size:10px;
-      font-weight:700;
-    }
-
-    .primary {
-      width:100%;
-      border:0;
-      border-radius:15px;
-      background:var(--green);
-      color:#041109;
-      padding:15px;
-      font-weight:950;
-      margin-top:14px;
-    }
-
-    .secondary {
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:var(--panel2);
-      color:var(--text);
-      padding:12px 14px;
-      font-weight:800;
-    }
-
-    .ghost {
-      border:1px solid var(--border);
-      border-radius:13px;
-      background:transparent;
-      color:var(--text);
-      padding:11px 13px;
-      font-weight:800;
-    }
-
-    .quick {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .quick button {
-      min-height:94px;
-      border:1px solid var(--border);
-      border-radius:18px;
-      background:var(--panel);
-      color:var(--text);
-      padding:15px;
-      text-align:left;
-      font-weight:850;
-    }
-
-    .quick .ico {
-      display:block;
-      font-size:23px;
-      margin-bottom:10px;
-    }
-
-    .bottom {
-      position:fixed;
-      z-index:900;
-      bottom:0;
-      left:50%;
-      transform:translateX(-50%);
-      width:min(520px,100%);
-      display:flex;
-      justify-content:space-around;
-      background:rgba(11,13,13,.95);
-      backdrop-filter:blur(18px);
-      border-top:1px solid var(--border);
-      padding:10px 8px calc(13px + env(safe-area-inset-bottom));
-    }
-
-    .nav {
-      width:25%;
-      border:0;
-      background:none;
-      color:#737b7b;
-      font-size:10px;
-      font-weight:850;
-      padding:6px 2px;
-    }
-
-    .nav .ico {
-      display:block;
-      font-size:20px;
-      margin-bottom:3px;
-    }
-
-    .nav.active { color:var(--green); }
-
-    .map-shell {
-      position:relative;
-      border:1px solid var(--border);
-      border-radius:22px;
-      overflow:hidden;
-      background:var(--panel);
-      height:420px;
-    }
-
-    #map {
-      height:100%;
-      width:100%;
-      background:#1a1e1e;
-    }
-
-    .map-tools {
-      display:flex;
-      gap:8px;
-      margin:10px 0 12px;
-      overflow:auto;
-      padding-bottom:2px;
-    }
-
-    .chip {
-      white-space:nowrap;
-      border:1px solid var(--border);
-      background:var(--panel);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:850;
-    }
-
-    .chip.active {
-      background:var(--green);
-      border-color:var(--green);
-      color:#041109;
-    }
-
-    .map-status {
-      margin:10px 0;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .leaflet-container { font-family:inherit; }
-
-    .leaflet-popup-content-wrapper,
-    .leaflet-popup-tip {
-      background:#151919;
-      color:#fff;
-    }
-
-    .leaflet-popup-content {
-      margin:13px 14px;
-    }
-
-    .marker-dot {
-      width:32px;
-      height:32px;
-      border-radius:50%;
-      display:grid;
-      place-items:center;
-      background:var(--green);
-      color:#06130a;
-      border:3px solid #fff;
-      font-size:14px;
-      font-weight:950;
-      box-shadow:0 4px 14px rgba(0,0,0,.35);
-    }
-
-    .price-grid {
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:8px;
-      margin-top:12px;
-    }
-
-    .mini {
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:15px;
-      padding:12px;
-    }
-
-    .mini b {
-      display:block;
-      font-size:17px;
-      margin-top:4px;
-    }
-
-    .brand-strip {
-      display:flex;
-      gap:8px;
-      overflow:auto;
-      padding-bottom:4px;
-    }
-
-    .brand-pill {
-      flex:0 0 auto;
-      border:1px solid var(--border);
-      background:var(--panel);
-      padding:10px 12px;
-      border-radius:14px;
-      font-size:12px;
-      font-weight:850;
-    }
-
-    .form-grid {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .field {
-      display:flex;
-      flex-direction:column;
-      gap:7px;
-    }
-
-    .field.full { grid-column:1/-1; }
-
-    .field label {
-      font-size:12px;
-      color:var(--muted);
-      font-weight:800;
-    }
-
-    .field input,
-    .field select {
-      width:100%;
-      min-height:48px;
-      border:1px solid var(--border);
-      border-radius:13px;
-      background:#101313;
-      color:var(--text);
-      padding:0 12px;
-      font-size:16px;
-      outline:none;
-    }
-
-    .field input:focus,
-    .field select:focus {
-      border-color:var(--green);
-      box-shadow:0 0 0 3px rgba(0,200,83,.12);
-    }
-
-    .vehicle-card {
-      display:flex;
-      align-items:center;
-      gap:14px;
-    }
-
-    .vehicle-icon {
-      width:52px;
-      height:52px;
-      border-radius:16px;
-      background:rgba(0,200,83,.12);
-      display:grid;
-      place-items:center;
-      font-size:25px;
-    }
-
-    .vehicle-copy {
-      min-width:0;
-      flex:1;
-    }
-
-    .vehicle-copy h3 {
-      margin:0 0 3px;
-      font-size:17px;
-    }
-
-    .vehicle-copy p {
-      margin:0;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .link-status {
-      color:var(--green);
-      font-weight:900;
-      font-size:12px;
-    }
-
-    .stat-grid {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .stat {
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:15px;
-    }
-
-    .stat .big {
-      font-size:25px;
-      font-weight:950;
-      margin-top:5px;
-    }
-
-    .notice {
-      border:1px solid rgba(255,200,87,.25);
-      background:rgba(255,200,87,.06);
-      color:#e8d7aa;
-      border-radius:15px;
-      padding:12px;
-      font-size:12px;
-      line-height:1.45;
-    }
-
-    .modal {
-      display:none;
-      position:fixed;
-      z-index:2000;
-      inset:0;
-      background:rgba(0,0,0,.68);
-      padding:18px;
-      overflow:auto;
-    }
-
-    .modal.open {
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-    }
-
-    .sheet {
-      width:min(520px,100%);
-      background:#101313;
-      border:1px solid var(--border);
-      border-radius:25px 25px 18px 18px;
-      padding:18px;
-      margin:auto auto 0;
-    }
-
-    .sheet-head {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:16px;
-    }
-
-    .sheet-head h2 {
-      margin:0;
-      font-size:21px;
-    }
-
-    .close {
-      width:40px;
-      height:40px;
-      border-radius:50%;
-      border:1px solid var(--border);
-      background:var(--panel);
-      color:#fff;
-      font-size:20px;
-    }
-
-    .disclaimer {
-      font-size:10.5px;
-      color:#687070;
-      line-height:1.5;
-      margin:16px 2px 0;
-    }
-
-    @media(max-width:360px) {
-      .app { padding-left:12px; padding-right:12px; }
-      .range { font-size:45px; }
-      .map-shell { height:370px; }
-      .form-grid { grid-template-columns:1fr; }
-      .field.full { grid-column:auto; }
-    }
-
-    @media(min-width:700px) {
-      .app { max-width:760px; }
-      .bottom { width:min(760px,100%); }
-      .map-shell { height:500px; }
-      .quick { grid-template-columns:repeat(4,1fr); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#090c0b">
+<title>GasGo</title>
+
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIINfQ3yn5Ha+MZCGqJ0B4Gf4I9F3g5uP8Y="
+  crossorigin=""
+>
+
+<style>
+:root{
+  --green:#00C853;
+  --green-dark:#00a844;
+  --green-soft:rgba(0,200,83,.12);
+  --bg:#090c0b;
+  --card:#121615;
+  --card2:#171c1a;
+  --border:#242b28;
+  --text:#f5f7f6;
+  --muted:#929b97;
+  --yellow:#ffc857;
+  --red:#ff6565;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+
+body{
+  min-height:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+
+button,input,select{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+.app{
+  width:100%;
+  max-width:540px;
+  margin:auto;
+  min-height:100vh;
+  padding:18px 16px 105px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(0,200,83,.10),transparent 26%),
+    var(--bg);
+}
+
+.screen{
+  display:none;
+}
+
+.screen.active{
+  display:block;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:22px;
+}
+
+.logo{
+  font-size:30px;
+  font-weight:950;
+  letter-spacing:-1.7px;
+}
+
+.logo span{
+  color:var(--green);
+}
+
+.badge{
+  padding:7px 10px;
+  border-radius:999px;
+  background:var(--green-soft);
+  border:1px solid rgba(0,200,83,.28);
+  color:#5bea96;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.6px;
+}
+
+.eyebrow{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+h1{
+  font-size:31px;
+  line-height:1.08;
+  margin:6px 0 18px;
+  letter-spacing:-1.1px;
+}
+
+h2,h3,p{
+  margin-top:0;
+}
+
+.section-title{
+  font-size:17px;
+  font-weight:900;
+  margin:24px 0 11px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:18px;
+}
+
+.hero{
+  border:none;
+  color:#041009;
+  background:linear-gradient(135deg,#00c853,#20e874);
+  padding:22px;
+  box-shadow:0 18px 50px rgba(0,200,83,.12);
+}
+
+.hero-label{
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.8px;
+  opacity:.7;
+}
+
+.range-number{
+  font-size:54px;
+  line-height:1;
+  font-weight:950;
+  margin:7px 0 18px;
+  letter-spacing:-2px;
+}
+
+.range-number small{
+  font-size:20px;
+  letter-spacing:0;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.muted{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.45;
+}
+
+.progress{
+  width:100%;
+  height:8px;
+  background:rgba(0,0,0,.18);
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:9px;
+}
+
+.progress-fill{
+  height:100%;
+  width:68%;
+  background:#06130b;
+  border-radius:999px;
+  transition:width .3s ease;
+}
+
+.primary{
+  width:100%;
+  border:none;
+  min-height:49px;
+  border-radius:15px;
+  background:var(--green);
+  color:#031009;
+  font-weight:950;
+  padding:13px 15px;
+}
+
+.secondary{
+  border:1px solid var(--border);
+  min-height:46px;
+  border-radius:14px;
+  background:var(--card2);
+  color:var(--text);
+  font-weight:850;
+  padding:11px 14px;
+}
+
+.ghost{
+  border:1px solid var(--border);
+  min-height:46px;
+  border-radius:14px;
+  background:transparent;
+  color:var(--text);
+  font-weight:850;
+  padding:11px 14px;
+}
+
+.quick-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.quick{
+  min-height:100px;
+  padding:15px;
+  text-align:left;
+  border:1px solid var(--border);
+  border-radius:19px;
+  background:var(--card);
+  color:var(--text);
+  font-weight:850;
+}
+
+.quick-icon{
+  display:block;
+  font-size:25px;
+  margin-bottom:11px;
+}
+
+.price-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.price-mini{
+  padding:13px 10px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:var(--card);
+}
+
+.price-mini span{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.price-mini b{
+  display:block;
+  margin-top:5px;
+  font-size:18px;
+  letter-spacing:-.5px;
+}
+
+.brand-scroll{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  padding-bottom:3px;
+}
+
+.brand-scroll::-webkit-scrollbar{
+  display:none;
+}
+
+.brand-pill{
+  white-space:nowrap;
+  flex:0 0 auto;
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:10px 13px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:850;
+}
+
+/* MAP */
+
+.map-wrap{
+  position:relative;
+  width:100%;
+  height:430px;
+  overflow:hidden;
+  border-radius:22px;
+  border:1px solid var(--border);
+  background:#dce4df;
+}
+
+#map{
+  width:100%;
+  height:100%;
+  min-height:430px;
+  background:#dce4df;
+  z-index:1;
+}
+
+.leaflet-container{
+  background:#dce4df !important;
+  font-family:inherit;
+}
+
+.leaflet-control-attribution{
+  font-size:8px !important;
+}
+
+.map-loading{
+  position:absolute;
+  z-index:500;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:80%;
+  padding:13px;
+  text-align:center;
+  border-radius:14px;
+  color:#111;
+  background:rgba(255,255,255,.94);
+  font-size:12px;
+  font-weight:800;
+  pointer-events:none;
+}
+
+.map-controls{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  margin-bottom:11px;
+}
+
+.chip{
+  white-space:nowrap;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--card);
+  color:var(--text);
+  padding:10px 13px;
+  font-size:12px;
+  font-weight:850;
+}
+
+.chip.active{
+  background:var(--green);
+  border-color:var(--green);
+  color:#031009;
+}
+
+.map-actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.map-actions button{
+  flex:1;
+}
+
+.map-status{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:10px;
+  line-height:1.4;
+}
+
+.marker{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--green);
+  border:3px solid white;
+  box-shadow:0 4px 12px rgba(0,0,0,.35);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  background:#111614;
+  color:#fff;
+}
+
+.popup-name{
+  font-size:15px;
+  font-weight:900;
+  margin-bottom:3px;
+}
+
+.popup-price{
+  color:#42e885;
+  font-size:17px;
+  font-weight:950;
+  margin-top:7px;
+}
+
+/* PRICE LIST */
+
+.price-card{
+  margin-bottom:10px;
+}
+
+.price-main{
+  color:var(--green);
+  font-size:22px;
+  font-weight:950;
+}
+
+.price-sub{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:11px;
+}
+
+/* REWARDS */
+
+.reward-brand{
+  margin-bottom:12px;
+  transition:border-color .2s ease;
+}
+
+.reward-brand.selected{
+  border-color:rgba(0,200,83,.65);
+}
+
+.reward-top{
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+
+.reward-logo{
+  width:49px;
+  height:49px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  background:var(--green-soft);
+  font-weight:950;
+  color:var(--green);
+  font-size:19px;
+}
+
+.reward-info{
+  flex:1;
+  min-width:0;
+}
+
+.reward-info b{
+  font-size:17px;
+}
+
+.reward-points{
+  font-size:14px;
+  color:var(--green);
+  font-weight:950;
+}
+
+.reward-progress{
+  height:9px;
+  background:#252c29;
+  border-radius:999px;
+  overflow:hidden;
+  margin:15px 0 7px;
+}
+
+.reward-progress div{
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--green),#43ea89);
+  transition:width .4s ease;
+}
+
+.reward-details{
+  display:none;
+  margin-top:15px;
+  padding-top:14px;
+  border-top:1px solid var(--border);
+}
+
+.reward-brand.selected .reward-details{
+  display:block;
+}
+
+.reward-tier{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:10px 0;
+}
+
+.reward-tier + .reward-tier{
+  border-top:1px solid rgba(255,255,255,.05);
+}
+
+.reward-circle{
+  width:35px;
+  height:35px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#222826;
+  font-size:16px;
+}
+
+.reward-tier.unlocked .reward-circle{
+  background:var(--green);
+  color:#031009;
+}
+
+.reward-tier.locked{
+  opacity:.5;
+}
+
+.demo-add{
+  margin-top:12px;
+  width:100%;
+}
+
+/* VEHICLE */
+
+.vehicle-header{
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+
+.vehicle-icon{
+  width:54px;
+  height:54px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:17px;
+  background:var(--green-soft);
+  font-size:26px;
+}
+
+.vehicle-info{
+  min-width:0;
+  flex:1;
+}
+
+.vehicle-info h3{
+  margin:0 0 4px;
+  font-size:17px;
+}
+
+.vehicle-info p{
+  margin:0;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.stat{
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--card);
+  padding:15px;
+}
+
+.stat strong{
+  display:block;
+  font-size:25px;
+  margin-top:5px;
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.field{
+  min-width:0;
+}
+
+.field.full{
+  grid-column:1/-1;
+}
+
+.field label{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:7px;
+}
+
+.field input,
+.field select{
+  width:100%;
+  min-height:50px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  outline:none;
+  color:white;
+  background:#0e1211;
+  padding:0 12px;
+  font-size:16px;
+}
+
+.field input:focus,
+.field select:focus{
+  border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(0,200,83,.1);
+}
+
+.slider-box{
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:#0e1211;
+}
+
+.slider-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.slider-value{
+  color:var(--green);
+  font-weight:950;
+  font-size:18px;
+}
+
+input[type="range"]{
+  width:100%;
+  min-height:30px;
+  padding:0;
+  border:0;
+  background:transparent;
+  accent-color:var(--green);
+}
+
+.notice{
+  padding:13px;
+  border-radius:16px;
+  background:rgba(255,200,87,.06);
+  border:1px solid rgba(255,200,87,.20);
+  color:#dfcca0;
+  font-size:11px;
+  line-height:1.5;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  z-index:3000;
+  inset:0;
+  padding:16px;
+  background:rgba(0,0,0,.72);
+  overflow-y:auto;
+}
+
+.modal.open{
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+
+.sheet{
+  width:min(520px,100%);
+  max-height:92vh;
+  overflow-y:auto;
+  margin:auto auto 0;
+  padding:19px;
+  background:#101412;
+  border:1px solid var(--border);
+  border-radius:25px 25px 17px 17px;
+}
+
+.sheet-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.sheet-head h2{
+  margin:0;
+}
+
+.close{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:#fff;
+  font-size:21px;
+}
+
+.bottom-nav{
+  position:fixed;
+  z-index:2000;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(540px,100%);
+  display:flex;
+  background:rgba(9,12,11,.95);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--border);
+  padding:9px 7px calc(11px + env(safe-area-inset-bottom));
+}
+
+.nav{
+  flex:1;
+  border:0;
+  background:none;
+  color:#737c78;
+  padding:6px 2px;
+  font-size:10px;
+  font-weight:850;
+}
+
+.nav-icon{
+  display:block;
+  font-size:20px;
+  margin-bottom:3px;
+}
+
+.nav.active{
+  color:var(--green);
+}
+
+.disclaimer{
+  color:#68716d;
+  font-size:10.5px;
+  line-height:1.5;
+  margin-top:17px;
+}
+
+@media(max-width:360px){
+  .app{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .range-number{
+    font-size:47px;
+  }
+
+  .map-wrap,
+  #map{
+    height:390px;
+    min-height:390px;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .field.full{
+    grid-column:auto;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <!-- HOME -->
-  <section id="home" class="screen active">
+<!-- HOME -->
 
-    <div class="top">
-      <div class="brand">Gas<span>Go</span></div>
-      <div class="badge">PR PROTOTYPE</div>
-    </div>
+<section id="home" class="screen active">
 
-    <div class="eyebrow">Good afternoon 👋</div>
-    <h1 class="title">Drive smarter.</h1>
+  <div class="top">
+    <div class="logo">Gas<span>Go</span></div>
+    <div class="badge">PUERTO RICO</div>
+  </div>
 
-    <div class="card hero">
-      <div class="label">ESTIMATED RANGE</div>
+  <div class="eyebrow">Good afternoon 👋</div>
+  <h1>Drive smarter.<br>Go farther.</h1>
 
-      <div class="range">
-        <span id="homeRange">47</span>
-        <small>mi</small>
-      </div>
+  <div class="card hero">
 
-      <div class="row">
-        <b id="homeFuelLabel">⛽ Fuel level</b>
-        <b id="homeFuel">68%</b>
-      </div>
+    <div class="hero-label">ESTIMATED RANGE</div>
 
-      <div class="meter">
-        <div id="homeMeter"></div>
-      </div>
-    </div>
-
-    <div class="section-title">Puerto Rico fuel snapshot</div>
-
-    <div class="price-grid">
-      <div class="mini">
-        <span class="muted">Regular</span>
-        <b>$1.137–1.177</b>
-        <span class="muted">/L</span>
-      </div>
-
-      <div class="mini">
-        <span class="muted">Premium</span>
-        <b>$1.277–1.357</b>
-        <span class="muted">/L</span>
-      </div>
-
-      <div class="mini">
-        <span class="muted">Diesel</span>
-        <b>$1.407–1.447</b>
-        <span class="muted">/L</span>
-      </div>
-    </div>
-
-    <div class="section-title">Quick actions</div>
-
-    <div class="quick">
-
-      <button data-go="stations">
-        <span class="ico">🗺️</span>
-        Explore map
-      </button>
-
-      <button data-go="stations">
-        <span class="ico">⛽</span>
-        Find fuel
-      </button>
-
-      <button data-go="prices">
-        <span class="ico">💲</span>
-        Compare brands
-      </button>
-
-      <button data-go="car">
-        <span class="ico">🚗</span>
-        My vehicle
-      </button>
-
-    </div>
-
-    <div class="section-title">Fuel brands tracked by DACO</div>
-
-    <div class="brand-strip" id="brandStrip"></div>
-
-    <p class="disclaimer">
-      Fuel snapshot based on recent DACO reference data.
-      Prices can change by station and time.
-      GasGo is a competition prototype; vehicle range and station
-      availability are estimates and data-source dependent.
-    </p>
-
-  </section>
-
-
-  <!-- MAP -->
-  <section id="stations" class="screen">
-
-    <div class="top">
-      <div>
-        <div class="eyebrow">Puerto Rico</div>
-        <div class="brand">Explore</div>
-      </div>
-
-      <div class="badge">INTERACTIVE MAP</div>
-    </div>
-
-    <div class="map-tools">
-      <button class="chip active" data-filter="all">All fuel</button>
-      <button class="chip" data-filter="Puma">Puma</button>
-      <button class="chip" data-filter="Shell">Shell</button>
-      <button class="chip" data-filter="Total">Total</button>
-      <button class="chip" data-filter="Gulf">Gulf</button>
-      <button class="chip" data-filter="Texaco">Texaco</button>
-      <button class="chip" data-filter="Mobil">Mobil</button>
-    </div>
-
-    <div class="map-shell">
-      <div id="map"></div>
-    </div>
-
-    <div id="mapStatus" class="map-status">
-      Open the map to load fuel locations.
+    <div class="range-number">
+      <span id="homeRange">238</span>
+      <small>mi</small>
     </div>
 
     <div class="row">
-      <button id="locateBtn" class="secondary">
-        📍 My location
-      </button>
-
-      <button id="resetMap" class="ghost">
-        Puerto Rico
-      </button>
+      <strong id="homeLevelLabel">⛽ Fuel level</strong>
+      <strong id="homeLevel">68%</strong>
     </div>
 
-    <div class="notice" style="margin-top:14px;">
-      Station locations come from OpenStreetMap.
-      Coverage can be incomplete. Prices shown in station popups are
-      brand-level DACO references, not guaranteed station-specific prices.
+    <div class="progress">
+      <div id="homeProgress" class="progress-fill"></div>
     </div>
 
-  </section>
+  </div>
 
+  <div class="section-title">Puerto Rico fuel snapshot</div>
 
-  <!-- PRICES -->
-  <section id="prices" class="screen">
+  <div class="price-grid">
 
-    <div class="top">
-      <div>
-        <div class="eyebrow">Puerto Rico</div>
-        <div class="brand">Fuel prices</div>
-      </div>
-
-      <div class="badge">DACO DATA</div>
+    <div class="price-mini">
+      <span>REGULAR</span>
+      <b>$1.14</b>
+      <span>approx./L</span>
     </div>
 
-    <h1 class="title">Compare brands.</h1>
-
-    <div id="priceList"></div>
-
-    <p class="disclaimer">
-      Values are reference prices by brand and should not be interpreted
-      as the exact price at every individual station.
-    </p>
-
-  </section>
-
-
-  <!-- REWARDS -->
-  <section id="rewards" class="screen">
-
-    <div class="top">
-      <div>
-        <div class="eyebrow">GasGo</div>
-        <div class="brand">Rewards</div>
-      </div>
-
-      <div class="badge">DEMO</div>
+    <div class="price-mini">
+      <span>PREMIUM</span>
+      <b>$1.28</b>
+      <span>approx./L</span>
     </div>
 
-    <h1 class="title">Your rewards.</h1>
-
-    <div class="card">
-      <div class="eyebrow">Puma</div>
-      <div class="range" style="font-size:38px;">
-        750 <small>pts</small>
-      </div>
-      <div class="muted">
-        Demo loyalty balance
-      </div>
+    <div class="price-mini">
+      <span>DIESEL</span>
+      <b>$1.41</b>
+      <span>approx./L</span>
     </div>
 
-    <div style="height:10px;"></div>
+  </div>
 
-    <div class="card">
-      <div class="eyebrow">Shell</div>
-      <div class="range" style="font-size:38px;">
-        420 <small>pts</small>
-      </div>
-      <div class="muted">
-        Demo loyalty balance
-      </div>
+  <div class="section-title">Quick actions</div>
+
+  <div class="quick-grid">
+
+    <button class="quick" data-screen="stations">
+      <span class="quick-icon">🗺️</span>
+      Explore map
+    </button>
+
+    <button class="quick" data-screen="prices">
+      <span class="quick-icon">⛽</span>
+      Compare prices
+    </button>
+
+    <button class="quick" data-screen="rewards">
+      <span class="quick-icon">★</span>
+      Rewards
+    </button>
+
+    <button class="quick" data-screen="car">
+      <span class="quick-icon">🚗</span>
+      My vehicle
+    </button>
+
+  </div>
+
+  <div class="section-title">Fuel brands</div>
+  <div id="brandScroll" class="brand-scroll"></div>
+
+  <p class="disclaimer">
+    GasGo is a prototype. Fuel prices and vehicle range are estimates
+    and may differ from real-world conditions.
+  </p>
+
+</section>
+
+
+<!-- MAP -->
+
+<section id="stations" class="screen">
+
+  <div class="top">
+    <div>
+      <div class="eyebrow">Explore</div>
+      <div class="logo">Stations</div>
+    </div>
+    <div class="badge">LIVE MAP</div>
+  </div>
+
+  <h1>Fuel around<br>Puerto Rico.</h1>
+
+  <div class="map-controls">
+    <button class="chip active" data-filter="all">All</button>
+    <button class="chip" data-filter="Puma">Puma</button>
+    <button class="chip" data-filter="Shell">Shell</button>
+    <button class="chip" data-filter="Total">Total</button>
+    <button class="chip" data-filter="Gulf">Gulf</button>
+    <button class="chip" data-filter="Texaco">Texaco</button>
+    <button class="chip" data-filter="Mobil">Mobil</button>
+  </div>
+
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div id="mapLoading" class="map-loading">
+      Loading map…
+    </div>
+  </div>
+
+  <div class="map-actions">
+
+    <button id="locationButton" class="secondary">
+      📍 My location
+    </button>
+
+    <button id="resetMapButton" class="ghost">
+      🇵🇷 Puerto Rico
+    </button>
+
+  </div>
+
+  <div id="mapStatus" class="map-status">
+    You can move, zoom and explore the map manually.
+  </div>
+
+  <div class="notice">
+    Location is optional. Your browser will always ask permission before
+    a website can access your device location.
+  </div>
+
+</section>
+
+
+<!-- PRICES -->
+
+<section id="prices" class="screen">
+
+  <div class="top">
+    <div>
+      <div class="eyebrow">Compare</div>
+      <div class="logo">Fuel prices</div>
+    </div>
+    <div class="badge">REFERENCE</div>
+  </div>
+
+  <h1>Find better<br>value.</h1>
+
+  <div id="priceList"></div>
+
+  <p class="disclaimer">
+    Displayed prices are brand-level prototype reference values,
+    not guaranteed prices for each individual station.
+  </p>
+
+</section>
+
+
+<!-- REWARDS -->
+
+<section id="rewards" class="screen">
+
+  <div class="top">
+    <div>
+      <div class="eyebrow">Loyalty</div>
+      <div class="logo">Rewards</div>
+    </div>
+    <div class="badge">DEMO</div>
+  </div>
+
+  <h1>Drive. Earn.<br>Get rewarded.</h1>
+
+  <div class="card" style="margin-bottom:18px;">
+
+    <div class="eyebrow">TOTAL GASGO POINTS</div>
+
+    <div class="range-number" style="font-size:43px;margin-bottom:5px;">
+      <span id="totalPoints">1,170</span>
+      <small>pts</small>
     </div>
 
-    <div class="section-title">Available offer</div>
-
-    <div class="card">
-      <div class="station-name">🚿 Car Wash Reward</div>
-      <p class="muted">
-        Example partner discount for GasGo users.
-      </p>
+    <div class="muted">
+      Points stay separated by participating brand.
     </div>
 
-    <p class="disclaimer">
-      Rewards shown are prototype examples and do not represent
-      active commercial partnerships.
-    </p>
+  </div>
 
-  </section>
+  <div id="rewardsList"></div>
+
+  <div class="notice">
+    This rewards system is an interactive prototype. Participating brands,
+    point conversion rates and offers are examples for the GasGo concept.
+  </div>
+
+</section>
 
 
-  <!-- MY CAR -->
-  <section id="car" class="screen">
+<!-- MY CAR -->
 
-    <div class="top">
-      <div>
-        <div class="eyebrow">Garage</div>
-        <div class="brand">My Car</div>
-      </div>
+<section id="car" class="screen">
 
-      <div class="badge">GASGO LINK</div>
+  <div class="top">
+    <div>
+      <div class="eyebrow">Garage</div>
+      <div class="logo">My Car</div>
     </div>
+    <div class="badge">GASGO LINK</div>
+  </div>
 
-    <div id="vehicleEmpty" class="card">
+  <div id="noVehicle" class="card">
 
-      <div class="vehicle-card">
+    <div class="vehicle-header">
 
-        <div class="vehicle-icon">🚗</div>
+      <div class="vehicle-icon">🚗</div>
 
-        <div class="vehicle-copy">
-          <h3>No vehicle added</h3>
-          <p>Add your vehicle to personalize GasGo.</p>
-        </div>
-
-      </div>
-
-      <button id="addVehicleBtn" class="primary">
-        + ADD VEHICLE
-      </button>
-
-    </div>
-
-
-    <div id="vehicleSaved" style="display:none;">
-
-      <div class="card">
-
-        <div class="vehicle-card">
-
-          <div class="vehicle-icon" id="vehicleIcon">🚗</div>
-
-          <div class="vehicle-copy">
-            <h3 id="vehicleName">Vehicle</h3>
-            <p id="vehicleMeta">Gasoline</p>
-          </div>
-
-          <div class="link-status">
-            ● READY
-          </div>
-
-        </div>
-
-        <button id="editVehicleBtn" class="secondary" style="width:100%;margin-top:15px;">
-          Edit vehicle
-        </button>
-
-      </div>
-
-      <div class="section-title">Vehicle insights</div>
-
-      <div class="stat-grid">
-
-        <div class="stat">
-          <div class="muted">Estimated range</div>
-          <div class="big" id="carRange">—</div>
-        </div>
-
-        <div class="stat">
-          <div class="muted">Fuel / battery</div>
-          <div class="big" id="carLevel">—</div>
-        </div>
-
-      </div>
-
-      <div class="section-title">GasGo Link</div>
-
-      <div class="card">
-        <div class="row">
-          <div>
-            <div class="station-name">GasGo Link</div>
-            <div class="muted">OBD-II smart vehicle connection</div>
-          </div>
-
-          <div class="link-status">DEMO</div>
-        </div>
-
-        <p class="muted" style="margin-bottom:0;">
-          GasGo Link is designed to support most OBD-II vehicles from
-          1996 or newer. Available information depends on the vehicle.
+      <div class="vehicle-info">
+        <h3>Add your vehicle</h3>
+        <p class="muted">
+          Personalize range and vehicle information.
         </p>
       </div>
 
     </div>
 
-  </section>
+    <button id="addVehicle" class="primary" style="margin-top:17px;">
+      + ADD VEHICLE
+    </button>
+
+  </div>
+
+
+  <div id="savedVehicle" style="display:none;">
+
+    <div class="card">
+
+      <div class="vehicle-header">
+
+        <div id="savedVehicleIcon" class="vehicle-icon">
+          🚗
+        </div>
+
+        <div class="vehicle-info">
+          <h3 id="savedVehicleName">Vehicle</h3>
+          <p id="savedVehicleMeta" class="muted"></p>
+        </div>
+
+      </div>
+
+      <button id="editVehicle" class="secondary"
+        style="width:100%;margin-top:16px;">
+        Edit vehicle
+      </button>
+
+    </div>
+
+    <div class="section-title">Vehicle status</div>
+
+    <div class="stats">
+
+      <div class="stat">
+        <div class="muted">Estimated range</div>
+        <strong id="vehicleRange">—</strong>
+      </div>
+
+      <div class="stat">
+        <div class="muted">Fuel / battery</div>
+        <strong id="vehicleLevel">—</strong>
+      </div>
+
+    </div>
+
+    <div class="section-title">GasGo Link</div>
+
+    <div class="card">
+
+      <div class="row">
+
+        <div>
+          <strong>GasGo Link</strong>
+          <div class="muted">
+            OBD-II vehicle connection
+          </div>
+        </div>
+
+        <div style="color:var(--green);font-weight:900;">
+          ● DEMO
+        </div>
+
+      </div>
+
+      <p class="muted" style="margin:14px 0 0;">
+        Designed for compatible OBD-II vehicles. Available vehicle
+        information depends on the specific vehicle.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
 
 </div>
 
 
-<!-- NAVIGATION -->
-<nav class="bottom">
+<!-- NAV -->
+
+<nav class="bottom-nav">
 
   <button class="nav active" data-nav="home">
-    <span class="ico">⌂</span>
+    <span class="nav-icon">⌂</span>
     Home
   </button>
 
   <button class="nav" data-nav="stations">
-    <span class="ico">🗺️</span>
+    <span class="nav-icon">🗺️</span>
     Stations
   </button>
 
   <button class="nav" data-nav="rewards">
-    <span class="ico">★</span>
+    <span class="nav-icon">★</span>
     Rewards
   </button>
 
   <button class="nav" data-nav="car">
-    <span class="ico">🚗</span>
+    <span class="nav-icon">🚗</span>
     My Car
   </button>
 
@@ -898,13 +1138,22 @@
 
 
 <!-- VEHICLE MODAL -->
+
 <div id="vehicleModal" class="modal">
 
   <div class="sheet">
 
     <div class="sheet-head">
-      <h2>Add your vehicle</h2>
-      <button id="closeModal" class="close">×</button>
+
+      <div>
+        <div class="eyebrow">GARAGE</div>
+        <h2 style="margin-top:3px;">Your vehicle</h2>
+      </div>
+
+      <button id="closeVehicle" class="close" type="button">
+        ×
+      </button>
+
     </div>
 
     <form id="vehicleForm">
@@ -912,72 +1161,92 @@
       <div class="form-grid">
 
         <div class="field">
-          <label for="year">Year</label>
-          <select id="year" required></select>
+          <label for="vehicleYear">Year</label>
+          <select id="vehicleYear"></select>
         </div>
 
         <div class="field">
-          <label for="make">Make</label>
-          <select id="make" required></select>
+          <label for="vehicleMake">Make</label>
+          <select id="vehicleMake"></select>
         </div>
 
         <div class="field full">
-          <label for="model">Model</label>
-          <input
-            id="model"
-            type="text"
-            placeholder="Example: Corolla"
-            maxlength="40"
-            required
-          />
+          <label for="vehicleModel">Model</label>
+          <select id="vehicleModel"></select>
         </div>
 
         <div class="field full">
-          <label for="powertrain">Vehicle type</label>
+          <label for="vehicleType">Powertrain</label>
 
-          <select id="powertrain" required>
-            <option value="Gasoline">Gasoline</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Plug-in Hybrid">Plug-in Hybrid</option>
-            <option value="Electric">Electric</option>
-            <option value="Diesel">Diesel</option>
+          <select id="vehicleType">
+            <option>Gasoline</option>
+            <option>Hybrid</option>
+            <option>Plug-in Hybrid</option>
+            <option>Electric</option>
+            <option>Diesel</option>
           </select>
 
         </div>
 
-        <div class="field">
-          <label for="level">Fuel / battery %</label>
-          <input
-            id="level"
-            type="number"
-            min="0"
-            max="100"
-            value="68"
-            required
-          />
+
+        <div class="field full">
+
+          <label>Fuel / battery level</label>
+
+          <div class="slider-box">
+
+            <div class="slider-head">
+              <span class="muted">Current level</span>
+              <span id="levelOutput" class="slider-value">68%</span>
+            </div>
+
+            <input
+              id="vehicleLevelSlider"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="68"
+            >
+
+          </div>
+
         </div>
 
-        <div class="field">
-          <label for="fullRange">Range at 100% (mi)</label>
-          <input
-            id="fullRange"
-            type="number"
-            min="20"
-            max="800"
-            value="350"
-            required
-          />
+
+        <div class="field full">
+
+          <label>Estimated range at 100%</label>
+
+          <div class="slider-box">
+
+            <div class="slider-head">
+              <span class="muted">Full range</span>
+              <span id="rangeOutput" class="slider-value">350 mi</span>
+            </div>
+
+            <input
+              id="vehicleRangeSlider"
+              type="range"
+              min="50"
+              max="600"
+              step="5"
+              value="350"
+            >
+
+          </div>
+
         </div>
 
       </div>
 
-      <div
-        id="formMsg"
+      <div id="vehicleFormMessage"
         class="muted"
-        style="margin-top:10px;"
-      ></div>
+        style="margin-top:12px;">
+      </div>
 
-      <button class="primary" type="submit">
+      <button type="submit" class="primary"
+        style="margin-top:14px;">
         SAVE VEHICLE
       </button>
 
@@ -988,1203 +1257,1948 @@
 </div>
 
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin="">
+</script>
 
 <script>
-(() => {
+(function(){
 
-  "use strict";
+"use strict";
 
-  /* =========================
-     GASGO DATA
-  ========================= */
+/* =========================
+   DATA
+========================= */
 
-  const PR_CENTER = [18.2208, -66.5901];
+const PR_CENTER = [18.2208,-66.5901];
 
-  const BRANDS = [
-    "76",
-    "American",
-    "Bita's",
-    "EcoMaxx",
-    "Gulf",
-    "Mobil",
-    "Phillips 66",
-    "Puma",
-    "Shell",
-    "Sunoco",
-    "Texaco",
-    "T-Express",
-    "Total",
-    "Ultra Top Fuel"
-  ];
+const brands = [
+  "76",
+  "American",
+  "Bita's",
+  "EcoMaxx",
+  "Gulf",
+  "Mobil",
+  "Phillips 66",
+  "Puma",
+  "Shell",
+  "Sunoco",
+  "Texaco",
+  "T-Express",
+  "Total",
+  "Ultra Top Fuel"
+];
 
+/*
+  Prototype brand references.
+  Displayed with TWO decimals:
+  1.27 instead of 1.277
+*/
 
-  const PRICES = {
-
-    "76":[1.147,1.287,1.437],
-
-    "American":[1.167,1.277,1.427],
-
-    "Bita's":[1.157,1.297,1.437],
-
-    "EcoMaxx":[1.157,1.297,1.447],
-
-    "Gulf":[1.157,1.297,1.447],
-
-    "Mobil":[1.167,1.337,1.447],
-
-    "Phillips 66":[1.147,1.287,1.437],
-
-    "Puma":[1.167,1.337,1.437],
-
-    "Shell":[1.167,1.337,1.447],
-
-    "Sunoco":[1.167,1.357,1.447],
-
-    "Texaco":[1.167,1.337,1.437],
-
-    "T-Express":[1.147,1.297,1.407],
-
-    "Total":[1.177,1.337,1.437],
-
-    "Ultra Top Fuel":[1.137,1.287,1.427]
-
-  };
+const prices = {
+  "76":[1.15,1.29,1.44],
+  "American":[1.17,1.28,1.43],
+  "Bita's":[1.16,1.30,1.44],
+  "EcoMaxx":[1.16,1.30,1.45],
+  "Gulf":[1.16,1.30,1.45],
+  "Mobil":[1.17,1.34,1.45],
+  "Phillips 66":[1.15,1.29,1.44],
+  "Puma":[1.17,1.34,1.44],
+  "Shell":[1.17,1.34,1.45],
+  "Sunoco":[1.17,1.36,1.45],
+  "Texaco":[1.17,1.34,1.44],
+  "T-Express":[1.15,1.30,1.41],
+  "Total":[1.18,1.34,1.44],
+  "Ultra Top Fuel":[1.14,1.29,1.43]
+};
 
 
-  const MAKES = [
-    "Acura",
-    "Audi",
-    "BMW",
-    "Buick",
-    "Cadillac",
-    "Chevrolet",
-    "Chrysler",
-    "Dodge",
-    "Ford",
-    "Genesis",
-    "GMC",
-    "Honda",
-    "Hyundai",
-    "Infiniti",
-    "Jeep",
-    "Kia",
-    "Lexus",
-    "Lincoln",
-    "Mazda",
-    "Mercedes-Benz",
-    "MINI",
-    "Mitsubishi",
-    "Nissan",
-    "Porsche",
-    "Ram",
-    "Subaru",
-    "Tesla",
-    "Toyota",
-    "Volkswagen",
-    "Volvo",
+/*
+  Model lists are prototype convenience data.
+  User can choose common models by brand.
+*/
+
+const vehicleModels = {
+
+  "Toyota":[
+    "Corolla",
+    "Camry",
+    "RAV4",
+    "Highlander",
+    "Tacoma",
+    "4Runner",
+    "Prius",
+    "Corolla Cross",
+    "Tundra",
     "Other"
-  ];
+  ],
+
+  "Honda":[
+    "Civic",
+    "Accord",
+    "CR-V",
+    "HR-V",
+    "Pilot",
+    "Ridgeline",
+    "Odyssey",
+    "Other"
+  ],
+
+  "Chevrolet":[
+    "Sonic",
+    "Spark",
+    "Malibu",
+    "Trax",
+    "Equinox",
+    "Traverse",
+    "Tahoe",
+    "Silverado",
+    "Bolt EV",
+    "Other"
+  ],
+
+  "Hyundai":[
+    "Accent",
+    "Elantra",
+    "Sonata",
+    "Venue",
+    "Kona",
+    "Tucson",
+    "Santa Fe",
+    "Ioniq 5",
+    "Other"
+  ],
+
+  "Kia":[
+    "Rio",
+    "Forte",
+    "K4",
+    "Soul",
+    "Seltos",
+    "Sportage",
+    "Sorento",
+    "Telluride",
+    "EV6",
+    "Other"
+  ],
+
+  "Nissan":[
+    "Versa",
+    "Sentra",
+    "Altima",
+    "Kicks",
+    "Rogue",
+    "Pathfinder",
+    "Frontier",
+    "Leaf",
+    "Other"
+  ],
+
+  "Ford":[
+    "Mustang",
+    "Escape",
+    "Explorer",
+    "Bronco",
+    "Bronco Sport",
+    "Maverick",
+    "Ranger",
+    "F-150",
+    "Mustang Mach-E",
+    "Other"
+  ],
+
+  "Jeep":[
+    "Wrangler",
+    "Compass",
+    "Renegade",
+    "Cherokee",
+    "Grand Cherokee",
+    "Gladiator",
+    "Other"
+  ],
+
+  "Mitsubishi":[
+    "Mirage",
+    "Outlander",
+    "Outlander Sport",
+    "Eclipse Cross",
+    "Outlander PHEV",
+    "Other"
+  ],
+
+  "Mazda":[
+    "Mazda3",
+    "CX-30",
+    "CX-5",
+    "CX-50",
+    "CX-90",
+    "MX-5 Miata",
+    "Other"
+  ],
+
+  "Subaru":[
+    "Impreza",
+    "Legacy",
+    "Crosstrek",
+    "Forester",
+    "Outback",
+    "WRX",
+    "Other"
+  ],
+
+  "Volkswagen":[
+    "Jetta",
+    "Golf",
+    "Taos",
+    "Tiguan",
+    "Atlas",
+    "ID.4",
+    "Other"
+  ],
+
+  "BMW":[
+    "3 Series",
+    "4 Series",
+    "5 Series",
+    "X1",
+    "X3",
+    "X5",
+    "i4",
+    "iX",
+    "Other"
+  ],
+
+  "Mercedes-Benz":[
+    "A-Class",
+    "C-Class",
+    "E-Class",
+    "CLA",
+    "GLA",
+    "GLC",
+    "GLE",
+    "EQS",
+    "Other"
+  ],
+
+  "Audi":[
+    "A3",
+    "A4",
+    "A5",
+    "Q3",
+    "Q5",
+    "Q7",
+    "e-tron",
+    "Other"
+  ],
+
+  "Lexus":[
+    "IS",
+    "ES",
+    "UX",
+    "NX",
+    "RX",
+    "GX",
+    "Other"
+  ],
+
+  "Tesla":[
+    "Model 3",
+    "Model Y",
+    "Model S",
+    "Model X",
+    "Cybertruck",
+    "Other"
+  ],
+
+  "Acura":[
+    "Integra",
+    "TLX",
+    "RDX",
+    "MDX",
+    "Other"
+  ],
+
+  "GMC":[
+    "Terrain",
+    "Acadia",
+    "Canyon",
+    "Sierra",
+    "Yukon",
+    "Hummer EV",
+    "Other"
+  ],
+
+  "Dodge":[
+    "Charger",
+    "Challenger",
+    "Durango",
+    "Hornet",
+    "Other"
+  ],
+
+  "Ram":[
+    "1500",
+    "2500",
+    "3500",
+    "ProMaster",
+    "Other"
+  ],
+
+  "Buick":[
+    "Encore",
+    "Envista",
+    "Envision",
+    "Enclave",
+    "Other"
+  ],
+
+  "Cadillac":[
+    "CT4",
+    "CT5",
+    "XT4",
+    "XT5",
+    "Escalade",
+    "Lyriq",
+    "Other"
+  ],
+
+  "Volvo":[
+    "S60",
+    "XC40",
+    "XC60",
+    "XC90",
+    "EX30",
+    "Other"
+  ],
+
+  "Porsche":[
+    "718",
+    "911",
+    "Macan",
+    "Cayenne",
+    "Panamera",
+    "Taycan",
+    "Other"
+  ],
+
+  "Other":[
+    "Other"
+  ]
+};
 
 
-  /* =========================
-     HELPERS
-  ========================= */
+/* =========================
+   VEHICLE MAKES
+========================= */
 
-  function escapeHtml(value) {
+const makes = Object.keys(vehicleModels);
 
-    return String(value).replace(
-      /[&<>'"]/g,
-      char => ({
-        "&":"&amp;",
-        "<":"&lt;",
-        ">":"&gt;",
-        "'":"&#39;",
-        '"':"&quot;"
-      }[char])
-    );
+
+/* =========================
+   REWARDS
+========================= */
+
+const rewardData = {
+
+  Puma:{
+    points:750,
+    tiers:[
+      {
+        points:250,
+        title:"Fuel bonus",
+        text:"Prototype $2 fuel reward"
+      },
+      {
+        points:500,
+        title:"Car wash",
+        text:"Prototype car wash discount"
+      },
+      {
+        points:1000,
+        title:"Premium reward",
+        text:"Prototype $10 value reward"
+      }
+    ]
+  },
+
+  Shell:{
+    points:420,
+    tiers:[
+      {
+        points:200,
+        title:"Starter reward",
+        text:"Prototype $2 value reward"
+      },
+      {
+        points:500,
+        title:"Fuel saver",
+        text:"Prototype $5 value reward"
+      },
+      {
+        points:1000,
+        title:"Gold reward",
+        text:"Prototype $10 value reward"
+      }
+    ]
+  },
+
+  Total:{
+    points:0,
+    tiers:[
+      {
+        points:250,
+        title:"Starter reward",
+        text:"Prototype partner reward"
+      },
+      {
+        points:500,
+        title:"Fuel reward",
+        text:"Prototype $5 value reward"
+      },
+      {
+        points:1000,
+        title:"Road reward",
+        text:"Prototype premium reward"
+      }
+    ]
+  }
+
+};
+
+
+/* =========================
+   HELPERS
+========================= */
+
+function safeText(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+function formatPrice(value){
+
+  return Number(value).toFixed(2);
+
+}
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+function showScreen(screenId){
+
+  document.querySelectorAll(".screen")
+    .forEach(screen=>{
+
+      screen.classList.toggle(
+        "active",
+        screen.id===screenId
+      );
+
+    });
+
+
+  document.querySelectorAll(".nav")
+    .forEach(button=>{
+
+      button.classList.toggle(
+        "active",
+        button.dataset.nav===screenId
+      );
+
+    });
+
+
+  window.scrollTo(0,0);
+
+
+  if(screenId==="stations"){
+
+    setTimeout(function(){
+
+      initializeMap();
+
+      if(map){
+        map.invalidateSize(true);
+      }
+
+    },250);
 
   }
 
+}
 
-  /* =========================
-     BRANDS
-  ========================= */
 
-  const brandStrip =
-    document.getElementById("brandStrip");
+document.querySelectorAll("[data-nav]")
+  .forEach(button=>{
 
-  BRANDS.forEach(brand => {
+    button.addEventListener("click",function(){
 
-    const element =
-      document.createElement("div");
+      showScreen(button.dataset.nav);
 
-    element.className = "brand-pill";
-
-    element.textContent = brand;
-
-    brandStrip.appendChild(element);
+    });
 
   });
 
 
-  /* =========================
-     PRICE LIST
-  ========================= */
+document.querySelectorAll("[data-screen]")
+  .forEach(button=>{
 
-  const priceList =
-    document.getElementById("priceList");
+    button.addEventListener("click",function(){
 
-  BRANDS.forEach(brand => {
+      showScreen(button.dataset.screen);
 
-    const prices = PRICES[brand];
+    });
 
-    const element =
-      document.createElement("div");
+  });
 
-    element.className = "card station";
 
-    element.innerHTML = `
+/* =========================
+   HOME BRANDS
+========================= */
 
-      <div class="row">
+const brandScroll =
+  document.getElementById("brandScroll");
 
-        <div>
 
-          <div class="station-name">
-            ${escapeHtml(brand)}
-          </div>
+brands.forEach(brand=>{
 
-          <div class="muted">
-            Regular · Premium · Diesel
-          </div>
+  const pill =
+    document.createElement("div");
 
-        </div>
+  pill.className="brand-pill";
+  pill.textContent=brand;
 
-        <div class="price">
+  brandScroll.appendChild(pill);
 
-          $${prices[0].toFixed(3)}
+});
 
-          <small>
-            $${prices[1].toFixed(3)}
-            ·
-            $${prices[2].toFixed(3)}
-            /L
-          </small>
 
+/* =========================
+   PRICES
+========================= */
+
+const priceList =
+  document.getElementById("priceList");
+
+
+brands.forEach(brand=>{
+
+  const p=prices[brand];
+
+  const card =
+    document.createElement("div");
+
+  card.className="card price-card";
+
+  card.innerHTML=`
+
+    <div class="row">
+
+      <div>
+
+        <strong>
+          ${safeText(brand)}
+        </strong>
+
+        <div class="price-sub">
+          Regular fuel reference
         </div>
 
       </div>
 
-    `;
+      <div style="text-align:right;">
 
-    priceList.appendChild(element);
+        <div class="price-main">
+          $${formatPrice(p[0])}
+        </div>
+
+        <div class="price-sub">
+          per liter
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="price-grid"
+      style="margin-top:14px;grid-template-columns:1fr 1fr;">
+
+      <div class="price-mini">
+        <span>PREMIUM</span>
+        <b>$${formatPrice(p[1])}</b>
+      </div>
+
+      <div class="price-mini">
+        <span>DIESEL</span>
+        <b>$${formatPrice(p[2])}</b>
+      </div>
+
+    </div>
+
+  `;
+
+  priceList.appendChild(card);
+
+});
+
+
+/* =========================
+   REWARDS
+========================= */
+
+function renderRewards(){
+
+  const container =
+    document.getElementById("rewardsList");
+
+  container.innerHTML="";
+
+  let total=0;
+
+
+  Object.entries(rewardData)
+    .forEach(([brand,data])=>{
+
+      total+=data.points;
+
+      const maxTier=
+        Math.max(
+          ...data.tiers.map(t=>t.points)
+        );
+
+      const percent=
+        Math.min(
+          100,
+          (data.points/maxTier)*100
+        );
+
+
+      const nextTier=
+        data.tiers.find(
+          tier=>data.points<tier.points
+        );
+
+
+      const card =
+        document.createElement("div");
+
+      card.className="card reward-brand";
+
+
+      const tierHTML =
+        data.tiers.map(tier=>{
+
+          const unlocked =
+            data.points>=tier.points;
+
+          return `
+
+            <div class="reward-tier ${unlocked ? "unlocked":"locked"}">
+
+              <div class="reward-circle">
+                ${unlocked ? "✓":"🔒"}
+              </div>
+
+              <div>
+
+                <strong>
+                  ${safeText(tier.title)}
+                </strong>
+
+                <div class="muted">
+                  ${tier.points} pts ·
+                  ${safeText(tier.text)}
+                </div>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }).join("");
+
+
+      card.innerHTML=`
+
+        <div class="reward-top">
+
+          <div class="reward-logo">
+            ${safeText(brand.charAt(0))}
+          </div>
+
+          <div class="reward-info">
+
+            <b>
+              ${safeText(brand)}
+            </b>
+
+            <div class="muted">
+              Tap to view rewards
+            </div>
+
+          </div>
+
+          <div class="reward-points">
+            ${data.points} pts
+          </div>
+
+        </div>
+
+
+        <div class="reward-progress">
+          <div style="width:${percent}%"></div>
+        </div>
+
+
+        <div class="row">
+
+          <span class="muted">
+            ${nextTier
+              ? (nextTier.points-data.points)+" pts to next reward"
+              : "All demo tiers unlocked"}
+          </span>
+
+          <span class="muted">
+            ${Math.round(percent)}%
+          </span>
+
+        </div>
+
+
+        <div class="reward-details">
+
+          <div class="eyebrow">
+            REWARD JOURNEY
+          </div>
+
+          ${tierHTML}
+
+          <button
+            type="button"
+            class="secondary demo-add"
+            data-add-points="${safeText(brand)}">
+
+            + Demo purchase · 50 pts
+
+          </button>
+
+        </div>
+
+      `;
+
+
+      card.addEventListener("click",function(event){
+
+        if(
+          event.target.closest(
+            "[data-add-points]"
+          )
+        ){
+          return;
+        }
+
+        document.querySelectorAll(
+          ".reward-brand"
+        ).forEach(other=>{
+
+          if(other!==card){
+            other.classList.remove("selected");
+          }
+
+        });
+
+        card.classList.toggle("selected");
+
+      });
+
+
+      container.appendChild(card);
+
+    });
+
+
+  document.getElementById(
+    "totalPoints"
+  ).textContent=
+    total.toLocaleString();
+
+
+  document.querySelectorAll(
+    "[data-add-points]"
+  ).forEach(button=>{
+
+    button.addEventListener(
+      "click",
+      function(event){
+
+        event.stopPropagation();
+
+        const brand=
+          button.dataset.addPoints;
+
+        if(rewardData[brand]){
+
+          rewardData[brand].points+=50;
+
+          saveRewards();
+
+          renderRewards();
+
+        }
+
+      }
+    );
 
   });
 
-
-  /* =========================
-     SCREEN NAVIGATION
-  ========================= */
-
-  function showScreen(id) {
-
-    document
-      .querySelectorAll(".screen")
-      .forEach(screen => {
-
-        screen.classList.toggle(
-          "active",
-          screen.id === id
-        );
-
-      });
+}
 
 
-    document
-      .querySelectorAll(".nav")
-      .forEach(nav => {
+function saveRewards(){
 
-        nav.classList.toggle(
-          "active",
-          nav.dataset.nav === id
-        );
+  try{
 
-      });
+    localStorage.setItem(
+      "gasgoRewardsV3",
+      JSON.stringify(rewardData)
+    );
 
+  }catch(error){}
 
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
+}
 
 
-    if (id === "stations") {
+function loadRewards(){
 
-      setTimeout(() => {
+  try{
 
-        initMap();
+    const saved=
+      JSON.parse(
+        localStorage.getItem(
+          "gasgoRewardsV3"
+        )
+      );
 
-        if (map) {
-          map.invalidateSize();
-        }
+    if(saved){
 
-      }, 80);
+      Object.keys(rewardData)
+        .forEach(brand=>{
+
+          if(
+            saved[brand] &&
+            Number.isFinite(
+              Number(saved[brand].points)
+            )
+          ){
+
+            rewardData[brand].points=
+              Number(saved[brand].points);
+
+          }
+
+        });
 
     }
 
-  }
+  }catch(error){}
+
+}
 
 
-  document
-    .querySelectorAll("[data-nav]")
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => showScreen(button.dataset.nav)
-      );
-
-    });
+loadRewards();
+renderRewards();
 
 
-  document
-    .querySelectorAll("[data-go]")
-    .forEach(button => {
+/* =========================
+   MAP
+========================= */
 
-      button.addEventListener(
-        "click",
-        () => showScreen(button.dataset.go)
-      );
-
-    });
-
-
-  /* =========================
-     MAP
-  ========================= */
-
-  let map = null;
-
-  let stationLayer = null;
-
-  let stationData = [];
-
-  let activeFilter = "all";
-
-  let userMarker = null;
+let map=null;
+let stationLayer=null;
+let userMarker=null;
+let activeFilter="all";
+let stations=[];
 
 
-  function normalizeBrand(tags = {}) {
+function initializeMap(){
 
-    const text = (
-      (tags.brand || "") +
-      " " +
-      (tags.operator || "") +
-      " " +
-      (tags.name || "")
-    ).toLowerCase();
-
-
-    if (text.includes("puma"))
-      return "Puma";
-
-    if (text.includes("shell"))
-      return "Shell";
-
-    if (text.includes("total"))
-      return "Total";
-
-    if (text.includes("gulf"))
-      return "Gulf";
-
-    if (text.includes("texaco"))
-      return "Texaco";
-
-    if (text.includes("mobil"))
-      return "Mobil";
-
-    if (text.includes("phillips"))
-      return "Phillips 66";
-
-    if (text.includes("sunoco"))
-      return "Sunoco";
-
-    if (text.includes("ecomaxx"))
-      return "EcoMaxx";
-
-    if (text.includes("t-express"))
-      return "T-Express";
-
-    if (text.includes("american"))
-      return "American";
-
-    if (text.includes("ultra"))
-      return "Ultra Top Fuel";
-
-    if (text.includes("76"))
-      return "76";
-
-
-    return (
-      tags.brand ||
-      tags.operator ||
-      "Independent"
+  const loading=
+    document.getElementById(
+      "mapLoading"
     );
 
+  const status=
+    document.getElementById(
+      "mapStatus"
+    );
+
+
+  if(map){
+
+    map.invalidateSize(true);
+    return;
+
   }
 
 
-  function initMap() {
+  if(typeof L==="undefined"){
 
-    if (map || typeof L === "undefined")
-      return;
+    loading.textContent=
+      "Map library couldn't load.";
+
+    status.textContent=
+      "Check your internet connection and refresh GasGo.";
+
+    return;
+
+  }
 
 
-    map = L
-      .map("map", {
-        zoomControl:true
-      })
-      .setView(PR_CENTER, 8);
+  try{
+
+    map=L.map(
+      "map",
+      {
+        zoomControl:true,
+        attributionControl:true,
+        dragging:true,
+        touchZoom:true,
+        doubleClickZoom:true,
+        scrollWheelZoom:true,
+        boxZoom:true
+      }
+    );
 
 
-    L.tileLayer(
+    map.setView(
+      PR_CENTER,
+      9
+    );
+
+
+    const tiles=L.tileLayer(
       "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       {
+        minZoom:7,
         maxZoom:19,
-        attribution:"&copy; OpenStreetMap contributors"
+        attribution:
+          "&copy; OpenStreetMap contributors"
       }
-    ).addTo(map);
+    );
 
 
-    stationLayer =
+    tiles.on("load",function(){
+
+      loading.style.display="none";
+
+    });
+
+
+    tiles.on("tileerror",function(){
+
+      loading.textContent=
+        "Map tiles are having trouble loading. You can retry by refreshing.";
+
+    });
+
+
+    tiles.addTo(map);
+
+
+    stationLayer=
       L.layerGroup().addTo(map);
+
+
+    /*
+      Give Leaflet time to measure
+      the previously hidden screen.
+    */
+
+    setTimeout(function(){
+
+      map.invalidateSize(true);
+
+    },400);
 
 
     loadStations();
 
   }
 
+  catch(error){
 
-  async function loadStations() {
+    loading.textContent=
+      "Map couldn't initialize.";
 
-    const status =
-      document.getElementById("mapStatus");
+    status.textContent=
+      "Refresh the page and try again.";
+
+  }
+
+}
 
 
-    status.textContent =
-      "Loading Puerto Rico fuel locations…";
+/* =========================
+   STATION DATA
+========================= */
+
+function detectBrand(tags){
+
+  const text=[
+    tags.name,
+    tags.brand,
+    tags.operator
+  ]
+  .filter(Boolean)
+  .join(" ")
+  .toLowerCase();
 
 
-    try {
+  if(text.includes("puma")) return "Puma";
+  if(text.includes("shell")) return "Shell";
+  if(text.includes("total")) return "Total";
+  if(text.includes("gulf")) return "Gulf";
+  if(text.includes("texaco")) return "Texaco";
+  if(text.includes("mobil")) return "Mobil";
+  if(text.includes("sunoco")) return "Sunoco";
+  if(text.includes("phillips")) return "Phillips 66";
+  if(text.includes("ecomaxx")) return "EcoMaxx";
+  if(text.includes("american")) return "American";
+  if(text.includes("ultra")) return "Ultra Top Fuel";
+  if(text.includes("t-express")) return "T-Express";
 
-      const query = `
-        [out:json][timeout:25];
+  return tags.brand ||
+         tags.operator ||
+         "Independent";
 
-        (
-          node["amenity"="fuel"]
-          (17.80,-67.40,18.60,-65.20);
+}
 
-          way["amenity"="fuel"]
-          (17.80,-67.40,18.60,-65.20);
 
-          relation["amenity"="fuel"]
-          (17.80,-67.40,18.60,-65.20);
+async function loadStations(){
+
+  const status=
+    document.getElementById(
+      "mapStatus"
+    );
+
+
+  status.textContent=
+    "Loading fuel stations…";
+
+
+  const query=`
+    [out:json][timeout:20];
+    (
+      node["amenity"="fuel"](17.80,-67.40,18.60,-65.20);
+      way["amenity"="fuel"](17.80,-67.40,18.60,-65.20);
+    );
+    out center tags;
+  `;
+
+
+  const endpoints=[
+
+    "https://overpass-api.de/api/interpreter",
+
+    "https://overpass.kumi.systems/api/interpreter"
+
+  ];
+
+
+  let data=null;
+
+
+  for(const endpoint of endpoints){
+
+    try{
+
+      const response=
+        await fetch(
+          endpoint+
+          "?data="+
+          encodeURIComponent(query)
         );
 
-        out center tags;
+
+      if(!response.ok){
+        continue;
+      }
+
+
+      data=await response.json();
+
+      if(data && data.elements){
+        break;
+      }
+
+    }
+
+    catch(error){}
+
+  }
+
+
+  if(!data || !data.elements){
+
+    status.textContent=
+      "The map is working, but station data is temporarily unavailable.";
+
+    return;
+
+  }
+
+
+  stations=data.elements
+    .map(item=>{
+
+      return{
+
+        lat:
+          item.lat ??
+          item.center?.lat,
+
+        lon:
+          item.lon ??
+          item.center?.lon,
+
+        tags:item.tags || {}
+
+      };
+
+    })
+    .filter(item=>
+      Number.isFinite(item.lat) &&
+      Number.isFinite(item.lon)
+    );
+
+
+  renderStations();
+
+}
+
+
+function renderStations(){
+
+  if(!stationLayer) return;
+
+
+  stationLayer.clearLayers();
+
+  let count=0;
+
+
+  stations.forEach(station=>{
+
+    const brand=
+      detectBrand(station.tags);
+
+
+    if(
+      activeFilter!=="all" &&
+      brand!==activeFilter
+    ){
+      return;
+    }
+
+
+    count++;
+
+
+    const name=
+      station.tags.name ||
+      brand+" Station";
+
+
+    const reference=
+      prices[brand];
+
+
+    const priceText=
+      reference
+      ? `
+        <div class="popup-price">
+          $${formatPrice(reference[0])}/L
+        </div>
+
+        <div style="font-size:10px;color:#9ba39f;">
+          Brand reference · regular
+        </div>
+      `
+      : `
+        <div style="font-size:11px;color:#9ba39f;margin-top:7px;">
+          Price unavailable
+        </div>
       `;
 
 
-      const url =
-        "https://overpass-api.de/api/interpreter?data=" +
-        encodeURIComponent(query);
+    const icon=L.divIcon({
 
+      className:"",
 
-      const response =
-        await fetch(
-          url,
-          {
-            headers:{
-              "Accept":"application/json"
-            }
-          }
-        );
+      html:
+        '<div class="marker">⛽</div>',
 
+      iconSize:[34,34],
 
-      if (!response.ok) {
+      iconAnchor:[17,17],
 
-        throw new Error(
-          "Map data unavailable"
-        );
-
-      }
-
-
-      const data =
-        await response.json();
-
-
-      stationData =
-        data.elements
-          .map(element => ({
-
-            lat:
-              element.lat ||
-              (element.center &&
-               element.center.lat),
-
-            lon:
-              element.lon ||
-              (element.center &&
-               element.center.lon),
-
-            tags:
-              element.tags || {}
-
-          }))
-          .filter(station =>
-            Number.isFinite(station.lat) &&
-            Number.isFinite(station.lon)
-          );
-
-
-      renderStations();
-
-
-      status.textContent =
-        stationData.length +
-        " fuel locations loaded. Pan, zoom or tap a marker.";
-
-    }
-
-    catch (error) {
-
-      status.textContent =
-        "Could not load station markers right now. " +
-        "The map itself still works; try refreshing later.";
-
-    }
-
-  }
-
-
-  function renderStations() {
-
-    stationLayer.clearLayers();
-
-    let shown = 0;
-
-
-    stationData.forEach(station => {
-
-      const brand =
-        normalizeBrand(station.tags);
-
-
-      if (
-        activeFilter !== "all" &&
-        brand !== activeFilter
-      ) {
-        return;
-      }
-
-
-      shown++;
-
-
-      const name =
-        station.tags.name ||
-        brand + " station";
-
-
-      const prices =
-        PRICES[brand];
-
-
-      const priceText =
-        prices
-          ? `
-            <br>
-            <b>DACO brand reference:</b>
-            $${prices[0].toFixed(3)}/L regular
-          `
-          : `
-            <br>
-            <span style="color:#9aa">
-              No DACO brand match
-            </span>
-          `;
-
-
-      const icon =
-        L.divIcon({
-
-          className:"",
-
-          html:
-            '<div class="marker-dot">⛽</div>',
-
-          iconSize:[32,32],
-
-          iconAnchor:[16,16]
-
-        });
-
-
-      L.marker(
-        [station.lat, station.lon],
-        { icon }
-      )
-
-      .bindPopup(`
-
-        <b>${escapeHtml(name)}</b>
-
-        <br>
-
-        ${escapeHtml(brand)}
-
-        ${priceText}
-
-        <br>
-
-        <small>
-          OSM location · price is not station-specific
-        </small>
-
-      `)
-
-      .addTo(stationLayer);
+      popupAnchor:[0,-14]
 
     });
 
 
-    if (stationData.length) {
-
-      document.getElementById(
-        "mapStatus"
-      ).textContent =
-        shown +
-        " of " +
-        stationData.length +
-        " fuel locations shown.";
-
-    }
-
-  }
-
-
-  /* =========================
-     MAP FILTERS
-  ========================= */
-
-  document
-    .querySelectorAll("[data-filter]")
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          activeFilter =
-            button.dataset.filter;
-
-
-          document
-            .querySelectorAll("[data-filter]")
-            .forEach(item => {
-
-              item.classList.toggle(
-                "active",
-                item === button
-              );
-
-            });
-
-
-          if (map) {
-            renderStations();
-          }
-
-        }
-      );
-
-    });
-
-
-  /* =========================
-     RESET MAP
-  ========================= */
-
-  document
-    .getElementById("resetMap")
-    .addEventListener(
-      "click",
-      () => {
-
-        initMap();
-
-        map.setView(
-          PR_CENTER,
-          8
-        );
-
-      }
-    );
-
-
-  /* =========================
-     USER LOCATION
-  ========================= */
-
-  document
-    .getElementById("locateBtn")
-    .addEventListener(
-      "click",
-      () => {
-
-        initMap();
-
-
-        const status =
-          document.getElementById(
-            "mapStatus"
-          );
-
-
-        if (!navigator.geolocation) {
-
-          status.textContent =
-            "Location is not supported by this browser.";
-
-          return;
-
-        }
-
-
-        status.textContent =
-          "Requesting your location…";
-
-
-        navigator.geolocation
-          .getCurrentPosition(
-
-            position => {
-
-              const location = [
-
-                position.coords.latitude,
-
-                position.coords.longitude
-
-              ];
-
-
-              if (userMarker) {
-
-                userMarker.remove();
-
-              }
-
-
-              userMarker =
-                L.circleMarker(
-                  location,
-                  {
-                    radius:9,
-                    color:"#fff",
-                    weight:3,
-                    fillColor:"#00c853",
-                    fillOpacity:1
-                  }
-                )
-                .addTo(map)
-                .bindPopup(
-                  "Your approximate device location"
-                )
-                .openPopup();
-
-
-              map.setView(
-                location,
-                13
-              );
-
-
-              status.textContent =
-                "Location found. Fuel markers remain based on OpenStreetMap data.";
-
-            },
-
-
-            () => {
-
-              status.textContent =
-                "Location permission was not granted. You can still move the map manually.";
-
-            },
-
-
-            {
-              enableHighAccuracy:false,
-              timeout:8000,
-              maximumAge:60000
-            }
-
-          );
-
-      }
-    );
-
-
-  /* =========================
-     VEHICLE SETUP
-  ========================= */
-
-  const modal =
-    document.getElementById(
-      "vehicleModal"
-    );
-
-
-  const form =
-    document.getElementById(
-      "vehicleForm"
-    );
-
-
-  const year =
-    document.getElementById(
-      "year"
-    );
-
-
-  const make =
-    document.getElementById(
-      "make"
-    );
-
-
-  /* YEARS */
-
-  for (
-    let vehicleYear = 2027;
-    vehicleYear >= 1996;
-    vehicleYear--
-  ) {
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
-
-    option.value =
-      vehicleYear;
-
-
-    option.textContent =
-      vehicleYear;
-
-
-    year.appendChild(option);
-
-  }
-
-
-  year.value = "2015";
-
-
-  /* MAKES */
-
-  MAKES.forEach(vehicleMake => {
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
-
-    option.value =
-      vehicleMake;
-
-
-    option.textContent =
-      vehicleMake;
-
-
-    make.appendChild(option);
+    L.marker(
+      [station.lat,station.lon],
+      {icon:icon}
+    )
+    .bindPopup(`
+
+      <div class="popup-name">
+        ${safeText(name)}
+      </div>
+
+      <div style="font-size:11px;color:#9ba39f;">
+        ${safeText(brand)}
+      </div>
+
+      ${priceText}
+
+    `)
+    .addTo(stationLayer);
 
   });
 
 
-  function openVehicle() {
+  document.getElementById(
+    "mapStatus"
+  ).textContent=
+    count+
+    " fuel locations shown · move or zoom the map.";
 
-    modal.classList.add(
-      "open"
-    );
-
-
-    const vehicle =
-      readVehicle();
+}
 
 
-    if (vehicle) {
+/* =========================
+   MAP FILTERS
+========================= */
 
-      year.value =
-        vehicle.year;
+document.querySelectorAll(
+  "[data-filter]"
+).forEach(button=>{
 
-      make.value =
-        vehicle.make;
-
-      document.getElementById(
-        "model"
-      ).value =
-        vehicle.model;
-
-      document.getElementById(
-        "powertrain"
-      ).value =
-        vehicle.powertrain;
-
-      document.getElementById(
-        "level"
-      ).value =
-        vehicle.level;
-
-      document.getElementById(
-        "fullRange"
-      ).value =
-        vehicle.fullRange;
-
-    }
-
-  }
-
-
-  function closeVehicle() {
-
-    modal.classList.remove(
-      "open"
-    );
-
-  }
-
-
-  document
-    .getElementById("addVehicleBtn")
-    .addEventListener(
-      "click",
-      openVehicle
-    );
-
-
-  document
-    .getElementById("editVehicleBtn")
-    .addEventListener(
-      "click",
-      openVehicle
-    );
-
-
-  document
-    .getElementById("closeModal")
-    .addEventListener(
-      "click",
-      closeVehicle
-    );
-
-
-  modal.addEventListener(
+  button.addEventListener(
     "click",
-    event => {
+    function(){
 
-      if (event.target === modal) {
+      activeFilter=
+        button.dataset.filter;
 
-        closeVehicle();
 
+      document.querySelectorAll(
+        "[data-filter]"
+      ).forEach(other=>{
+
+        other.classList.toggle(
+          "active",
+          other===button
+        );
+
+      });
+
+
+      if(map){
+        renderStations();
       }
 
     }
   );
 
+});
 
-  /* =========================
-     SAVE VEHICLE
-  ========================= */
 
-  function readVehicle() {
+/* =========================
+   MAP RESET
+========================= */
 
-    try {
+document.getElementById(
+  "resetMapButton"
+).addEventListener(
+  "click",
+  function(){
 
-      return JSON.parse(
-        localStorage.getItem(
-          "gasgoVehicle"
-        ) || "null"
+    initializeMap();
+
+    if(map){
+
+      map.setView(
+        PR_CENTER,
+        9
       );
 
-    }
-
-    catch (error) {
-
-      return null;
-
-    }
-
-  }
-
-
-  function saveVehicle(vehicle) {
-
-    try {
-
-      localStorage.setItem(
-        "gasgoVehicle",
-        JSON.stringify(vehicle)
-      );
-
-      return true;
-
-    }
-
-    catch (error) {
-
-      return false;
+      setTimeout(function(){
+        map.invalidateSize(true);
+      },100);
 
     }
 
   }
+);
 
 
-  function renderVehicle() {
+/* =========================
+   LOCATION
+========================= */
 
-    const vehicle =
-      readVehicle();
+document.getElementById(
+  "locationButton"
+).addEventListener(
+  "click",
+  function(){
+
+    initializeMap();
 
 
-    const empty =
+    const status=
       document.getElementById(
-        "vehicleEmpty"
+        "mapStatus"
       );
 
 
-    const saved =
-      document.getElementById(
-        "vehicleSaved"
-      );
+    if(!navigator.geolocation){
 
-
-    if (!vehicle) {
-
-      empty.style.display =
-        "block";
-
-      saved.style.display =
-        "none";
+      status.textContent=
+        "This browser doesn't support location.";
 
       return;
 
     }
 
 
-    empty.style.display =
-      "none";
+    status.textContent=
+      "Waiting for location permission…";
 
 
-    saved.style.display =
-      "block";
+    navigator.geolocation.getCurrentPosition(
+
+      function(position){
+
+        const coords=[
+
+          position.coords.latitude,
+
+          position.coords.longitude
+
+        ];
 
 
-    const estimatedRange =
-      Math.max(
-        0,
-        Math.round(
-          vehicle.fullRange *
-          (vehicle.level / 100)
+        if(userMarker){
+
+          map.removeLayer(userMarker);
+
+        }
+
+
+        userMarker=L.circleMarker(
+          coords,
+          {
+            radius:9,
+            color:"#ffffff",
+            weight:3,
+            fillColor:"#00C853",
+            fillOpacity:1
+          }
         )
-      );
+        .addTo(map)
+        .bindPopup("Your location")
+        .openPopup();
 
 
-    document.getElementById(
-      "vehicleName"
-    ).textContent =
-      vehicle.year +
-      " " +
-      vehicle.make +
-      " " +
-      vehicle.model;
+        map.setView(
+          coords,
+          13
+        );
 
 
-    document.getElementById(
-      "vehicleMeta"
-    ).textContent =
-      vehicle.powertrain +
-      " · " +
-      vehicle.level +
-      "% level";
+        status.textContent=
+          "Location found.";
+
+      },
 
 
-    document.getElementById(
-      "vehicleIcon"
-    ).textContent =
-      vehicle.powertrain ===
-      "Electric"
-        ? "⚡"
-        : "🚗";
+      function(){
+
+        status.textContent=
+          "Location wasn't shared. No problem — you can explore the map manually.";
+
+      },
 
 
-    document.getElementById(
-      "carRange"
-    ).textContent =
-      estimatedRange +
-      " mi";
+      {
+        enableHighAccuracy:false,
+        timeout:10000,
+        maximumAge:60000
+      }
+
+    );
+
+  }
+);
 
 
-    document.getElementById(
-      "carLevel"
-    ).textContent =
-      vehicle.level +
-      "%";
+/* =========================
+   VEHICLE FORM
+========================= */
+
+const vehicleModal=
+  document.getElementById(
+    "vehicleModal"
+  );
+
+const yearSelect=
+  document.getElementById(
+    "vehicleYear"
+  );
+
+const makeSelect=
+  document.getElementById(
+    "vehicleMake"
+  );
+
+const modelSelect=
+  document.getElementById(
+    "vehicleModel"
+  );
+
+const typeSelect=
+  document.getElementById(
+    "vehicleType"
+  );
+
+const levelSlider=
+  document.getElementById(
+    "vehicleLevelSlider"
+  );
+
+const rangeSlider=
+  document.getElementById(
+    "vehicleRangeSlider"
+  );
+
+const levelOutput=
+  document.getElementById(
+    "levelOutput"
+  );
+
+const rangeOutput=
+  document.getElementById(
+    "rangeOutput"
+  );
 
 
-    document.getElementById(
-      "homeRange"
-    ).textContent =
-      estimatedRange;
+/* YEARS */
+
+for(let year=2027;year>=1996;year--){
+
+  const option=
+    document.createElement("option");
+
+  option.value=year;
+  option.textContent=year;
+
+  yearSelect.appendChild(option);
+
+}
+
+yearSelect.value="2015";
 
 
-    document.getElementById(
-      "homeFuel"
-    ).textContent =
-      vehicle.level +
-      "%";
+/* MAKES */
+
+makes.forEach(make=>{
+
+  const option=
+    document.createElement("option");
+
+  option.value=make;
+  option.textContent=make;
+
+  makeSelect.appendChild(option);
+
+});
 
 
-    document.getElementById(
-      "homeFuelLabel"
-    ).textContent =
-      vehicle.powertrain ===
-      "Electric"
-        ? "⚡ Battery level"
-        : "⛽ Fuel level";
+makeSelect.value="Toyota";
 
 
-    document.getElementById(
-      "homeMeter"
-    ).style.width =
-      vehicle.level +
-      "%";
+/* MODELS CHANGE WITH MAKE */
+
+function updateModels(
+  selectedModel=null
+){
+
+  const make=
+    makeSelect.value;
+
+  const models=
+    vehicleModels[make] ||
+    ["Other"];
+
+
+  modelSelect.innerHTML="";
+
+
+  models.forEach(model=>{
+
+    const option=
+      document.createElement("option");
+
+    option.value=model;
+    option.textContent=model;
+
+    modelSelect.appendChild(option);
+
+  });
+
+
+  if(
+    selectedModel &&
+    models.includes(selectedModel)
+  ){
+
+    modelSelect.value=
+      selectedModel;
+
+  }
+
+}
+
+
+makeSelect.addEventListener(
+  "change",
+  function(){
+
+    updateModels();
+
+  }
+);
+
+
+updateModels();
+
+
+/* SLIDERS */
+
+function updateSliderLabels(){
+
+  levelOutput.textContent=
+    levelSlider.value+"%";
+
+  rangeOutput.textContent=
+    rangeSlider.value+" mi";
+
+}
+
+
+levelSlider.addEventListener(
+  "input",
+  updateSliderLabels
+);
+
+
+levelSlider.addEventListener(
+  "change",
+  updateSliderLabels
+);
+
+
+rangeSlider.addEventListener(
+  "input",
+  updateSliderLabels
+);
+
+
+rangeSlider.addEventListener(
+  "change",
+  updateSliderLabels
+);
+
+
+updateSliderLabels();
+
+
+/* =========================
+   VEHICLE STORAGE
+========================= */
+
+function getVehicle(){
+
+  try{
+
+    return JSON.parse(
+      localStorage.getItem(
+        "gasgoVehicleV3"
+      )
+    );
+
+  }
+
+  catch(error){
+
+    return null;
+
+  }
+
+}
+
+
+function saveVehicle(vehicle){
+
+  try{
+
+    localStorage.setItem(
+      "gasgoVehicleV3",
+      JSON.stringify(vehicle)
+    );
+
+    return true;
+
+  }
+
+  catch(error){
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================
+   OPEN VEHICLE FORM
+========================= */
+
+function openVehicleForm(){
+
+  const saved=
+    getVehicle();
+
+
+  if(saved){
+
+    yearSelect.value=
+      String(saved.year);
+
+
+    if(
+      makes.includes(saved.make)
+    ){
+
+      makeSelect.value=
+        saved.make;
+
+    }
+
+
+    updateModels(saved.model);
+
+
+    typeSelect.value=
+      saved.type;
+
+
+    levelSlider.value=
+      saved.level;
+
+
+    rangeSlider.value=
+      saved.fullRange;
+
+
+    updateSliderLabels();
 
   }
 
 
-  /* =========================
-     VEHICLE FORM
-  ========================= */
-
-  form.addEventListener(
-    "submit",
-    event => {
-
-      event.preventDefault();
-
-
-      const level =
-        Number(
-          document.getElementById(
-            "level"
-          ).value
-        );
-
-
-      const fullRange =
-        Number(
-          document.getElementById(
-            "fullRange"
-          ).value
-        );
-
-
-      const model =
-        document
-          .getElementById(
-            "model"
-          )
-          .value
-          .trim();
-
-
-      const message =
-        document.getElementById(
-          "formMsg"
-        );
-
-
-      if (
-        !model ||
-        !Number.isFinite(level) ||
-        level < 0 ||
-        level > 100 ||
-        !Number.isFinite(fullRange) ||
-        fullRange < 20 ||
-        fullRange > 800
-      ) {
-
-        message.textContent =
-          "Check the vehicle information and try again.";
-
-        return;
-
-      }
-
-
-      const vehicle = {
-
-        year:
-          year.value,
-
-        make:
-          make.value,
-
-        model,
-
-        powertrain:
-          document.getElementById(
-            "powertrain"
-          ).value,
-
-        level,
-
-        fullRange
-
-      };
-
-
-      if (!saveVehicle(vehicle)) {
-
-        message.textContent =
-          "Your browser blocked local saving.";
-
-        return;
-
-      }
-
-
-      message.textContent = "";
-
-
-      renderVehicle();
-
-
-      closeVehicle();
-
-    }
+  vehicleModal.classList.add(
+    "open"
   );
 
+}
 
-  /* INITIALIZE */
 
-  renderVehicle();
+function closeVehicleForm(){
+
+  vehicleModal.classList.remove(
+    "open"
+  );
+
+}
+
+
+document.getElementById(
+  "addVehicle"
+).addEventListener(
+  "click",
+  openVehicleForm
+);
+
+
+document.getElementById(
+  "editVehicle"
+).addEventListener(
+  "click",
+  openVehicleForm
+);
+
+
+document.getElementById(
+  "closeVehicle"
+).addEventListener(
+  "click",
+  closeVehicleForm
+);
+
+
+vehicleModal.addEventListener(
+  "click",
+  function(event){
+
+    if(event.target===vehicleModal){
+
+      closeVehicleForm();
+
+    }
+
+  }
+);
+
+
+/* =========================
+   SAVE FORM
+========================= */
+
+document.getElementById(
+  "vehicleForm"
+).addEventListener(
+  "submit",
+  function(event){
+
+    event.preventDefault();
+
+
+    const level=
+      Number(levelSlider.value);
+
+
+    const fullRange=
+      Number(rangeSlider.value);
+
+
+    if(
+      !Number.isFinite(level) ||
+      !Number.isFinite(fullRange)
+    ){
+
+      document.getElementById(
+        "vehicleFormMessage"
+      ).textContent=
+        "Check your vehicle information.";
+
+      return;
+
+    }
+
+
+    const vehicle={
+
+      year:
+        Number(yearSelect.value),
+
+      make:
+        makeSelect.value,
+
+      model:
+        modelSelect.value,
+
+      type:
+        typeSelect.value,
+
+      level:
+        Math.max(
+          0,
+          Math.min(100,level)
+        ),
+
+      fullRange:
+        Math.max(
+          50,
+          Math.min(600,fullRange)
+        )
+
+    };
+
+
+    if(!saveVehicle(vehicle)){
+
+      document.getElementById(
+        "vehicleFormMessage"
+      ).textContent=
+        "Your browser couldn't save the vehicle.";
+
+      return;
+
+    }
+
+
+    document.getElementById(
+      "vehicleFormMessage"
+    ).textContent="";
+
+
+    renderVehicle();
+
+    closeVehicleForm();
+
+  }
+);
+
+
+/* =========================
+   RENDER VEHICLE
+========================= */
+
+function renderVehicle(){
+
+  const vehicle=
+    getVehicle();
+
+
+  const noVehicle=
+    document.getElementById(
+      "noVehicle"
+    );
+
+
+  const savedVehicle=
+    document.getElementById(
+      "savedVehicle"
+    );
+
+
+  if(!vehicle){
+
+    noVehicle.style.display="block";
+
+    savedVehicle.style.display="none";
+
+    document.getElementById(
+      "homeRange"
+    ).textContent="238";
+
+    document.getElementById(
+      "homeLevel"
+    ).textContent="68%";
+
+    document.getElementById(
+      "homeProgress"
+    ).style.width="68%";
+
+    return;
+
+  }
+
+
+  noVehicle.style.display="none";
+
+  savedVehicle.style.display="block";
+
+
+  const currentRange=
+    Math.round(
+      vehicle.fullRange*
+      (vehicle.level/100)
+    );
+
+
+  const electric=
+    vehicle.type==="Electric";
+
+
+  document.getElementById(
+    "savedVehicleName"
+  ).textContent=
+    vehicle.year+
+    " "+
+    vehicle.make+
+    " "+
+    vehicle.model;
+
+
+  document.getElementById(
+    "savedVehicleMeta"
+  ).textContent=
+    vehicle.type;
+
+
+  document.getElementById(
+    "savedVehicleIcon"
+  ).textContent=
+    electric ? "⚡":"🚗";
+
+
+  document.getElementById(
+    "vehicleRange"
+  ).textContent=
+    currentRange+" mi";
+
+
+  document.getElementById(
+    "vehicleLevel"
+  ).textContent=
+    vehicle.level+"%";
+
+
+  document.getElementById(
+    "homeRange"
+  ).textContent=
+    currentRange;
+
+
+  document.getElementById(
+    "homeLevel"
+  ).textContent=
+    vehicle.level+"%";
+
+
+  document.getElementById(
+    "homeProgress"
+  ).style.width=
+    vehicle.level+"%";
+
+
+  document.getElementById(
+    "homeLevelLabel"
+  ).textContent=
+    electric
+      ? "⚡ Battery level"
+      : "⛽ Fuel level";
+
+}
+
+
+renderVehicle();
 
 })();
 </script>
