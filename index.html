@@ -2,319 +2,552 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#00C853" />
-  <title>GasGo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1111" />
+  <title>GasGo — Puerto Rico</title>
+
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    :root {
+      --green:#00c853;
+      --green2:#00a846;
+      --bg:#0b0d0d;
+      --panel:#141717;
+      --panel2:#1a1e1e;
+      --border:#272c2c;
+      --text:#f7f8f8;
+      --muted:#949b9b;
+      --danger:#ff6b6b;
+      --warn:#ffc857;
     }
+
+    * { box-sizing:border-box; }
+
+    html { background:var(--bg); }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #090b0b;
-      color: white;
-      min-height: 100vh;
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
     }
 
-    button {
-      font-family: inherit;
-    }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
 
     .app {
-      width: 100%;
-      max-width: 430px;
-      margin: auto;
-      min-height: 100vh;
+      width:100%;
+      max-width:520px;
+      margin:auto;
+      min-height:100vh;
       background:
-        radial-gradient(circle at top right, rgba(0,200,83,.13), transparent 35%),
-        #0f1111;
-      padding: 22px 18px 100px;
+        radial-gradient(circle at 100% 0,rgba(0,200,83,.12),transparent 28%),
+        var(--bg);
+      padding:18px 16px 104px;
     }
 
+    .screen { display:none; }
+    .screen.active { display:block; }
+
     .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:22px;
     }
 
     .brand {
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: -1.5px;
+      font-size:29px;
+      font-weight:950;
+      letter-spacing:-1.6px;
     }
 
-    .brand span {
-      color: #00C853;
+    .brand span { color:var(--green); }
+
+    .badge {
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.5px;
+      color:#53e68e;
+      border:1px solid rgba(0,200,83,.32);
+      background:rgba(0,200,83,.1);
+      padding:7px 10px;
+      border-radius:999px;
     }
 
-    .demo {
-      background: rgba(0,200,83,.12);
-      color: #49e183;
-      border: 1px solid rgba(0,200,83,.35);
-      padding: 7px 11px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 800;
+    .eyebrow {
+      color:var(--muted);
+      font-size:13px;
+      font-weight:700;
     }
 
-    .hello {
-      color: #a7a7a7;
-      font-size: 14px;
-      margin-bottom: 5px;
+    .title {
+      font-size:29px;
+      line-height:1.08;
+      letter-spacing:-1px;
+      margin:5px 0 18px;
     }
 
-    h1 {
-      font-size: 28px;
-      margin-bottom: 22px;
-      letter-spacing: -1px;
+    .card {
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:18px;
     }
 
-    .range-card {
-      background: linear-gradient(135deg, #00C853, #00a944);
-      color: #06140b;
-      border-radius: 24px;
-      padding: 24px;
-      margin-bottom: 14px;
-      box-shadow: 0 15px 40px rgba(0,200,83,.15);
+    .hero {
+      background:linear-gradient(135deg,var(--green),#16df6a);
+      color:#041109;
+      border:none;
+      padding:22px;
+      box-shadow:0 16px 40px rgba(0,200,83,.12);
     }
 
-    .range-label {
-      font-size: 13px;
-      font-weight: 800;
-      opacity: .75;
+    .hero .label {
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.7px;
+      opacity:.72;
     }
 
     .range {
-      font-size: 52px;
-      font-weight: 900;
-      line-height: 1.05;
-      margin-top: 5px;
+      font-size:52px;
+      font-weight:950;
+      line-height:1;
+      margin:6px 0 18px;
     }
 
-    .range small {
-      font-size: 22px;
+    .range small { font-size:20px; }
+
+    .row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
 
-    .fuel-row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-      font-weight: 700;
-      font-size: 14px;
+    .meter {
+      height:7px;
+      border-radius:999px;
+      background:rgba(0,0,0,.2);
+      overflow:hidden;
+      margin-top:8px;
     }
 
-    .bar {
-      height: 7px;
-      background: rgba(0,0,0,.22);
-      border-radius: 20px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-
-    .bar div {
-      width: 68%;
-      height: 100%;
-      background: #07140b;
-      border-radius: 20px;
+    .meter > div {
+      height:100%;
+      width:68%;
+      background:#07130b;
+      border-radius:999px;
     }
 
     .section-title {
-      font-size: 17px;
-      font-weight: 800;
-      margin: 23px 0 12px;
+      font-size:17px;
+      font-weight:900;
+      margin:23px 0 11px;
     }
 
-    .station {
-      background: #181b1b;
-      border: 1px solid #272b2b;
-      border-radius: 20px;
-      padding: 17px;
-    }
-
-    .station-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .station { margin-bottom:10px; }
 
     .station-name {
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .station-distance {
-      color: #999;
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .price {
-      font-size: 22px;
-      color: #00C853;
-      font-weight: 900;
-    }
-
-    .price small {
-      display: block;
-      font-size: 10px;
-      color: #777;
-      text-align: right;
-    }
-
-    .make-it {
-      width: 100%;
-      border: 0;
-      background: #00C853;
-      color: #06140b;
-      padding: 16px;
-      border-radius: 16px;
-      font-size: 15px;
-      font-weight: 900;
-      margin-top: 15px;
-      cursor: pointer;
-    }
-
-    .quick {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .quick button {
-      border: 1px solid #272b2b;
-      background: #181b1b;
-      color: white;
-      padding: 18px 10px;
-      border-radius: 18px;
-      text-align: left;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .quick span {
-      display: block;
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-
-    .screen {
-      display: none;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .bottom {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(430px, 100%);
-      background: rgba(15,17,17,.96);
-      backdrop-filter: blur(15px);
-      border-top: 1px solid #262929;
-      padding: 12px 12px 20px;
-      display: flex;
-      justify-content: space-around;
-    }
-
-    .nav {
-      background: none;
-      border: 0;
-      color: #777;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 25%;
-    }
-
-    .nav span {
-      display: block;
-      font-size: 21px;
-      margin-bottom: 3px;
-    }
-
-    .nav.active {
-      color: #00C853;
-    }
-
-    .back {
-      border: 0;
-      background: #202424;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 12px;
-      margin-bottom: 22px;
-      cursor: pointer;
-    }
-
-    .result {
-      margin-top: 20px;
-      background: #181b1b;
-      border-radius: 24px;
-      padding: 22px;
-      border: 1px solid #292d2d;
-    }
-
-    .success {
-      font-size: 27px;
-      color: #00C853;
-      font-weight: 900;
-      margin: 8px 0;
+      font-weight:900;
+      font-size:17px;
     }
 
     .muted {
-      color: #999;
-      line-height: 1.5;
-      font-size: 14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
     }
 
-    .big-stat {
-      font-size: 40px;
-      font-weight: 900;
-      margin: 10px 0;
+    .price {
+      color:var(--green);
+      font-size:21px;
+      font-weight:950;
+      text-align:right;
     }
 
-    .reward {
-      background: #181b1b;
-      border-radius: 18px;
-      padding: 17px;
-      margin-bottom: 10px;
-      border: 1px solid #292d2d;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .price small {
+      display:block;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:700;
     }
 
-    .points {
-      color: #00C853;
-      font-weight: 900;
+    .primary {
+      width:100%;
+      border:0;
+      border-radius:15px;
+      background:var(--green);
+      color:#041109;
+      padding:15px;
+      font-weight:950;
+      margin-top:14px;
     }
 
-    .vehicle {
-      background: #181b1b;
-      border: 1px solid #292d2d;
-      padding: 20px;
-      border-radius: 20px;
-      margin-bottom: 12px;
+    .secondary {
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:var(--panel2);
+      color:var(--text);
+      padding:12px 14px;
+      font-weight:800;
     }
 
-    .connected {
-      color: #00C853;
-      font-weight: 800;
+    .ghost {
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:transparent;
+      color:var(--text);
+      padding:11px 13px;
+      font-weight:800;
+    }
+
+    .quick {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .quick button {
+      min-height:94px;
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--panel);
+      color:var(--text);
+      padding:15px;
+      text-align:left;
+      font-weight:850;
+    }
+
+    .quick .ico {
+      display:block;
+      font-size:23px;
+      margin-bottom:10px;
+    }
+
+    .bottom {
+      position:fixed;
+      z-index:900;
+      bottom:0;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(520px,100%);
+      display:flex;
+      justify-content:space-around;
+      background:rgba(11,13,13,.95);
+      backdrop-filter:blur(18px);
+      border-top:1px solid var(--border);
+      padding:10px 8px calc(13px + env(safe-area-inset-bottom));
+    }
+
+    .nav {
+      width:25%;
+      border:0;
+      background:none;
+      color:#737b7b;
+      font-size:10px;
+      font-weight:850;
+      padding:6px 2px;
+    }
+
+    .nav .ico {
+      display:block;
+      font-size:20px;
+      margin-bottom:3px;
+    }
+
+    .nav.active { color:var(--green); }
+
+    .map-shell {
+      position:relative;
+      border:1px solid var(--border);
+      border-radius:22px;
+      overflow:hidden;
+      background:var(--panel);
+      height:420px;
+    }
+
+    #map {
+      height:100%;
+      width:100%;
+      background:#1a1e1e;
+    }
+
+    .map-tools {
+      display:flex;
+      gap:8px;
+      margin:10px 0 12px;
+      overflow:auto;
+      padding-bottom:2px;
+    }
+
+    .chip {
+      white-space:nowrap;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:850;
+    }
+
+    .chip.active {
+      background:var(--green);
+      border-color:var(--green);
+      color:#041109;
+    }
+
+    .map-status {
+      margin:10px 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .leaflet-container { font-family:inherit; }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background:#151919;
+      color:#fff;
+    }
+
+    .leaflet-popup-content {
+      margin:13px 14px;
+    }
+
+    .marker-dot {
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:var(--green);
+      color:#06130a;
+      border:3px solid #fff;
+      font-size:14px;
+      font-weight:950;
+      box-shadow:0 4px 14px rgba(0,0,0,.35);
+    }
+
+    .price-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .mini {
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:15px;
+      padding:12px;
+    }
+
+    .mini b {
+      display:block;
+      font-size:17px;
+      margin-top:4px;
+    }
+
+    .brand-strip {
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding-bottom:4px;
+    }
+
+    .brand-pill {
+      flex:0 0 auto;
+      border:1px solid var(--border);
+      background:var(--panel);
+      padding:10px 12px;
+      border-radius:14px;
+      font-size:12px;
+      font-weight:850;
+    }
+
+    .form-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .field {
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+    .field.full { grid-column:1/-1; }
+
+    .field label {
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .field input,
+    .field select {
+      width:100%;
+      min-height:48px;
+      border:1px solid var(--border);
+      border-radius:13px;
+      background:#101313;
+      color:var(--text);
+      padding:0 12px;
+      font-size:16px;
+      outline:none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color:var(--green);
+      box-shadow:0 0 0 3px rgba(0,200,83,.12);
+    }
+
+    .vehicle-card {
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+
+    .vehicle-icon {
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      background:rgba(0,200,83,.12);
+      display:grid;
+      place-items:center;
+      font-size:25px;
+    }
+
+    .vehicle-copy {
+      min-width:0;
+      flex:1;
+    }
+
+    .vehicle-copy h3 {
+      margin:0 0 3px;
+      font-size:17px;
+    }
+
+    .vehicle-copy p {
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .link-status {
+      color:var(--green);
+      font-weight:900;
+      font-size:12px;
+    }
+
+    .stat-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .stat {
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:15px;
+    }
+
+    .stat .big {
+      font-size:25px;
+      font-weight:950;
+      margin-top:5px;
+    }
+
+    .notice {
+      border:1px solid rgba(255,200,87,.25);
+      background:rgba(255,200,87,.06);
+      color:#e8d7aa;
+      border-radius:15px;
+      padding:12px;
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .modal {
+      display:none;
+      position:fixed;
+      z-index:2000;
+      inset:0;
+      background:rgba(0,0,0,.68);
+      padding:18px;
+      overflow:auto;
+    }
+
+    .modal.open {
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+
+    .sheet {
+      width:min(520px,100%);
+      background:#101313;
+      border:1px solid var(--border);
+      border-radius:25px 25px 18px 18px;
+      padding:18px;
+      margin:auto auto 0;
+    }
+
+    .sheet-head {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+
+    .sheet-head h2 {
+      margin:0;
+      font-size:21px;
+    }
+
+    .close {
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:#fff;
+      font-size:20px;
     }
 
     .disclaimer {
-      margin-top: 18px;
-      color: #666;
-      font-size: 11px;
-      line-height: 1.5;
+      font-size:10.5px;
+      color:#687070;
+      line-height:1.5;
+      margin:16px 2px 0;
+    }
+
+    @media(max-width:360px) {
+      .app { padding-left:12px; padding-right:12px; }
+      .range { font-size:45px; }
+      .map-shell { height:370px; }
+      .form-grid { grid-template-columns:1fr; }
+      .field.full { grid-column:auto; }
+    }
+
+    @media(min-width:700px) {
+      .app { max-width:760px; }
+      .bottom { width:min(760px,100%); }
+      .map-shell { height:500px; }
+      .quick { grid-template-columns:repeat(4,1fr); }
     }
   </style>
 </head>
@@ -328,174 +561,160 @@
 
     <div class="top">
       <div class="brand">Gas<span>Go</span></div>
-      <div class="demo">DEMO MODE</div>
+      <div class="badge">PR PROTOTYPE</div>
     </div>
 
-    <div class="hello">Good afternoon 👋</div>
-    <h1>Where are we going?</h1>
+    <div class="eyebrow">Good afternoon 👋</div>
+    <h1 class="title">Drive smarter.</h1>
 
-    <div class="range-card">
-      <div class="range-label">ESTIMATED RANGE</div>
-      <div class="range">47 <small>mi</small></div>
+    <div class="card hero">
+      <div class="label">ESTIMATED RANGE</div>
 
-      <div class="fuel-row">
-        <span>⛽ Fuel level</span>
-        <span>68%</span>
+      <div class="range">
+        <span id="homeRange">47</span>
+        <small>mi</small>
       </div>
 
-      <div class="bar">
-        <div></div>
+      <div class="row">
+        <b id="homeFuelLabel">⛽ Fuel level</b>
+        <b id="homeFuel">68%</b>
+      </div>
+
+      <div class="meter">
+        <div id="homeMeter"></div>
       </div>
     </div>
 
-    <div class="section-title">Best nearby option</div>
+    <div class="section-title">Puerto Rico fuel snapshot</div>
 
-    <div class="station">
-      <div class="station-top">
-        <div>
-          <div class="station-name">Puma</div>
-          <div class="station-distance">📍 1.2 mi away</div>
-        </div>
-
-        <div class="price">
-          $0.94
-          <small>per liter · demo</small>
-        </div>
+    <div class="price-grid">
+      <div class="mini">
+        <span class="muted">Regular</span>
+        <b>$1.137–1.177</b>
+        <span class="muted">/L</span>
       </div>
 
-      <button class="make-it" onclick="showScreen('rangeCheck')">
-        CAN I MAKE IT? →
-      </button>
+      <div class="mini">
+        <span class="muted">Premium</span>
+        <b>$1.277–1.357</b>
+        <span class="muted">/L</span>
+      </div>
+
+      <div class="mini">
+        <span class="muted">Diesel</span>
+        <b>$1.407–1.447</b>
+        <span class="muted">/L</span>
+      </div>
     </div>
 
     <div class="section-title">Quick actions</div>
 
     <div class="quick">
-      <button onclick="showScreen('stations')">
-        <span>⛽</span>
-        Find Gas
+
+      <button data-go="stations">
+        <span class="ico">🗺️</span>
+        Explore map
       </button>
 
-      <button onclick="showScreen('stations')">
-        <span>⚡</span>
-        Find Chargers
+      <button data-go="stations">
+        <span class="ico">⛽</span>
+        Find fuel
       </button>
 
-      <button onclick="showScreen('stations')">
-        <span>💲</span>
-        Compare Prices
+      <button data-go="prices">
+        <span class="ico">💲</span>
+        Compare brands
       </button>
 
-      <button onclick="showScreen('rewards')">
-        <span>🎁</span>
-        Rewards
+      <button data-go="car">
+        <span class="ico">🚗</span>
+        My vehicle
       </button>
+
     </div>
 
+    <div class="section-title">Fuel brands tracked by DACO</div>
+
+    <div class="brand-strip" id="brandStrip"></div>
+
     <p class="disclaimer">
-      Prototype data for demonstration purposes. Vehicle range is an estimate
-      and may change based on driving conditions.
+      Fuel snapshot based on recent DACO reference data.
+      Prices can change by station and time.
+      GasGo is a competition prototype; vehicle range and station
+      availability are estimates and data-source dependent.
     </p>
 
   </section>
 
 
-  <!-- STATIONS -->
+  <!-- MAP -->
   <section id="stations" class="screen">
 
     <div class="top">
-      <div class="brand">Nearby</div>
-      <div class="demo">LIVE DEMO</div>
-    </div>
-
-    <h1>Stations near you</h1>
-
-    <div class="station" style="margin-bottom:10px;">
-      <div class="station-top">
-        <div>
-          <div class="station-name">Puma</div>
-          <div class="station-distance">1.2 mi · Best value</div>
-        </div>
-        <div class="price">$0.94<small>/L demo</small></div>
+      <div>
+        <div class="eyebrow">Puerto Rico</div>
+        <div class="brand">Explore</div>
       </div>
 
-      <button class="make-it" onclick="showScreen('rangeCheck')">
-        Check Range
+      <div class="badge">INTERACTIVE MAP</div>
+    </div>
+
+    <div class="map-tools">
+      <button class="chip active" data-filter="all">All fuel</button>
+      <button class="chip" data-filter="Puma">Puma</button>
+      <button class="chip" data-filter="Shell">Shell</button>
+      <button class="chip" data-filter="Total">Total</button>
+      <button class="chip" data-filter="Gulf">Gulf</button>
+      <button class="chip" data-filter="Texaco">Texaco</button>
+      <button class="chip" data-filter="Mobil">Mobil</button>
+    </div>
+
+    <div class="map-shell">
+      <div id="map"></div>
+    </div>
+
+    <div id="mapStatus" class="map-status">
+      Open the map to load fuel locations.
+    </div>
+
+    <div class="row">
+      <button id="locateBtn" class="secondary">
+        📍 My location
+      </button>
+
+      <button id="resetMap" class="ghost">
+        Puerto Rico
       </button>
     </div>
 
-    <div class="station" style="margin-bottom:10px;">
-      <div class="station-top">
-        <div>
-          <div class="station-name">Shell</div>
-          <div class="station-distance">2.7 mi</div>
-        </div>
-        <div class="price">$0.96<small>/L demo</small></div>
-      </div>
+    <div class="notice" style="margin-top:14px;">
+      Station locations come from OpenStreetMap.
+      Coverage can be incomplete. Prices shown in station popups are
+      brand-level DACO references, not guaranteed station-specific prices.
     </div>
-
-    <div class="station" style="margin-bottom:10px;">
-      <div class="station-top">
-        <div>
-          <div class="station-name">EV Fast Charge</div>
-          <div class="station-distance">⚡ 4.1 mi · Fast charger</div>
-        </div>
-        <div class="price">150<small>kW demo</small></div>
-      </div>
-    </div>
-
-    <p class="disclaimer">
-      Prices, locations and charger information shown in this prototype are
-      simulated.
-    </p>
 
   </section>
 
 
-  <!-- CAN I MAKE IT -->
-  <section id="rangeCheck" class="screen">
+  <!-- PRICES -->
+  <section id="prices" class="screen">
 
-    <button class="back" onclick="showScreen('home')">
-      ← Back
-    </button>
-
-    <div class="brand">Can I Make It?</div>
-
-    <div class="result">
-      <div class="muted">Destination</div>
-      <h2 style="margin-top:5px;">Puma Station</h2>
-
-      <div style="margin-top:25px;" class="muted">
-        Estimated vehicle range
+    <div class="top">
+      <div>
+        <div class="eyebrow">Puerto Rico</div>
+        <div class="brand">Fuel prices</div>
       </div>
 
-      <div class="big-stat">47 mi</div>
-
-      <div class="muted">Distance to station</div>
-      <div class="big-stat">1.2 mi</div>
-
-      <hr style="border-color:#292d2d;margin:20px 0;">
-
-      <div class="success">✓ You can make it.</div>
-
-      <div class="muted">
-        Estimated remaining range after arrival:
-        <strong style="color:white;">45.8 mi</strong>
-      </div>
+      <div class="badge">DACO DATA</div>
     </div>
 
-    <div class="result">
-      <strong>GasGo Safety Margin</strong>
+    <h1 class="title">Compare brands.</h1>
 
-      <p class="muted" style="margin-top:8px;">
-        GasGo compares your estimated vehicle range with the distance to your
-        selected station and keeps a safety margin before recommending the trip.
-      </p>
-    </div>
+    <div id="priceList"></div>
 
     <p class="disclaimer">
-      Estimated range is not a guarantee. Weather, traffic, driving behavior,
-      terrain and vehicle conditions may affect actual range.
+      Values are reference prices by brand and should not be interpreted
+      as the exact price at every individual station.
     </p>
 
   </section>
@@ -505,36 +724,51 @@
   <section id="rewards" class="screen">
 
     <div class="top">
-      <div class="brand">Rewards</div>
-      <div class="demo">DEMO</div>
-    </div>
-
-    <h1>Your points</h1>
-
-    <div class="reward">
       <div>
-        <strong>Puma Rewards</strong>
-        <div class="muted">Favorite station</div>
+        <div class="eyebrow">GasGo</div>
+        <div class="brand">Rewards</div>
       </div>
-      <div class="points">750 pts</div>
+
+      <div class="badge">DEMO</div>
     </div>
 
-    <div class="reward">
-      <div>
-        <strong>Shell Rewards</strong>
-        <div class="muted">Member</div>
+    <h1 class="title">Your rewards.</h1>
+
+    <div class="card">
+      <div class="eyebrow">Puma</div>
+      <div class="range" style="font-size:38px;">
+        750 <small>pts</small>
       </div>
-      <div class="points">420 pts</div>
+      <div class="muted">
+        Demo loyalty balance
+      </div>
     </div>
 
-    <div class="section-title">Available reward</div>
+    <div style="height:10px;"></div>
 
-    <div class="station">
-      <strong>🚗 Car Wash Discount</strong>
-      <p class="muted" style="margin-top:7px;">
-        Redeem your participating partner points for discounts and benefits.
+    <div class="card">
+      <div class="eyebrow">Shell</div>
+      <div class="range" style="font-size:38px;">
+        420 <small>pts</small>
+      </div>
+      <div class="muted">
+        Demo loyalty balance
+      </div>
+    </div>
+
+    <div class="section-title">Available offer</div>
+
+    <div class="card">
+      <div class="station-name">🚿 Car Wash Reward</div>
+      <p class="muted">
+        Example partner discount for GasGo users.
       </p>
     </div>
+
+    <p class="disclaimer">
+      Rewards shown are prototype examples and do not represent
+      active commercial partnerships.
+    </p>
 
   </section>
 
@@ -543,95 +777,1416 @@
   <section id="car" class="screen">
 
     <div class="top">
-      <div class="brand">My Car</div>
-      <div class="demo">DEMO</div>
+      <div>
+        <div class="eyebrow">Garage</div>
+        <div class="brand">My Car</div>
+      </div>
+
+      <div class="badge">GASGO LINK</div>
     </div>
 
-    <h1>Vehicle</h1>
+    <div id="vehicleEmpty" class="card">
 
-    <div class="vehicle">
-      <div class="muted">Current vehicle</div>
-      <h2 style="margin:6px 0;">Demo Vehicle</h2>
-      <div class="muted">Gasoline · OBD-II compatible</div>
+      <div class="vehicle-card">
+
+        <div class="vehicle-icon">🚗</div>
+
+        <div class="vehicle-copy">
+          <h3>No vehicle added</h3>
+          <p>Add your vehicle to personalize GasGo.</p>
+        </div>
+
+      </div>
+
+      <button id="addVehicleBtn" class="primary">
+        + ADD VEHICLE
+      </button>
+
     </div>
 
-    <div class="vehicle">
-      <div class="muted">GasGo Link</div>
-      <h2 class="connected" style="margin-top:6px;">
-        ● Connected
-      </h2>
 
-      <p class="muted" style="margin-top:10px;">
-        GasGo Link can use compatible vehicle data to improve range and
-        efficiency estimates.
-      </p>
+    <div id="vehicleSaved" style="display:none;">
+
+      <div class="card">
+
+        <div class="vehicle-card">
+
+          <div class="vehicle-icon" id="vehicleIcon">🚗</div>
+
+          <div class="vehicle-copy">
+            <h3 id="vehicleName">Vehicle</h3>
+            <p id="vehicleMeta">Gasoline</p>
+          </div>
+
+          <div class="link-status">
+            ● READY
+          </div>
+
+        </div>
+
+        <button id="editVehicleBtn" class="secondary" style="width:100%;margin-top:15px;">
+          Edit vehicle
+        </button>
+
+      </div>
+
+      <div class="section-title">Vehicle insights</div>
+
+      <div class="stat-grid">
+
+        <div class="stat">
+          <div class="muted">Estimated range</div>
+          <div class="big" id="carRange">—</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Fuel / battery</div>
+          <div class="big" id="carLevel">—</div>
+        </div>
+
+      </div>
+
+      <div class="section-title">GasGo Link</div>
+
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="station-name">GasGo Link</div>
+            <div class="muted">OBD-II smart vehicle connection</div>
+          </div>
+
+          <div class="link-status">DEMO</div>
+        </div>
+
+        <p class="muted" style="margin-bottom:0;">
+          GasGo Link is designed to support most OBD-II vehicles from
+          1996 or newer. Available information depends on the vehicle.
+        </p>
+      </div>
+
     </div>
-
-    <div class="vehicle">
-      <div class="muted">Average efficiency</div>
-      <div class="big-stat">27.4 MPG</div>
-    </div>
-
-    <p class="disclaimer">
-      Available vehicle information depends on year, make, model and supported
-      OBD-II data.
-    </p>
 
   </section>
 
 </div>
 
 
+<!-- NAVIGATION -->
 <nav class="bottom">
 
-  <button class="nav active" onclick="navTo('home',this)">
-    <span>⌂</span>
+  <button class="nav active" data-nav="home">
+    <span class="ico">⌂</span>
     Home
   </button>
 
-  <button class="nav" onclick="navTo('stations',this)">
-    <span>⌖</span>
+  <button class="nav" data-nav="stations">
+    <span class="ico">🗺️</span>
     Stations
   </button>
 
-  <button class="nav" onclick="navTo('rewards',this)">
-    <span>★</span>
+  <button class="nav" data-nav="rewards">
+    <span class="ico">★</span>
     Rewards
   </button>
 
-  <button class="nav" onclick="navTo('car',this)">
-    <span>🚗</span>
+  <button class="nav" data-nav="car">
+    <span class="ico">🚗</span>
     My Car
   </button>
 
 </nav>
 
 
+<!-- VEHICLE MODAL -->
+<div id="vehicleModal" class="modal">
+
+  <div class="sheet">
+
+    <div class="sheet-head">
+      <h2>Add your vehicle</h2>
+      <button id="closeModal" class="close">×</button>
+    </div>
+
+    <form id="vehicleForm">
+
+      <div class="form-grid">
+
+        <div class="field">
+          <label for="year">Year</label>
+          <select id="year" required></select>
+        </div>
+
+        <div class="field">
+          <label for="make">Make</label>
+          <select id="make" required></select>
+        </div>
+
+        <div class="field full">
+          <label for="model">Model</label>
+          <input
+            id="model"
+            type="text"
+            placeholder="Example: Corolla"
+            maxlength="40"
+            required
+          />
+        </div>
+
+        <div class="field full">
+          <label for="powertrain">Vehicle type</label>
+
+          <select id="powertrain" required>
+            <option value="Gasoline">Gasoline</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Plug-in Hybrid">Plug-in Hybrid</option>
+            <option value="Electric">Electric</option>
+            <option value="Diesel">Diesel</option>
+          </select>
+
+        </div>
+
+        <div class="field">
+          <label for="level">Fuel / battery %</label>
+          <input
+            id="level"
+            type="number"
+            min="0"
+            max="100"
+            value="68"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="fullRange">Range at 100% (mi)</label>
+          <input
+            id="fullRange"
+            type="number"
+            min="20"
+            max="800"
+            value="350"
+            required
+          />
+        </div>
+
+      </div>
+
+      <div
+        id="formMsg"
+        class="muted"
+        style="margin-top:10px;"
+      ></div>
+
+      <button class="primary" type="submit">
+        SAVE VEHICLE
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
+(() => {
+
+  "use strict";
+
+  /* =========================
+     GASGO DATA
+  ========================= */
+
+  const PR_CENTER = [18.2208, -66.5901];
+
+  const BRANDS = [
+    "76",
+    "American",
+    "Bita's",
+    "EcoMaxx",
+    "Gulf",
+    "Mobil",
+    "Phillips 66",
+    "Puma",
+    "Shell",
+    "Sunoco",
+    "Texaco",
+    "T-Express",
+    "Total",
+    "Ultra Top Fuel"
+  ];
+
+
+  const PRICES = {
+
+    "76":[1.147,1.287,1.437],
+
+    "American":[1.167,1.277,1.427],
+
+    "Bita's":[1.157,1.297,1.437],
+
+    "EcoMaxx":[1.157,1.297,1.447],
+
+    "Gulf":[1.157,1.297,1.447],
+
+    "Mobil":[1.167,1.337,1.447],
+
+    "Phillips 66":[1.147,1.287,1.437],
+
+    "Puma":[1.167,1.337,1.437],
+
+    "Shell":[1.167,1.337,1.447],
+
+    "Sunoco":[1.167,1.357,1.447],
+
+    "Texaco":[1.167,1.337,1.437],
+
+    "T-Express":[1.147,1.297,1.407],
+
+    "Total":[1.177,1.337,1.437],
+
+    "Ultra Top Fuel":[1.137,1.287,1.427]
+
+  };
+
+
+  const MAKES = [
+    "Acura",
+    "Audi",
+    "BMW",
+    "Buick",
+    "Cadillac",
+    "Chevrolet",
+    "Chrysler",
+    "Dodge",
+    "Ford",
+    "Genesis",
+    "GMC",
+    "Honda",
+    "Hyundai",
+    "Infiniti",
+    "Jeep",
+    "Kia",
+    "Lexus",
+    "Lincoln",
+    "Mazda",
+    "Mercedes-Benz",
+    "MINI",
+    "Mitsubishi",
+    "Nissan",
+    "Porsche",
+    "Ram",
+    "Subaru",
+    "Tesla",
+    "Toyota",
+    "Volkswagen",
+    "Volvo",
+    "Other"
+  ];
+
+
+  /* =========================
+     HELPERS
+  ========================= */
+
+  function escapeHtml(value) {
+
+    return String(value).replace(
+      /[&<>'"]/g,
+      char => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        "'":"&#39;",
+        '"':"&quot;"
+      }[char])
+    );
+
+  }
+
+
+  /* =========================
+     BRANDS
+  ========================= */
+
+  const brandStrip =
+    document.getElementById("brandStrip");
+
+  BRANDS.forEach(brand => {
+
+    const element =
+      document.createElement("div");
+
+    element.className = "brand-pill";
+
+    element.textContent = brand;
+
+    brandStrip.appendChild(element);
+
+  });
+
+
+  /* =========================
+     PRICE LIST
+  ========================= */
+
+  const priceList =
+    document.getElementById("priceList");
+
+  BRANDS.forEach(brand => {
+
+    const prices = PRICES[brand];
+
+    const element =
+      document.createElement("div");
+
+    element.className = "card station";
+
+    element.innerHTML = `
+
+      <div class="row">
+
+        <div>
+
+          <div class="station-name">
+            ${escapeHtml(brand)}
+          </div>
+
+          <div class="muted">
+            Regular · Premium · Diesel
+          </div>
+
+        </div>
+
+        <div class="price">
+
+          $${prices[0].toFixed(3)}
+
+          <small>
+            $${prices[1].toFixed(3)}
+            ·
+            $${prices[2].toFixed(3)}
+            /L
+          </small>
+
+        </div>
+
+      </div>
+
+    `;
+
+    priceList.appendChild(element);
+
+  });
+
+
+  /* =========================
+     SCREEN NAVIGATION
+  ========================= */
 
   function showScreen(id) {
-    document.querySelectorAll(".screen")
-      .forEach(screen => screen.classList.remove("active"));
 
-    document.getElementById(id).classList.add("active");
+    document
+      .querySelectorAll(".screen")
+      .forEach(screen => {
+
+        screen.classList.toggle(
+          "active",
+          screen.id === id
+        );
+
+      });
+
+
+    document
+      .querySelectorAll(".nav")
+      .forEach(nav => {
+
+        nav.classList.toggle(
+          "active",
+          nav.dataset.nav === id
+        );
+
+      });
+
 
     window.scrollTo({
-      top: 0,
-      behavior: "smooth"
+      top:0,
+      behavior:"smooth"
     });
+
+
+    if (id === "stations") {
+
+      setTimeout(() => {
+
+        initMap();
+
+        if (map) {
+          map.invalidateSize();
+        }
+
+      }, 80);
+
+    }
+
   }
 
 
-  function navTo(id, button) {
+  document
+    .querySelectorAll("[data-nav]")
+    .forEach(button => {
 
-    showScreen(id);
+      button.addEventListener(
+        "click",
+        () => showScreen(button.dataset.nav)
+      );
 
-    document.querySelectorAll(".nav")
-      .forEach(nav => nav.classList.remove("active"));
+    });
 
-    button.classList.add("active");
+
+  document
+    .querySelectorAll("[data-go]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => showScreen(button.dataset.go)
+      );
+
+    });
+
+
+  /* =========================
+     MAP
+  ========================= */
+
+  let map = null;
+
+  let stationLayer = null;
+
+  let stationData = [];
+
+  let activeFilter = "all";
+
+  let userMarker = null;
+
+
+  function normalizeBrand(tags = {}) {
+
+    const text = (
+      (tags.brand || "") +
+      " " +
+      (tags.operator || "") +
+      " " +
+      (tags.name || "")
+    ).toLowerCase();
+
+
+    if (text.includes("puma"))
+      return "Puma";
+
+    if (text.includes("shell"))
+      return "Shell";
+
+    if (text.includes("total"))
+      return "Total";
+
+    if (text.includes("gulf"))
+      return "Gulf";
+
+    if (text.includes("texaco"))
+      return "Texaco";
+
+    if (text.includes("mobil"))
+      return "Mobil";
+
+    if (text.includes("phillips"))
+      return "Phillips 66";
+
+    if (text.includes("sunoco"))
+      return "Sunoco";
+
+    if (text.includes("ecomaxx"))
+      return "EcoMaxx";
+
+    if (text.includes("t-express"))
+      return "T-Express";
+
+    if (text.includes("american"))
+      return "American";
+
+    if (text.includes("ultra"))
+      return "Ultra Top Fuel";
+
+    if (text.includes("76"))
+      return "76";
+
+
+    return (
+      tags.brand ||
+      tags.operator ||
+      "Independent"
+    );
+
   }
 
+
+  function initMap() {
+
+    if (map || typeof L === "undefined")
+      return;
+
+
+    map = L
+      .map("map", {
+        zoomControl:true
+      })
+      .setView(PR_CENTER, 8);
+
+
+    L.tileLayer(
+      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom:19,
+        attribution:"&copy; OpenStreetMap contributors"
+      }
+    ).addTo(map);
+
+
+    stationLayer =
+      L.layerGroup().addTo(map);
+
+
+    loadStations();
+
+  }
+
+
+  async function loadStations() {
+
+    const status =
+      document.getElementById("mapStatus");
+
+
+    status.textContent =
+      "Loading Puerto Rico fuel locations…";
+
+
+    try {
+
+      const query = `
+        [out:json][timeout:25];
+
+        (
+          node["amenity"="fuel"]
+          (17.80,-67.40,18.60,-65.20);
+
+          way["amenity"="fuel"]
+          (17.80,-67.40,18.60,-65.20);
+
+          relation["amenity"="fuel"]
+          (17.80,-67.40,18.60,-65.20);
+        );
+
+        out center tags;
+      `;
+
+
+      const url =
+        "https://overpass-api.de/api/interpreter?data=" +
+        encodeURIComponent(query);
+
+
+      const response =
+        await fetch(
+          url,
+          {
+            headers:{
+              "Accept":"application/json"
+            }
+          }
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          "Map data unavailable"
+        );
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      stationData =
+        data.elements
+          .map(element => ({
+
+            lat:
+              element.lat ||
+              (element.center &&
+               element.center.lat),
+
+            lon:
+              element.lon ||
+              (element.center &&
+               element.center.lon),
+
+            tags:
+              element.tags || {}
+
+          }))
+          .filter(station =>
+            Number.isFinite(station.lat) &&
+            Number.isFinite(station.lon)
+          );
+
+
+      renderStations();
+
+
+      status.textContent =
+        stationData.length +
+        " fuel locations loaded. Pan, zoom or tap a marker.";
+
+    }
+
+    catch (error) {
+
+      status.textContent =
+        "Could not load station markers right now. " +
+        "The map itself still works; try refreshing later.";
+
+    }
+
+  }
+
+
+  function renderStations() {
+
+    stationLayer.clearLayers();
+
+    let shown = 0;
+
+
+    stationData.forEach(station => {
+
+      const brand =
+        normalizeBrand(station.tags);
+
+
+      if (
+        activeFilter !== "all" &&
+        brand !== activeFilter
+      ) {
+        return;
+      }
+
+
+      shown++;
+
+
+      const name =
+        station.tags.name ||
+        brand + " station";
+
+
+      const prices =
+        PRICES[brand];
+
+
+      const priceText =
+        prices
+          ? `
+            <br>
+            <b>DACO brand reference:</b>
+            $${prices[0].toFixed(3)}/L regular
+          `
+          : `
+            <br>
+            <span style="color:#9aa">
+              No DACO brand match
+            </span>
+          `;
+
+
+      const icon =
+        L.divIcon({
+
+          className:"",
+
+          html:
+            '<div class="marker-dot">⛽</div>',
+
+          iconSize:[32,32],
+
+          iconAnchor:[16,16]
+
+        });
+
+
+      L.marker(
+        [station.lat, station.lon],
+        { icon }
+      )
+
+      .bindPopup(`
+
+        <b>${escapeHtml(name)}</b>
+
+        <br>
+
+        ${escapeHtml(brand)}
+
+        ${priceText}
+
+        <br>
+
+        <small>
+          OSM location · price is not station-specific
+        </small>
+
+      `)
+
+      .addTo(stationLayer);
+
+    });
+
+
+    if (stationData.length) {
+
+      document.getElementById(
+        "mapStatus"
+      ).textContent =
+        shown +
+        " of " +
+        stationData.length +
+        " fuel locations shown.";
+
+    }
+
+  }
+
+
+  /* =========================
+     MAP FILTERS
+  ========================= */
+
+  document
+    .querySelectorAll("[data-filter]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          activeFilter =
+            button.dataset.filter;
+
+
+          document
+            .querySelectorAll("[data-filter]")
+            .forEach(item => {
+
+              item.classList.toggle(
+                "active",
+                item === button
+              );
+
+            });
+
+
+          if (map) {
+            renderStations();
+          }
+
+        }
+      );
+
+    });
+
+
+  /* =========================
+     RESET MAP
+  ========================= */
+
+  document
+    .getElementById("resetMap")
+    .addEventListener(
+      "click",
+      () => {
+
+        initMap();
+
+        map.setView(
+          PR_CENTER,
+          8
+        );
+
+      }
+    );
+
+
+  /* =========================
+     USER LOCATION
+  ========================= */
+
+  document
+    .getElementById("locateBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        initMap();
+
+
+        const status =
+          document.getElementById(
+            "mapStatus"
+          );
+
+
+        if (!navigator.geolocation) {
+
+          status.textContent =
+            "Location is not supported by this browser.";
+
+          return;
+
+        }
+
+
+        status.textContent =
+          "Requesting your location…";
+
+
+        navigator.geolocation
+          .getCurrentPosition(
+
+            position => {
+
+              const location = [
+
+                position.coords.latitude,
+
+                position.coords.longitude
+
+              ];
+
+
+              if (userMarker) {
+
+                userMarker.remove();
+
+              }
+
+
+              userMarker =
+                L.circleMarker(
+                  location,
+                  {
+                    radius:9,
+                    color:"#fff",
+                    weight:3,
+                    fillColor:"#00c853",
+                    fillOpacity:1
+                  }
+                )
+                .addTo(map)
+                .bindPopup(
+                  "Your approximate device location"
+                )
+                .openPopup();
+
+
+              map.setView(
+                location,
+                13
+              );
+
+
+              status.textContent =
+                "Location found. Fuel markers remain based on OpenStreetMap data.";
+
+            },
+
+
+            () => {
+
+              status.textContent =
+                "Location permission was not granted. You can still move the map manually.";
+
+            },
+
+
+            {
+              enableHighAccuracy:false,
+              timeout:8000,
+              maximumAge:60000
+            }
+
+          );
+
+      }
+    );
+
+
+  /* =========================
+     VEHICLE SETUP
+  ========================= */
+
+  const modal =
+    document.getElementById(
+      "vehicleModal"
+    );
+
+
+  const form =
+    document.getElementById(
+      "vehicleForm"
+    );
+
+
+  const year =
+    document.getElementById(
+      "year"
+    );
+
+
+  const make =
+    document.getElementById(
+      "make"
+    );
+
+
+  /* YEARS */
+
+  for (
+    let vehicleYear = 2027;
+    vehicleYear >= 1996;
+    vehicleYear--
+  ) {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      vehicleYear;
+
+
+    option.textContent =
+      vehicleYear;
+
+
+    year.appendChild(option);
+
+  }
+
+
+  year.value = "2015";
+
+
+  /* MAKES */
+
+  MAKES.forEach(vehicleMake => {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      vehicleMake;
+
+
+    option.textContent =
+      vehicleMake;
+
+
+    make.appendChild(option);
+
+  });
+
+
+  function openVehicle() {
+
+    modal.classList.add(
+      "open"
+    );
+
+
+    const vehicle =
+      readVehicle();
+
+
+    if (vehicle) {
+
+      year.value =
+        vehicle.year;
+
+      make.value =
+        vehicle.make;
+
+      document.getElementById(
+        "model"
+      ).value =
+        vehicle.model;
+
+      document.getElementById(
+        "powertrain"
+      ).value =
+        vehicle.powertrain;
+
+      document.getElementById(
+        "level"
+      ).value =
+        vehicle.level;
+
+      document.getElementById(
+        "fullRange"
+      ).value =
+        vehicle.fullRange;
+
+    }
+
+  }
+
+
+  function closeVehicle() {
+
+    modal.classList.remove(
+      "open"
+    );
+
+  }
+
+
+  document
+    .getElementById("addVehicleBtn")
+    .addEventListener(
+      "click",
+      openVehicle
+    );
+
+
+  document
+    .getElementById("editVehicleBtn")
+    .addEventListener(
+      "click",
+      openVehicle
+    );
+
+
+  document
+    .getElementById("closeModal")
+    .addEventListener(
+      "click",
+      closeVehicle
+    );
+
+
+  modal.addEventListener(
+    "click",
+    event => {
+
+      if (event.target === modal) {
+
+        closeVehicle();
+
+      }
+
+    }
+  );
+
+
+  /* =========================
+     SAVE VEHICLE
+  ========================= */
+
+  function readVehicle() {
+
+    try {
+
+      return JSON.parse(
+        localStorage.getItem(
+          "gasgoVehicle"
+        ) || "null"
+      );
+
+    }
+
+    catch (error) {
+
+      return null;
+
+    }
+
+  }
+
+
+  function saveVehicle(vehicle) {
+
+    try {
+
+      localStorage.setItem(
+        "gasgoVehicle",
+        JSON.stringify(vehicle)
+      );
+
+      return true;
+
+    }
+
+    catch (error) {
+
+      return false;
+
+    }
+
+  }
+
+
+  function renderVehicle() {
+
+    const vehicle =
+      readVehicle();
+
+
+    const empty =
+      document.getElementById(
+        "vehicleEmpty"
+      );
+
+
+    const saved =
+      document.getElementById(
+        "vehicleSaved"
+      );
+
+
+    if (!vehicle) {
+
+      empty.style.display =
+        "block";
+
+      saved.style.display =
+        "none";
+
+      return;
+
+    }
+
+
+    empty.style.display =
+      "none";
+
+
+    saved.style.display =
+      "block";
+
+
+    const estimatedRange =
+      Math.max(
+        0,
+        Math.round(
+          vehicle.fullRange *
+          (vehicle.level / 100)
+        )
+      );
+
+
+    document.getElementById(
+      "vehicleName"
+    ).textContent =
+      vehicle.year +
+      " " +
+      vehicle.make +
+      " " +
+      vehicle.model;
+
+
+    document.getElementById(
+      "vehicleMeta"
+    ).textContent =
+      vehicle.powertrain +
+      " · " +
+      vehicle.level +
+      "% level";
+
+
+    document.getElementById(
+      "vehicleIcon"
+    ).textContent =
+      vehicle.powertrain ===
+      "Electric"
+        ? "⚡"
+        : "🚗";
+
+
+    document.getElementById(
+      "carRange"
+    ).textContent =
+      estimatedRange +
+      " mi";
+
+
+    document.getElementById(
+      "carLevel"
+    ).textContent =
+      vehicle.level +
+      "%";
+
+
+    document.getElementById(
+      "homeRange"
+    ).textContent =
+      estimatedRange;
+
+
+    document.getElementById(
+      "homeFuel"
+    ).textContent =
+      vehicle.level +
+      "%";
+
+
+    document.getElementById(
+      "homeFuelLabel"
+    ).textContent =
+      vehicle.powertrain ===
+      "Electric"
+        ? "⚡ Battery level"
+        : "⛽ Fuel level";
+
+
+    document.getElementById(
+      "homeMeter"
+    ).style.width =
+      vehicle.level +
+      "%";
+
+  }
+
+
+  /* =========================
+     VEHICLE FORM
+  ========================= */
+
+  form.addEventListener(
+    "submit",
+    event => {
+
+      event.preventDefault();
+
+
+      const level =
+        Number(
+          document.getElementById(
+            "level"
+          ).value
+        );
+
+
+      const fullRange =
+        Number(
+          document.getElementById(
+            "fullRange"
+          ).value
+        );
+
+
+      const model =
+        document
+          .getElementById(
+            "model"
+          )
+          .value
+          .trim();
+
+
+      const message =
+        document.getElementById(
+          "formMsg"
+        );
+
+
+      if (
+        !model ||
+        !Number.isFinite(level) ||
+        level < 0 ||
+        level > 100 ||
+        !Number.isFinite(fullRange) ||
+        fullRange < 20 ||
+        fullRange > 800
+      ) {
+
+        message.textContent =
+          "Check the vehicle information and try again.";
+
+        return;
+
+      }
+
+
+      const vehicle = {
+
+        year:
+          year.value,
+
+        make:
+          make.value,
+
+        model,
+
+        powertrain:
+          document.getElementById(
+            "powertrain"
+          ).value,
+
+        level,
+
+        fullRange
+
+      };
+
+
+      if (!saveVehicle(vehicle)) {
+
+        message.textContent =
+          "Your browser blocked local saving.";
+
+        return;
+
+      }
+
+
+      message.textContent = "";
+
+
+      renderVehicle();
+
+
+      closeVehicle();
+
+    }
+  );
+
+
+  /* INITIALIZE */
+
+  renderVehicle();
+
+})();
 </script>
 
 </body>
