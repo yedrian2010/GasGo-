@@ -12,12 +12,12 @@
 
   <meta
     name="theme-color"
-    content="#080b0a"
+    content="#0F1111"
   >
 
   <meta
     name="description"
-    content="GasGo — Find fuel, compare options, estimate your range and earn rewards."
+    content="GasGo prototype — find fuel stations, compare options, estimate range and track fuel spending."
   >
 
   <title>GasGo</title>
@@ -34,7 +34,7 @@
 
 
   <!-- =====================================================
-       GASGO DESIGN
+       GASGO STYLE
        ===================================================== -->
 
   <link
@@ -48,11 +48,7 @@
 <body>
 
 
-  <!-- =====================================================
-       APP
-       ===================================================== -->
-
-  <main class="app">
+  <div class="app">
 
 
     <!-- ===================================================
@@ -65,82 +61,84 @@
     >
 
 
-      <header class="top">
+      <!-- HEADER -->
+
+      <header class="topbar">
 
         <div>
 
-          <div class="logo">
+          <div class="logo-text">
             Gas<span>Go</span>
           </div>
 
-          <div class="muted mt-8">
-            Drive smarter. Save more.
+          <div class="subtitle">
+            Drive smarter.
           </div>
 
         </div>
 
 
-        <span class="badge">
+        <div class="badge">
           PROTOTYPE
-        </span>
+        </div>
 
       </header>
 
 
-      <h1>
-        Ready to
-        <span class="green-text">
-          go?
-        </span>
-      </h1>
 
+      <!-- VEHICLE RANGE HERO -->
 
-      <!-- RANGE HERO -->
-
-      <article class="card hero">
-
-        <div class="hero-title">
-          Estimated range
-        </div>
-
-
-        <div
-          id="homeRange"
-          class="range"
-        >
-          238 <small>mi</small>
-        </div>
-
+      <div class="card hero-card">
 
         <div class="row">
 
           <div>
 
-            <strong id="homeLevel">
-              68%
-            </strong>
+            <div class="eyebrow">
+              ESTIMATED RANGE
+            </div>
 
             <div
-              id="homeFuelLabel"
-              class="small"
+              id="homeVehicleName"
+              class="muted"
             >
-              Fuel
+              Vehicle
             </div>
 
           </div>
 
 
-          <div class="text-center">
+          <div class="status-dot-wrap">
 
-            <strong id="homeVehicleName">
-              2015 Chevrolet Sonic
-            </strong>
+            <span class="status-dot"></span>
 
-            <div class="small">
-              Primary vehicle
-            </div>
+            Vehicle active
 
           </div>
+
+        </div>
+
+
+        <div
+          id="homeRange"
+          class="hero-range"
+        >
+          — <small>mi</small>
+        </div>
+
+
+        <div class="row">
+
+          <span
+            id="homeFuelLabel"
+            class="muted"
+          >
+            Fuel
+          </span>
+
+          <strong id="homeLevel">
+            —%
+          </strong>
 
         </div>
 
@@ -149,33 +147,45 @@
 
           <div
             id="homeLevelBar"
-            style="width:68%"
+            class="progress-fill"
+            style="width:0%"
           ></div>
 
         </div>
 
-      </article>
 
+        <div class="muted mt-12">
 
-      <!-- SMART STOP -->
+          Estimated range is based on your saved vehicle
+          settings. Actual range can vary with driving,
+          traffic and vehicle conditions.
 
-      <div class="section-title">
-
-        <span>
-          Smart Stop
-        </span>
-
-        <button
-          class="section-link"
-          onclick="GasGoApp.openStations()"
-        >
-          Explore map
-        </button>
+        </div>
 
       </div>
 
 
-      <article
+
+      <!-- SMART STOP -->
+
+      <div class="section-title-row">
+
+        <div>
+
+          <div class="eyebrow">
+            RECOMMENDED
+          </div>
+
+          <h2>
+            Smart Stop
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div
         id="smartStopCard"
         class="card smart-stop"
       >
@@ -185,89 +195,21 @@
         </div>
 
         <div class="smart-stop-subtitle">
-          Comparing mapped fuel options.
-        </div>
-
-      </article>
-
-
-      <!-- PRICE SNAPSHOT -->
-
-      <div class="section-title">
-
-        <span>
-          Puerto Rico today
-        </span>
-
-        <button
-          class="section-link"
-          onclick="GasGoApp.openPrices()"
-        >
-          View brands
-        </button>
-
-      </div>
-
-
-      <div class="price-grid">
-
-        <div class="price-box">
-
-          <span>
-            Regular
-          </span>
-
-          <b>
-            $1.14
-          </b>
-
-          <span>
-            from / L
-          </span>
-
-        </div>
-
-
-        <div class="price-box">
-
-          <span>
-            Premium
-          </span>
-
-          <b>
-            $1.28
-          </b>
-
-          <span>
-            from / L
-          </span>
-
-        </div>
-
-
-        <div class="price-box">
-
-          <span>
-            Diesel
-          </span>
-
-          <b>
-            $1.41
-          </b>
-
-          <span>
-            from / L
-          </span>
-
+          Loading mapped fuel locations.
         </div>
 
       </div>
+
 
 
       <!-- QUICK ACTIONS -->
 
-      <div class="section-title">
-        Quick actions
+      <div class="section-title-row">
+
+        <h2>
+          Quick actions
+        </h2>
+
       </div>
 
 
@@ -275,57 +217,84 @@
 
 
         <button
-          class="quick"
+          class="quick-card"
           onclick="GasGoApp.openStations()"
         >
 
-          <span class="quick-icon">
-            🗺️
-          </span>
+          <div class="quick-icon">
+            ⛽
+          </div>
 
-          Find stations
+          <strong>
+            Find Fuel
+          </strong>
+
+          <span>
+            Map & prices
+          </span>
 
         </button>
 
 
+
         <button
-          class="quick"
+          class="quick-card"
           onclick="GasGoApp.openDashboard()"
         >
 
-          <span class="quick-icon">
+          <div class="quick-icon">
             📊
-          </span>
+          </div>
 
-          My spending
+          <strong>
+            Dashboard
+          </strong>
+
+          <span>
+            Spending
+          </span>
 
         </button>
 
 
+
         <button
-          class="quick"
+          class="quick-card"
+          onclick="GasGoApp.openFuelLogModal()"
+        >
+
+          <div class="quick-icon">
+            ＋
+          </div>
+
+          <strong>
+            Fill-up
+          </strong>
+
+          <span>
+            Add fuel
+          </span>
+
+        </button>
+
+
+
+        <button
+          class="quick-card"
           onclick="GasGoApp.openRewards()"
         >
 
-          <span class="quick-icon">
-            ⭐
+          <div class="quick-icon">
+            🎁
+          </div>
+
+          <strong>
+            Rewards
+          </strong>
+
+          <span>
+            Your points
           </span>
-
-          Rewards
-
-        </button>
-
-
-        <button
-          class="quick"
-          onclick="GasGoApp.openCar()"
-        >
-
-          <span class="quick-icon">
-            🚗
-          </span>
-
-          My vehicle
 
         </button>
 
@@ -333,14 +302,36 @@
       </div>
 
 
+
+      <!-- WHY GASGO -->
+
+      <div class="card notice">
+
+        <strong>
+          Know before you go.
+        </strong>
+
+        <p>
+
+          GasGo combines mapped fuel locations,
+          prototype price comparisons and your
+          vehicle's estimated range to help you
+          make a smarter stop.
+
+        </p>
+
+      </div>
+
+
+
       <!-- DISCLAIMER -->
 
-      <div class="notice mt-20">
+      <div class="prototype-note">
 
-        GasGo is currently a prototype.
-        Individual station fuel prices shown in the app are
-        simulated estimates for demonstration and are not
-        live station-specific prices.
+        GasGo is a startup prototype.
+        Station-specific fuel prices shown in this demo
+        are simulated/reference values and are not live
+        retailer prices.
 
       </div>
 
@@ -349,8 +340,10 @@
 
 
 
+
+
     <!-- ===================================================
-         STATIONS / MAP
+         STATIONS
          =================================================== -->
 
     <section
@@ -359,49 +352,51 @@
     >
 
 
-      <header class="top">
+      <header class="screen-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Map
+            DISCOVER
           </div>
 
-          <h2 class="mb-0">
-            Find your stop
-          </h2>
+          <h1>
+            Fuel Stations
+          </h1>
 
         </div>
 
 
-        <span class="badge">
-          PR
-        </span>
+        <button
+          class="icon-button"
+          onclick="GasGoApp.resetMap()"
+          aria-label="Reset map"
+        >
+          ↻
+        </button>
 
       </header>
 
 
+
       <!-- SEARCH -->
 
-      <div class="search-wrap">
+      <div class="search-box">
 
-        <span class="search-icon">
+        <span>
           🔎
         </span>
 
         <input
           id="stationSearch"
-          class="search-input"
           type="search"
-          placeholder="Search station, brand or municipality"
+          placeholder="Search station, brand or city"
           autocomplete="off"
         >
 
         <button
-          class="search-clear"
-          type="button"
-          aria-label="Clear search"
           onclick="GasGoApp.clearStationSearch()"
+          aria-label="Clear search"
         >
           ×
         </button>
@@ -409,7 +404,8 @@
       </div>
 
 
-      <!-- FUEL -->
+
+      <!-- FUEL TYPE -->
 
       <div class="chips">
 
@@ -440,63 +436,42 @@
       </div>
 
 
+
       <!-- SORT -->
 
-      <div class="sort-card">
-
+      <div class="sort-row">
 
         <button
           class="sort-button active"
           data-sort="best"
           onclick="GasGoApp.setSortMode('best', this)"
         >
-
-          <span>
-            ✨
-          </span>
-
-          Best Value
-
+          ✨ Best Value
         </button>
-
 
         <button
           class="sort-button"
           data-sort="cheap"
           onclick="GasGoApp.setSortMode('cheap', this)"
         >
-
-          <span>
-            💵
-          </span>
-
-          Cheapest
-
+          💵 Cheapest
         </button>
-
 
         <button
           class="sort-button"
           data-sort="closest"
           onclick="GasGoApp.setSortMode('closest', this)"
         >
-
-          <span>
-            📍
-          </span>
-
-          Closest
-
+          📍 Closest
         </button>
-
 
       </div>
 
 
+
       <!-- BRAND FILTERS -->
 
-      <div class="map-filter">
-
+      <div class="chips horizontal-scroll">
 
         <button
           class="chip active"
@@ -506,7 +481,6 @@
           All
         </button>
 
-
         <button
           class="chip"
           data-brand-filter
@@ -514,7 +488,6 @@
         >
           Puma
         </button>
-
 
         <button
           class="chip"
@@ -524,7 +497,6 @@
           Shell
         </button>
 
-
         <button
           class="chip"
           data-brand-filter
@@ -532,7 +504,6 @@
         >
           Total
         </button>
-
 
         <button
           class="chip"
@@ -542,7 +513,6 @@
           Gulf
         </button>
 
-
         <button
           class="chip"
           data-brand-filter
@@ -550,7 +520,6 @@
         >
           Texaco
         </button>
-
 
         <button
           class="chip"
@@ -560,153 +529,153 @@
           Mobil
         </button>
 
-
       </div>
+
+
+
+      <!-- LOCATION BUTTON -->
+
+      <button
+        class="secondary full-button"
+        onclick="GasGoApp.requestLocation()"
+      >
+        📍 USE MY LOCATION
+      </button>
+
 
 
       <!-- MAP -->
 
       <div class="map-wrap">
 
-        <div id="map"></div>
-
-
         <div
           id="mapLoader"
           class="map-loader"
         >
-          Loading GasGo map…
+
+          <div class="spinner"></div>
+
+          Loading stations…
+
         </div>
 
-      </div>
 
-
-      <!-- MAP ACTIONS -->
-
-      <div class="map-actions">
-
-
-        <button
-          class="secondary"
-          onclick="GasGoApp.requestLocation()"
-        >
-          📍 MY LOCATION
-        </button>
-
-
-        <button
-          class="secondary"
-          onclick="GasGoApp.resetMap()"
-        >
-          🇵🇷 VIEW PR
-        </button>
-
+        <div id="map"></div>
 
       </div>
 
+
+
+      <!-- MAP STATUS -->
 
       <div
         id="stationStatus"
         class="map-status"
       >
-        Loading mapped fuel stations…
+        Loading mapped fuel stations across Puerto Rico…
       </div>
 
 
-      <!-- SELECTED STATION -->
 
-      <article
+      <!-- STATION SHEET -->
+
+      <div
         id="stationSheet"
-        class="card station-sheet"
+        class="station-sheet"
       >
+
+        <div class="sheet-handle"></div>
 
 
         <div class="row">
 
-          <div class="flex-1">
+          <div>
 
             <div class="eyebrow">
-              Selected station
+              SELECTED STATION
             </div>
 
-            <div
-              id="selectedStationName"
-              class="station-name"
-            >
-              Station
-            </div>
+            <h2 id="selectedStationName">
+              Fuel Station
+            </h2>
 
             <div
               id="selectedStationBrand"
-              class="station-brand"
+              class="muted"
             >
-              Brand
+              —
             </div>
 
           </div>
 
 
-          <div
-            id="selectedStationDistance"
-            class="station-distance"
-          >
-            —
+          <div class="distance-pill">
+
+            <span>
+              📍
+            </span>
+
+            <strong id="selectedStationDistance">
+              —
+            </strong>
+
           </div>
 
         </div>
 
 
-        <!-- STATION PRICES -->
 
-        <div class="station-price-grid">
+        <!-- PRICES -->
+
+        <div class="price-grid mt-16">
 
 
-          <div class="station-price">
+          <div class="price-box">
 
             <span>
               Regular
             </span>
 
-            <strong id="selectedRegular">
-              $0.00
-            </strong>
+            <b id="selectedRegular">
+              —
+            </b>
 
             <small>
-              DEMO / L
+              /L
             </small>
 
           </div>
 
 
-          <div class="station-price">
+          <div class="price-box">
 
             <span>
               Premium
             </span>
 
-            <strong id="selectedPremium">
-              $0.00
-            </strong>
+            <b id="selectedPremium">
+              —
+            </b>
 
             <small>
-              DEMO / L
+              /L
             </small>
 
           </div>
 
 
-          <div class="station-price">
+          <div class="price-box">
 
             <span>
               Diesel
             </span>
 
-            <strong id="selectedDiesel">
-              $0.00
-            </strong>
+            <b id="selectedDiesel">
+              —
+            </b>
 
             <small>
-              DEMO / L
+              /L
             </small>
 
           </div>
@@ -715,18 +684,32 @@
         </div>
 
 
-        <!-- RANGE RESULT -->
+
+        <div class="demo-price-note">
+
+          Prototype prices — not live retailer pricing.
+
+        </div>
+
+
+
+        <!-- RANGE -->
 
         <div
           id="rangeResult"
           class="range-result"
         >
-          Select a station to estimate range.
+
+          Select a station to compare it with your
+          estimated vehicle range.
+
         </div>
 
 
-        <div class="button-row mt-12">
 
+        <!-- BUTTONS -->
+
+        <div class="button-row">
 
           <button
             class="secondary"
@@ -740,35 +723,31 @@
             class="primary"
             onclick="GasGoApp.openDirections()"
           >
-            GO →
+            DIRECTIONS
           </button>
-
 
         </div>
 
 
-        <button
-          class="ghost full-button mt-10"
-          onclick="GasGoApp.openFuelLogModal()"
-        >
-          + LOG PURCHASE HERE
-        </button>
+      </div>
 
-
-      </article>
 
 
       <!-- STATION LIST -->
 
-      <div class="section-title">
+      <div class="section-title-row">
 
-        <span>
-          Stations
-        </span>
+        <div>
 
-        <span class="muted">
-          Tap to view
-        </span>
+          <div class="eyebrow">
+            RESULTS
+          </div>
+
+          <h2>
+            Stations
+          </h2>
+
+        </div>
 
       </div>
 
@@ -778,28 +757,22 @@
         class="station-list"
       >
 
-        <div class="empty-state">
+        <div class="skeleton"></div>
 
-          <div class="empty-icon">
-            ⛽
-          </div>
+        <div class="skeleton"></div>
 
-          <strong>
-            Loading stations…
-          </strong>
-
-        </div>
+        <div class="skeleton"></div>
 
       </div>
 
 
-      <div class="notice mt-20">
 
-        Station locations may come from OpenStreetMap and
-        coverage can be incomplete. GasGo's individual
-        station prices are simulated for this prototype.
-        Distance shown by the range tool is approximate
-        straight-line distance, not a driving route.
+      <div class="prototype-note">
+
+        Fuel locations are retrieved from mapped
+        OpenStreetMap data when available.
+        Map coverage can be incomplete.
+        Prices displayed by GasGo are prototype estimates.
 
       </div>
 
@@ -807,79 +780,6 @@
     </section>
 
 
-
-    <!-- ===================================================
-         PRICES
-         =================================================== -->
-
-    <section
-      id="screen-prices"
-      class="screen"
-    >
-
-
-      <header class="top">
-
-        <div>
-
-          <div class="eyebrow">
-            Market snapshot
-          </div>
-
-          <h2 class="mb-0">
-            Fuel prices
-          </h2>
-
-        </div>
-
-
-        <span class="badge">
-          $ / L
-        </span>
-
-      </header>
-
-
-      <div class="card savings-card">
-
-        <div class="eyebrow">
-          Compare before you drive
-        </div>
-
-        <div class="savings-number">
-          Save smarter.
-        </div>
-
-        <div class="muted">
-
-          GasGo compares price and distance so a station
-          isn't recommended just because it is a few cents
-          cheaper but much farther away.
-
-        </div>
-
-      </div>
-
-
-      <div class="section-title">
-        Brand references
-      </div>
-
-
-      <div id="brandPriceList"></div>
-
-
-      <div class="notice mt-20">
-
-        These brand-level values are prototype reference
-        prices. They are not live prices for every individual
-        station. Actual retail prices can vary by location
-        and time.
-
-      </div>
-
-
-    </section>
 
 
 
@@ -893,29 +793,31 @@
     >
 
 
-      <header class="top">
+      <header class="screen-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Insights
+            YOUR DRIVING
           </div>
 
-          <h2 class="mb-0">
+          <h1>
             Dashboard
-          </h2>
+          </h1>
 
         </div>
 
 
         <button
-          class="primary"
+          class="icon-button"
           onclick="GasGoApp.openFuelLogModal()"
+          aria-label="Add fill-up"
         >
-          + FILL-UP
+          ＋
         </button>
 
       </header>
+
 
 
       <!-- STATS -->
@@ -923,11 +825,7 @@
       <div class="dashboard-grid">
 
 
-        <div class="dashboard-stat">
-
-          <div class="dashboard-icon">
-            💳
-          </div>
+        <div class="stat-card">
 
           <span>
             Total spent
@@ -937,63 +835,36 @@
             $0.00
           </strong>
 
-          <small>
-            Saved fill-ups
-          </small>
-
         </div>
 
 
-        <div class="dashboard-stat">
-
-          <div class="dashboard-icon">
-            ⛽
-          </div>
+        <div class="stat-card">
 
           <span>
-            Fuel logged
+            Fuel added
           </span>
 
           <strong id="dashLiters">
             0.0 L
           </strong>
 
-          <small>
-            Across all purchases
-          </small>
-
         </div>
 
 
-        <div class="dashboard-stat">
-
-          <div class="dashboard-icon">
-            💚
-          </div>
+        <div class="stat-card">
 
           <span>
             Est. savings
           </span>
 
-          <strong
-            id="dashSavings"
-            class="savings-positive"
-          >
+          <strong id="dashSavings">
             $0.00
           </strong>
-
-          <small>
-            Prototype estimate
-          </small>
 
         </div>
 
 
-        <div class="dashboard-stat">
-
-          <div class="dashboard-icon">
-            🧾
-          </div>
+        <div class="stat-card">
 
           <span>
             Fill-ups
@@ -1003,98 +874,97 @@
             0
           </strong>
 
-          <small>
-            Purchases recorded
-          </small>
-
         </div>
 
 
       </div>
 
 
-      <!-- AVERAGE -->
 
-      <div class="card mt-12">
+      <!-- AVG PRICE -->
+
+      <div class="card">
 
         <div class="row">
 
           <div>
 
             <div class="eyebrow">
-              Your average
+              YOUR AVERAGE
             </div>
 
-            <strong>
+            <h3>
               Fuel price
-            </strong>
+            </h3>
 
           </div>
 
 
-          <div
+          <strong
             id="dashAveragePrice"
-            class="brand-price"
+            class="large-number"
           >
             —
-          </div>
+          </strong>
 
         </div>
 
       </div>
 
 
-      <!-- CHART -->
 
-      <div class="section-title">
-        Spending
-      </div>
+      <!-- SPENDING CHART -->
 
+      <div class="card">
 
-      <article class="card chart-card">
-
-        <div class="row">
+        <div class="section-title-row no-margin">
 
           <div>
 
-            <strong>
-              Last 6 months
-            </strong>
-
-            <div class="muted">
-              Based on your saved fill-ups
+            <div class="eyebrow">
+              LAST 6 MONTHS
             </div>
 
-          </div>
+            <h3>
+              Fuel spending
+            </h3>
 
-          <span class="badge">
-            HISTORY
-          </span>
+          </div>
 
         </div>
 
 
         <div
           id="spendingChart"
-          class="bar-chart"
+          class="chart"
         ></div>
 
-      </article>
+      </div>
 
 
-      <!-- LOGS -->
 
-      <div class="section-title">
+      <!-- FUEL LOG -->
 
-        <span>
-          Fuel Log
-        </span>
+      <div class="section-title-row">
+
+        <div>
+
+          <div class="eyebrow">
+            HISTORY
+          </div>
+
+          <h2>
+            Fuel Log
+          </h2>
+
+        </div>
+
 
         <button
           class="section-link"
           onclick="GasGoApp.openFuelLogModal()"
         >
-          Add
+          + ADD
         </button>
 
       </div>
@@ -1102,11 +972,23 @@
 
       <div
         id="fuelLogList"
-        class="log-list"
+        class="fuel-log-list"
       ></div>
 
 
+
+      <div class="prototype-note">
+
+        Savings are estimated using GasGo's prototype
+        comparison data and should not be treated as
+        guaranteed savings.
+
+      </div>
+
+
     </section>
+
+
 
 
 
@@ -1120,39 +1002,41 @@
     >
 
 
-      <header class="top">
+      <header class="screen-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Rewards
+            GASGO LOYALTY
           </div>
 
-          <h2 class="mb-0">
-            Your rewards
-          </h2>
+          <h1>
+            Rewards
+          </h1>
 
         </div>
 
 
-        <span class="badge">
+        <div class="badge">
           DEMO
-        </span>
+        </div>
 
       </header>
 
 
-      <article class="card hero">
 
-        <div class="hero-title">
-          Total reward points
+      <!-- TOTAL POINTS -->
+
+      <div class="card rewards-hero">
+
+        <div class="eyebrow">
+          TOTAL POINTS
         </div>
 
-
-        <div class="range">
+        <div class="rewards-total">
 
           <span id="totalRewardPoints">
-            1,170
+            0
           </span>
 
           <small>
@@ -1162,43 +1046,48 @@
         </div>
 
 
-        <div class="small">
+        <p class="muted">
 
-          Points remain separate for each participating
-          brand.
+          Points stay separated by participating brand.
+          Changing your favorite station would not erase
+          previously earned points.
 
-        </div>
-
-      </article>
-
-
-      <div class="section-title">
-
-        <span>
-          Participating brands
-        </span>
-
-        <span class="muted">
-          Tap a card
-        </span>
+        </p>
 
       </div>
 
 
-      <div id="rewardsList"></div>
+
+      <!-- REWARD CARDS -->
+
+      <div
+        id="rewardsList"
+        class="rewards-list"
+      ></div>
 
 
-      <div class="notice mt-20">
 
-        Rewards shown here are a GasGo business concept for
-        the prototype. Actual partnerships, point values and
-        redemption terms would depend on participating
-        businesses.
+      <div class="card notice">
+
+        <strong>
+          How GasGo Rewards works
+        </strong>
+
+        <p>
+
+          In the business concept, participating partners
+          can offer rewards for eligible purchases and
+          services. Rewards shown here are for prototype
+          demonstration only.
+
+        </p>
 
       </div>
 
 
     </section>
+
+
 
 
 
@@ -1212,23 +1101,23 @@
     >
 
 
-      <header class="top">
+      <header class="screen-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Garage
+            GARAGE
           </div>
 
-          <h2 class="mb-0">
+          <h1>
             My Car
-          </h2>
+          </h1>
 
         </div>
 
 
         <button
-          class="secondary"
+          class="secondary small-button"
           onclick="GasGoApp.openVehicleModal()"
         >
           EDIT
@@ -1237,222 +1126,356 @@
       </header>
 
 
-      <!-- VEHICLE -->
 
-      <article class="card">
+      <!-- VEHICLE CARD -->
 
-        <div class="vehicle-head">
-
-          <div class="vehicle-icon">
-            🚗
-          </div>
+      <div class="card vehicle-card">
 
 
-          <div class="vehicle-info">
-
-            <h3 id="vehicleTitle">
-              2015 Chevrolet Sonic
-            </h3>
-
-            <p
-              id="vehicleType"
-              class="muted"
-            >
-              Gasoline
-            </p>
-
-          </div>
-
-
-          <span class="badge">
-            PRIMARY
-          </span>
-
+        <div class="vehicle-icon">
+          🚗
         </div>
 
-      </article>
 
-
-      <!-- VEHICLE STATS -->
-
-      <div class="section-title">
-        Vehicle estimate
-      </div>
-
-
-      <div class="vehicle-stats">
-
-
-        <div class="vehicle-stat">
+        <div class="vehicle-main">
 
           <div class="eyebrow">
-            Current level
+            CURRENT VEHICLE
           </div>
 
-          <strong id="vehicleLevelDisplay">
-            68%
-          </strong>
+          <h2 id="vehicleTitle">
+            Vehicle
+          </h2>
+
+          <div
+            id="vehicleType"
+            class="muted"
+          >
+            Gasoline
+          </div>
 
         </div>
 
 
-        <div class="vehicle-stat">
+        <div class="vehicle-grid">
 
-          <div class="eyebrow">
-            Est. range
+
+          <div>
+
+            <span>
+              Fuel level
+            </span>
+
+            <strong id="vehicleLevelDisplay">
+              —
+            </strong>
+
           </div>
 
-          <strong id="vehicleRangeDisplay">
-            238 mi
-          </strong>
 
-        </div>
+          <div>
 
+            <span>
+              Est. range
+            </span>
 
-        <div class="vehicle-stat">
+            <strong id="vehicleRangeDisplay">
+              —
+            </strong>
 
-          <div class="eyebrow">
-            Full range
           </div>
 
-          <strong id="vehicleFullRangeDisplay">
-            350 mi
-          </strong>
 
-        </div>
+          <div>
 
+            <span>
+              Full range
+            </span>
 
-        <div class="vehicle-stat">
+            <strong id="vehicleFullRangeDisplay">
+              —
+            </strong>
 
-          <div class="eyebrow">
-            Connection
           </div>
 
-          <strong class="green-text">
-            Demo
-          </strong>
+
+          <div>
+
+            <span>
+              Tank capacity
+            </span>
+
+            <strong id="vehicleTankDisplay">
+              —
+            </strong>
+
+          </div>
+
 
         </div>
 
 
       </div>
+
 
 
       <!-- GASGO LINK -->
 
-      <div class="section-title">
-        GasGo Link
-      </div>
+      <div class="card">
 
 
-      <article class="card smart-stop">
+        <div class="row">
 
+          <div>
 
-        <div class="row-start">
+            <div class="eyebrow">
+              GASGO HARDWARE
+            </div>
 
-          <div class="vehicle-icon">
-            🔌
+            <h2>
+              GasGo Link
+            </h2>
+
           </div>
 
 
-          <div class="flex-1">
+          <span class="status-badge connected">
+            ● DEMO
+          </span>
 
-            <strong>
-              GasGo Link
-            </strong>
+        </div>
 
-            <div class="muted">
-              Bluetooth OBD-II vehicle connection
+
+        <p class="muted mt-12">
+
+          GasGo Link is the proposed Bluetooth OBD-II
+          device that can provide additional compatible
+          vehicle data to GasGo.
+
+        </p>
+
+
+        <div class="feature-list">
+
+
+          <div class="feature-row">
+
+            <span class="feature-icon">
+              📡
+            </span>
+
+            <div>
+
+              <strong>
+                Bluetooth connection
+              </strong>
+
+              <span>
+                Proposed automatic vehicle data sync
+              </span>
+
             </div>
 
           </div>
 
 
-          <span class="badge">
-            CONCEPT
-          </span>
+          <div class="feature-row">
+
+            <span class="feature-icon">
+              ⛽
+            </span>
+
+            <div>
+
+              <strong>
+                Range assistance
+              </strong>
+
+              <span>
+                Adds available vehicle data to GasGo estimates
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="feature-row">
+
+            <span class="feature-icon">
+              📈
+            </span>
+
+            <div>
+
+              <strong>
+                Driving insights
+              </strong>
+
+              <span>
+                Helps build consumption and efficiency history
+              </span>
+
+            </div>
+
+          </div>
+
 
         </div>
 
 
-        <div class="divider"></div>
+        <div class="compatibility-note">
 
-
-        <div class="row">
-
-          <span class="muted">
-            Connection
-          </span>
-
-          <strong>
-            Prototype demo
-          </strong>
+          GasGo Link is designed around OBD-II compatibility.
+          Most U.S.-market light-duty vehicles from model year
+          1996 or newer use OBD-II, but available data and
+          features vary by vehicle.
 
         </div>
 
 
-        <div class="row mt-12">
-
-          <span class="muted">
-            Compatibility
-          </span>
-
-          <strong>
-            Vehicle dependent
-          </strong>
-
-        </div>
-
-
-        <div class="notice info-notice mt-15">
-
-          GasGo Link is designed around OBD-II connectivity.
-          Most U.S.-market light-duty vehicles from model
-          year 1996 or newer use OBD-II, but available data
-          and GasGo features can vary by vehicle.
-
-        </div>
-
-
-      </article>
-
-
-      <!-- RANGE EXPLANATION -->
-
-      <div class="section-title">
-        How range works
       </div>
 
 
-      <article class="card">
+
+      <!-- AUTOMATIC FUEL UPDATE -->
+
+      <div class="card notice">
 
         <strong>
-          Estimated, never guaranteed.
+          ⛽ Smart fill-up tracking
         </strong>
 
-        <p class="muted mt-8">
+        <p>
 
-          GasGo estimates remaining range using the vehicle
-          information available to the app. Compatible
-          vehicles could provide additional information
-          through GasGo Link.
-
-        </p>
-
-        <p class="muted mb-0">
-
-          Driving style, traffic, terrain, weather and
-          vehicle condition can change actual range.
+          When you add a gasoline fill-up to your Fuel Log,
+          GasGo uses the saved tank capacity to update your
+          estimated fuel level and remaining range.
 
         </p>
 
-      </article>
+      </div>
+
+
+
+      <div class="prototype-note">
+
+        Fuel level and range values in this prototype are
+        user-entered estimates unless compatible vehicle
+        data is available in a future GasGo Link
+        implementation.
+
+      </div>
 
 
     </section>
 
 
-  </main>
+
+
+
+    <!-- ===================================================
+         BOTTOM NAVIGATION
+         =================================================== -->
+
+    <nav class="bottom-nav">
+
+
+      <button
+        class="nav active"
+        data-screen="home"
+        onclick="GasGoApp.showScreen('home')"
+      >
+
+        <span>
+          ⌂
+        </span>
+
+        <small>
+          Home
+        </small>
+
+      </button>
+
+
+
+      <button
+        class="nav"
+        data-screen="stations"
+        onclick="GasGoApp.showScreen('stations')"
+      >
+
+        <span>
+          ⛽
+        </span>
+
+        <small>
+          Stations
+        </small>
+
+      </button>
+
+
+
+      <button
+        class="nav"
+        data-screen="dashboard"
+        onclick="GasGoApp.showScreen('dashboard')"
+      >
+
+        <span>
+          ▥
+        </span>
+
+        <small>
+          Activity
+        </small>
+
+      </button>
+
+
+
+      <button
+        class="nav"
+        data-screen="rewards"
+        onclick="GasGoApp.showScreen('rewards')"
+      >
+
+        <span>
+          ◇
+        </span>
+
+        <small>
+          Rewards
+        </small>
+
+      </button>
+
+
+
+      <button
+        class="nav"
+        data-screen="car"
+        onclick="GasGoApp.showScreen('car')"
+      >
+
+        <span>
+          🚗
+        </span>
+
+        <small>
+          My Car
+        </small>
+
+      </button>
+
+
+    </nav>
+
+
+  </div>
+
+
 
 
 
@@ -1466,26 +1489,26 @@
   >
 
 
-    <div class="sheet">
+    <div class="modal-card">
 
 
-      <div class="sheet-head">
+      <div class="modal-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Garage
+            GARAGE
           </div>
 
-          <h2 class="mb-0">
-            Vehicle setup
+          <h2>
+            Edit vehicle
           </h2>
 
         </div>
 
 
         <button
-          class="close"
+          class="modal-close"
           onclick="GasGoApp.closeVehicleModal()"
           aria-label="Close"
         >
@@ -1495,192 +1518,194 @@
       </div>
 
 
-      <div class="form-grid">
+
+      <!-- YEAR -->
+
+      <label class="field">
+
+        <span>
+          Model year
+        </span>
+
+        <select id="vehicleYear"></select>
+
+      </label>
 
 
-        <!-- YEAR -->
 
-        <div class="field">
+      <!-- MAKE -->
 
-          <label for="vehicleYear">
-            YEAR
-          </label>
+      <label class="field">
 
-          <select id="vehicleYear"></select>
+        <span>
+          Make
+        </span>
 
-        </div>
+        <select id="vehicleMake"></select>
 
-
-        <!-- MAKE -->
-
-        <div class="field">
-
-          <label for="vehicleMake">
-            MAKE
-          </label>
-
-          <select
-            id="vehicleMake"
-            onchange="GasGoApp.updateVehicleModels()"
-          ></select>
-
-        </div>
+      </label>
 
 
-        <!-- MODEL -->
 
-        <div class="field full">
+      <!-- MODEL -->
 
-          <label for="vehicleModel">
-            MODEL
-          </label>
+      <label class="field">
 
-          <select id="vehicleModel"></select>
+        <span>
+          Model
+        </span>
 
-        </div>
+        <select id="vehicleModel"></select>
 
-
-        <!-- POWERTRAIN -->
-
-        <div class="field full">
-
-          <label for="vehiclePowertrain">
-            POWERTRAIN
-          </label>
-
-          <select id="vehiclePowertrain">
-
-            <option value="Gasoline">
-              Gasoline
-            </option>
-
-            <option value="Hybrid">
-              Hybrid
-            </option>
-
-            <option value="Plug-in Hybrid">
-              Plug-in Hybrid
-            </option>
-
-            <option value="Electric">
-              Electric
-            </option>
-
-            <option value="Diesel">
-              Diesel
-            </option>
-
-          </select>
-
-        </div>
+      </label>
 
 
-        <!-- CURRENT LEVEL -->
 
-        <div class="field full">
+      <!-- POWERTRAIN -->
 
-          <div class="slider-card">
+      <label class="field">
 
-            <div class="slider-title">
+        <span>
+          Powertrain
+        </span>
 
-              <div>
+        <select id="vehiclePowertrain">
 
-                <strong>
-                  Current level
-                </strong>
+          <option value="Gasoline">
+            Gasoline
+          </option>
 
-                <div class="muted">
-                  Fuel or battery percentage
-                </div>
+          <option value="Hybrid">
+            Hybrid
+          </option>
 
-              </div>
+          <option value="PHEV">
+            Plug-in Hybrid
+          </option>
+
+          <option value="Electric">
+            Electric
+          </option>
+
+        </select>
+
+      </label>
 
 
-              <div
-                id="vehicleLevelValue"
-                class="slider-value"
-              >
-                68%
-              </div>
 
-            </div>
+      <!-- FUEL LEVEL -->
 
+      <div class="field">
 
-            <input
-              id="vehicleLevel"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="68"
-              oninput="GasGoApp.updateVehicleSliderLabels()"
-            >
+        <div class="row">
 
-          </div>
+          <span>
+            Current fuel / battery level
+          </span>
+
+          <strong id="vehicleLevelValue">
+            68%
+          </strong>
 
         </div>
 
 
-        <!-- FULL RANGE -->
-
-        <div class="field full">
-
-          <div class="slider-card">
-
-            <div class="slider-title">
-
-              <div>
-
-                <strong>
-                  Estimated full range
-                </strong>
-
-                <div class="muted">
-                  Approximate range at 100%
-                </div>
-
-              </div>
-
-
-              <div
-                id="vehicleFullRangeValue"
-                class="slider-value"
-              >
-                350 mi
-              </div>
-
-            </div>
-
-
-            <input
-              id="vehicleFullRange"
-              type="range"
-              min="50"
-              max="650"
-              step="5"
-              value="350"
-              oninput="GasGoApp.updateVehicleSliderLabels()"
-            >
-
-          </div>
-
-        </div>
-
+        <input
+          id="vehicleLevel"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value="68"
+        >
 
       </div>
 
 
-      <div class="notice mt-15">
 
-        GasGo uses this information to create an estimated
-        remaining range. It should not be treated as a
-        guarantee of how far the vehicle can travel.
+      <!-- FULL RANGE -->
+
+      <div class="field">
+
+        <div class="row">
+
+          <span>
+            Estimated full range
+          </span>
+
+          <strong id="vehicleFullRangeValue">
+            350 mi
+          </strong>
+
+        </div>
+
+
+        <input
+          id="vehicleFullRange"
+          type="range"
+          min="50"
+          max="650"
+          step="5"
+          value="350"
+        >
 
       </div>
+
+
+
+      <!-- =================================================
+           NEW: TANK CAPACITY
+           ================================================= -->
+
+      <label class="field">
+
+        <span>
+          Fuel tank capacity
+        </span>
+
+        <div class="input-unit">
+
+          <input
+            id="vehicleTankCapacity"
+            type="number"
+            inputmode="decimal"
+            min="10"
+            max="250"
+            step="0.1"
+            value="46"
+            placeholder="46"
+          >
+
+          <span>
+            L
+          </span>
+
+        </div>
+
+
+        <small class="field-help">
+
+          GasGo uses this value to estimate how much your
+          fuel level increases after a fill-up.
+
+        </small>
+
+      </label>
+
+
+
+      <div class="modal-note">
+
+        Example: if your tank holds 46 L and you add 15 L,
+        GasGo estimates that you added about 33 percentage
+        points to the tank.
+
+      </div>
+
 
 
       <button
-        class="primary full-button mt-15"
+        class="primary full-button"
         onclick="GasGoApp.saveVehicle()"
       >
         SAVE VEHICLE
@@ -1689,7 +1714,10 @@
 
     </div>
 
+
   </div>
+
+
 
 
 
@@ -1703,18 +1731,18 @@
   >
 
 
-    <div class="sheet">
+    <div class="modal-card">
 
 
-      <div class="sheet-head">
+      <div class="modal-header">
 
         <div>
 
           <div class="eyebrow">
-            GasGo Fuel Log
+            FUEL LOG
           </div>
 
-          <h2 class="mb-0">
+          <h2>
             Add fill-up
           </h2>
 
@@ -1722,7 +1750,7 @@
 
 
         <button
-          class="close"
+          class="modal-close"
           onclick="GasGoApp.closeFuelLogModal()"
           aria-label="Close"
         >
@@ -1732,143 +1760,176 @@
       </div>
 
 
-      <div class="form-grid">
+
+      <!-- DATE -->
+
+      <label class="field">
+
+        <span>
+          Date
+        </span>
+
+        <input
+          id="logDate"
+          type="date"
+        >
+
+      </label>
 
 
-        <!-- DATE -->
 
-        <div class="field">
+      <!-- STATION -->
 
-          <label for="logDate">
-            DATE
-          </label>
+      <label class="field">
 
-          <input
-            id="logDate"
-            type="date"
-          >
+        <span>
+          Station
+        </span>
 
-        </div>
+        <input
+          id="logStation"
+          type="text"
+          placeholder="Example: Puma"
+          autocomplete="off"
+        >
 
-
-        <!-- FUEL -->
-
-        <div class="field">
-
-          <label for="logFuel">
-            FUEL
-          </label>
-
-          <select id="logFuel">
-
-            <option value="regular">
-              Regular
-            </option>
-
-            <option value="premium">
-              Premium
-            </option>
-
-            <option value="diesel">
-              Diesel
-            </option>
-
-          </select>
-
-        </div>
+      </label>
 
 
-        <!-- STATION -->
 
-        <div class="field full">
+      <!-- FUEL -->
 
-          <label for="logStation">
-            STATION
-          </label>
+      <label class="field">
 
-          <input
-            id="logStation"
-            type="text"
-            placeholder="Example: Puma Bayamón"
-          >
+        <span>
+          Fuel type
+        </span>
 
-        </div>
+        <select id="logFuel">
+
+          <option value="regular">
+            Regular
+          </option>
+
+          <option value="premium">
+            Premium
+          </option>
+
+          <option value="diesel">
+            Diesel
+          </option>
+
+        </select>
+
+      </label>
 
 
-        <!-- LITERS -->
 
-        <div class="field">
+      <!-- LITERS -->
 
-          <label for="logLiters">
-            LITERS
-          </label>
+      <label class="field">
+
+        <span>
+          Liters added
+        </span>
+
+        <div class="input-unit">
 
           <input
             id="logLiters"
             type="number"
             inputmode="decimal"
-            min="0"
-            step="0.01"
-            placeholder="20.00"
-            oninput="GasGoApp.updateFuelLogPreview()"
+            min="0.1"
+            max="250"
+            step="0.1"
+            placeholder="15.0"
           >
+
+          <span>
+            L
+          </span>
 
         </div>
 
+      </label>
 
-        <!-- PRICE -->
 
-        <div class="field">
 
-          <label for="logPrice">
-            PRICE / L
-          </label>
+      <!-- PRICE -->
+
+      <label class="field">
+
+        <span>
+          Price per liter
+        </span>
+
+        <div class="input-unit">
+
+          <span>
+            $
+          </span>
 
           <input
             id="logPrice"
             type="number"
             inputmode="decimal"
-            min="0"
+            min="0.01"
+            max="9.99"
             step="0.01"
-            placeholder="1.15"
-            oninput="GasGoApp.updateFuelLogPreview()"
+            placeholder="1.17"
           >
+
+          <span>
+            /L
+          </span>
 
         </div>
 
+      </label>
 
-        <!-- ODOMETER -->
 
-        <div class="field full">
 
-          <label for="logOdometer">
-            ODOMETER — OPTIONAL
-          </label>
+      <!-- ODOMETER -->
+
+      <label class="field">
+
+        <span>
+          Odometer
+          <small>
+            optional
+          </small>
+        </span>
+
+        <div class="input-unit">
 
           <input
             id="logOdometer"
             type="number"
             inputmode="decimal"
             min="0"
-            step="0.1"
-            placeholder="Example: 97013"
+            step="1"
+            placeholder="97013"
           >
+
+          <span>
+            mi
+          </span>
 
         </div>
 
+      </label>
 
-      </div>
 
 
-      <!-- TOTAL PREVIEW -->
+      <!-- TOTAL -->
 
       <div class="fuel-summary">
 
 
-        <div class="fuel-summary-box">
+        <div>
 
           <span>
-            Calculated total
+            Purchase total
           </span>
 
           <strong id="logCalculatedTotal">
@@ -1878,14 +1939,17 @@
         </div>
 
 
-        <div class="fuel-summary-box">
+
+        <!-- NEW FUEL LEVEL PREVIEW -->
+
+        <div>
 
           <span>
-            Tracking
+            Est. fuel level
           </span>
 
-          <strong>
-            GasGo
+          <strong id="logFuelLevelPreview">
+            —
           </strong>
 
         </div>
@@ -1894,17 +1958,20 @@
       </div>
 
 
-      <div class="notice mt-15">
 
-        Savings shown by GasGo are estimates based on
-        prototype comparison prices and should not be
-        interpreted as guaranteed savings.
+      <div class="modal-note">
+
+        GasGo estimates the new fuel level using liters
+        added ÷ saved tank capacity. It cannot know the
+        exact tank level unless compatible vehicle data
+        is available.
 
       </div>
 
 
+
       <button
-        class="primary full-button mt-15"
+        class="primary full-button"
         onclick="GasGoApp.saveFuelLog()"
       >
         SAVE FILL-UP
@@ -1913,93 +1980,10 @@
 
     </div>
 
+
   </div>
 
 
-
-  <!-- =====================================================
-       BOTTOM NAVIGATION
-       ===================================================== -->
-
-  <nav class="bottom">
-
-
-    <button
-      class="nav active"
-      data-screen="home"
-      onclick="GasGoApp.showScreen('home')"
-    >
-
-      <span>
-        ⌂
-      </span>
-
-      Home
-
-    </button>
-
-
-    <button
-      class="nav"
-      data-screen="stations"
-      onclick="GasGoApp.showScreen('stations')"
-    >
-
-      <span>
-        ⛽
-      </span>
-
-      Stations
-
-    </button>
-
-
-    <button
-      class="nav"
-      data-screen="dashboard"
-      onclick="GasGoApp.showScreen('dashboard')"
-    >
-
-      <span>
-        📊
-      </span>
-
-      Insights
-
-    </button>
-
-
-    <button
-      class="nav"
-      data-screen="rewards"
-      onclick="GasGoApp.showScreen('rewards')"
-    >
-
-      <span>
-        ★
-      </span>
-
-      Rewards
-
-    </button>
-
-
-    <button
-      class="nav"
-      data-screen="car"
-      onclick="GasGoApp.showScreen('car')"
-    >
-
-      <span>
-        🚗
-      </span>
-
-      My Car
-
-    </button>
-
-
-  </nav>
 
 
 
@@ -2014,10 +1998,13 @@
 
 
 
+
+
   <!-- =====================================================
        JAVASCRIPT
 
-       IMPORTANT ORDER:
+       ORDER IS IMPORTANT:
+
        1. Leaflet
        2. stations.js
        3. app.js
