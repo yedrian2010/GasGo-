@@ -1,4352 +1,2039 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090c0b">
-<title>GasGo</title>
 
-<link rel="stylesheet"
-href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <meta charset="UTF-8">
 
-<style>
-:root{
---green:#00c853;
---green2:#20e874;
---bg:#090c0b;
---card:#121615;
---card2:#171c1a;
---border:#252c29;
---text:#f6f8f7;
---muted:#929b97;
---yellow:#ffc857;
---red:#ff6565;
-}
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
-*{box-sizing:border-box}
+  <meta
+    name="theme-color"
+    content="#080b0a"
+  >
 
-html,body{
-margin:0;
-background:var(--bg);
-color:var(--text);
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-}
+  <meta
+    name="description"
+    content="GasGo — Find fuel, compare options, estimate your range and earn rewards."
+  >
 
-body{
-min-height:100vh;
--webkit-tap-highlight-color:transparent;
-}
+  <title>GasGo</title>
 
-button,input,select{
-font:inherit;
-}
 
-button{
-cursor:pointer;
-}
+  <!-- =====================================================
+       LEAFLET MAP
+       ===================================================== -->
 
-.app{
-max-width:560px;
-margin:auto;
-padding:18px 16px 110px;
-min-height:100vh;
-background:
-radial-gradient(circle at 100% 0,rgba(0,200,83,.10),transparent 27%),
-var(--bg);
-}
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+  >
 
-.screen{display:none}
-.screen.active{display:block}
 
-.top{
-display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-margin-bottom:22px;
-}
+  <!-- =====================================================
+       GASGO DESIGN
+       ===================================================== -->
 
-.logo{
-font-size:30px;
-font-weight:950;
-letter-spacing:-1.8px;
-}
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 
-.logo span{color:var(--green)}
-
-.badge{
-font-size:10px;
-font-weight:900;
-letter-spacing:.6px;
-padding:7px 10px;
-border-radius:999px;
-color:#61ed9c;
-background:rgba(0,200,83,.1);
-border:1px solid rgba(0,200,83,.28);
-}
-
-.eyebrow{
-font-size:11px;
-font-weight:850;
-letter-spacing:.6px;
-color:var(--muted);
-text-transform:uppercase;
-}
-
-h1{
-font-size:31px;
-line-height:1.08;
-letter-spacing:-1.2px;
-margin:6px 0 18px;
-}
-
-.card{
-background:var(--card);
-border:1px solid var(--border);
-border-radius:22px;
-padding:18px;
-}
-
-.hero{
-border:0;
-background:linear-gradient(135deg,var(--green),var(--green2));
-color:#041109;
-padding:22px;
-}
-
-.hero-title{
-font-size:11px;
-font-weight:950;
-letter-spacing:.8px;
-opacity:.7;
-}
-
-.range{
-font-size:53px;
-font-weight:950;
-letter-spacing:-2px;
-line-height:1;
-margin:7px 0 18px;
-}
-
-.range small{
-font-size:19px;
-letter-spacing:0;
-}
-
-.row{
-display:flex;
-justify-content:space-between;
-align-items:center;
-gap:12px;
-}
-
-.muted{
-font-size:12px;
-color:var(--muted);
-line-height:1.45;
-}
-
-.progress{
-height:8px;
-background:rgba(0,0,0,.18);
-border-radius:999px;
-overflow:hidden;
-margin-top:9px;
-}
-
-.progress div{
-height:100%;
-background:#06130b;
-border-radius:999px;
-transition:width .3s ease;
-}
-
-.section-title{
-font-size:17px;
-font-weight:900;
-margin:24px 0 11px;
-}
-
-.primary{
-width:100%;
-min-height:49px;
-border:0;
-border-radius:15px;
-background:var(--green);
-color:#031009;
-font-weight:950;
-padding:13px;
-}
-
-.secondary{
-min-height:45px;
-border:1px solid var(--border);
-border-radius:14px;
-background:var(--card2);
-color:white;
-font-weight:850;
-padding:11px 14px;
-}
-
-.ghost{
-min-height:45px;
-border:1px solid var(--border);
-border-radius:14px;
-background:transparent;
-color:white;
-font-weight:850;
-padding:11px 14px;
-}
-
-.quick-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.quick{
-min-height:96px;
-border:1px solid var(--border);
-border-radius:19px;
-background:var(--card);
-color:white;
-padding:15px;
-font-weight:850;
-text-align:left;
-}
-
-.quick-icon{
-display:block;
-font-size:24px;
-margin-bottom:10px;
-}
-
-.price-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:8px;
-}
-
-.price-box{
-background:var(--card);
-border:1px solid var(--border);
-border-radius:16px;
-padding:12px 10px;
-}
-
-.price-box span{
-display:block;
-font-size:9px;
-color:var(--muted);
-}
-
-.price-box b{
-display:block;
-font-size:18px;
-margin:5px 0 2px;
-}
-
-.notice{
-padding:13px;
-border:1px solid rgba(255,200,87,.20);
-background:rgba(255,200,87,.06);
-border-radius:15px;
-font-size:11px;
-line-height:1.5;
-color:#dfcca0;
-}
-
-/* MAP */
-
-.map-filter{
-display:flex;
-gap:8px;
-overflow-x:auto;
-scrollbar-width:none;
-margin-bottom:11px;
-}
-
-.map-filter::-webkit-scrollbar{display:none}
-
-.chip{
-flex:0 0 auto;
-border:1px solid var(--border);
-background:var(--card);
-color:white;
-border-radius:999px;
-padding:10px 13px;
-font-size:12px;
-font-weight:850;
-}
-
-.chip.active{
-background:var(--green);
-color:#031009;
-border-color:var(--green);
-}
-
-.map-wrap{
-position:relative;
-width:100%;
-height:440px;
-background:#d9e1dc;
-border-radius:22px;
-overflow:hidden;
-border:1px solid var(--border);
-}
-
-#map{
-height:100%;
-width:100%;
-background:#d9e1dc;
-}
-
-.map-loader{
-position:absolute;
-z-index:800;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-background:rgba(255,255,255,.94);
-color:#111;
-border-radius:14px;
-padding:12px 16px;
-font-size:11px;
-font-weight:850;
-text-align:center;
-}
-
-.map-actions{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
-margin-top:10px;
-}
-
-.map-status{
-font-size:11px;
-color:var(--muted);
-margin:10px 2px 14px;
-line-height:1.45;
-}
-
-.leaflet-container{
-font-family:inherit;
-background:#d9e1dc!important;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip{
-background:#101412;
-color:white;
-}
-
-.leaflet-popup-content{
-margin:15px;
-min-width:215px;
-}
-
-.station-popup-title{
-font-size:16px;
-font-weight:950;
-margin-bottom:2px;
-}
-
-.station-popup-brand{
-font-size:11px;
-color:#929b97;
-margin-bottom:12px;
-}
-
-.popup-prices{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:5px;
-}
-
-.popup-price{
-background:#1a201d;
-padding:8px 5px;
-border-radius:10px;
-text-align:center;
-}
-
-.popup-price span{
-display:block;
-font-size:8px;
-color:#929b97;
-text-transform:uppercase;
-}
-
-.popup-price b{
-display:block;
-font-size:15px;
-color:#49e98c;
-margin-top:3px;
-}
-
-.demo-label{
-font-size:9px;
-color:#929b97;
-margin-top:8px;
-}
-
-.marker{
-width:36px;
-height:36px;
-border-radius:50%;
-display:grid;
-place-items:center;
-border:3px solid white;
-box-shadow:0 5px 14px rgba(0,0,0,.35);
-font-size:16px;
-}
-
-.marker.best{
-background:#00c853;
-}
-
-.marker.normal{
-background:#ffc857;
-}
-
-.marker.high{
-background:#ff7777;
-}
-
-/* SELECTED STATION */
-
-.station-sheet{
-margin-top:12px;
-display:none;
-}
-
-.station-sheet.visible{
-display:block;
-}
-
-.selected-name{
-font-size:20px;
-font-weight:950;
-margin-bottom:2px;
-}
-
-.selected-brand{
-color:var(--muted);
-font-size:12px;
-}
-
-.selected-price-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:8px;
-margin:16px 0;
-}
-
-.selected-price{
-padding:12px 7px;
-background:#0e1211;
-border:1px solid var(--border);
-border-radius:14px;
-text-align:center;
-}
-
-.selected-price span{
-display:block;
-font-size:9px;
-color:var(--muted);
-}
-
-.selected-price strong{
-display:block;
-font-size:19px;
-margin-top:5px;
-}
-
-.best-tag{
-color:#42e886;
-font-size:9px;
-font-weight:900;
-margin-top:3px;
-}
-
-/* PRICE COMPARISON */
-
-.price-card{
-margin-bottom:10px;
-}
-
-.brand-price{
-font-size:22px;
-font-weight:950;
-color:var(--green);
-}
-
-/* REWARDS */
-
-.reward-card{
-margin-bottom:11px;
-}
-
-.reward-head{
-display:flex;
-align-items:center;
-gap:12px;
-}
-
-.reward-logo{
-width:48px;
-height:48px;
-border-radius:15px;
-background:rgba(0,200,83,.12);
-display:grid;
-place-items:center;
-font-size:19px;
-font-weight:950;
-color:var(--green);
-}
-
-.reward-info{
-flex:1;
-}
-
-.reward-info strong{
-font-size:17px;
-}
-
-.reward-points{
-font-size:14px;
-font-weight:950;
-color:var(--green);
-}
-
-.reward-bar{
-height:9px;
-background:#252c29;
-border-radius:999px;
-overflow:hidden;
-margin:14px 0 7px;
-}
-
-.reward-bar div{
-height:100%;
-background:linear-gradient(90deg,var(--green),#4cec90);
-border-radius:999px;
-transition:width .4s ease;
-}
-
-.reward-details{
-display:none;
-border-top:1px solid var(--border);
-margin-top:14px;
-padding-top:12px;
-}
-
-.reward-card.open .reward-details{
-display:block;
-}
-
-.reward-tier{
-display:flex;
-gap:10px;
-align-items:center;
-padding:10px 0;
-}
-
-.reward-tier+.reward-tier{
-border-top:1px solid rgba(255,255,255,.05);
-}
-
-.reward-lock{
-width:34px;
-height:34px;
-border-radius:50%;
-display:grid;
-place-items:center;
-background:#252b29;
-}
-
-.reward-tier.unlocked .reward-lock{
-background:var(--green);
-color:#031009;
-}
-
-/* CAR */
-
-.vehicle-head{
-display:flex;
-gap:13px;
-align-items:center;
-}
-
-.vehicle-icon{
-width:54px;
-height:54px;
-border-radius:17px;
-display:grid;
-place-items:center;
-font-size:25px;
-background:rgba(0,200,83,.12);
-}
-
-.vehicle-info{
-flex:1;
-min-width:0;
-}
-
-.vehicle-info h3{
-margin:0 0 3px;
-font-size:17px;
-}
-
-.vehicle-info p{
-margin:0;
-}
-
-.stats{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.stat{
-background:var(--card);
-border:1px solid var(--border);
-border-radius:18px;
-padding:15px;
-}
-
-.stat strong{
-display:block;
-font-size:24px;
-margin-top:5px;
-}
-
-.modal{
-position:fixed;
-display:none;
-z-index:3000;
-inset:0;
-background:rgba(0,0,0,.72);
-padding:16px;
-overflow-y:auto;
-}
-
-.modal.open{
-display:flex;
-align-items:flex-end;
-justify-content:center;
-}
-
-.sheet{
-width:min(540px,100%);
-background:#101412;
-border:1px solid var(--border);
-border-radius:25px 25px 17px 17px;
-padding:19px;
-max-height:92vh;
-overflow-y:auto;
-}
-
-.sheet-head{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:18px;
-}
-
-.close{
-width:42px;
-height:42px;
-border-radius:50%;
-border:1px solid var(--border);
-background:var(--card);
-color:white;
-font-size:20px;
-}
-
-.form-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:11px;
-}
-
-.field.full{
-grid-column:1/-1;
-}
-
-.field label{
-display:block;
-font-size:11px;
-font-weight:800;
-color:var(--muted);
-margin-bottom:7px;
-}
-
-.field select{
-width:100%;
-height:50px;
-border:1px solid var(--border);
-border-radius:14px;
-background:#0e1211;
-color:white;
-padding:0 12px;
-font-size:16px;
-}
-
-.slider-card{
-padding:14px;
-border-radius:15px;
-background:#0e1211;
-border:1px solid var(--border);
-}
-
-.slider-title{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:8px;
-}
-
-.slider-value{
-color:var(--green);
-font-size:18px;
-font-weight:950;
-}
-
-input[type=range]{
-width:100%;
-accent-color:var(--green);
-}
-
-/* NAV */
-
-.bottom{
-position:fixed;
-z-index:2000;
-left:50%;
-bottom:0;
-transform:translateX(-50%);
-width:min(560px,100%);
-display:flex;
-background:rgba(9,12,11,.96);
-backdrop-filter:blur(18px);
--webkit-backdrop-filter:blur(18px);
-border-top:1px solid var(--border);
-padding:9px 7px calc(11px + env(safe-area-inset-bottom));
-}
-
-.nav{
-flex:1;
-border:0;
-background:none;
-color:#747d79;
-font-size:10px;
-font-weight:850;
-padding:6px 2px;
-}
-
-.nav span{
-display:block;
-font-size:20px;
-margin-bottom:3px;
-}
-
-.nav.active{
-color:var(--green);
-}
-
-@media(max-width:370px){
-.app{padding-left:12px;padding-right:12px}
-.range{font-size:46px}
-.map-wrap{height:400px}
-.form-grid{grid-template-columns:1fr}
-.field.full{grid-column:auto}
-}
-</style>
 </head>
+
 
 <body>
 
-<div class="app">
-
-<!-- HOME -->
-
-<section id="home" class="screen active">
-
-<div class="top">
-<div class="logo">Gas<span>Go</span></div>
-<div class="badge">PR PROTOTYPE</div>
-</div>
-
-<div class="eyebrow">Good afternoon 👋</div>
-
-<h1>
-Know before<br>
-you go.
-</h1>
-
-<div class="card hero">
 
-<div class="hero-title">
-ESTIMATED RANGE
-</div>
+  <!-- =====================================================
+       APP
+       ===================================================== -->
 
-<div class="range">
-<span id="homeRange">238</span>
-<small>mi</small>
-</div>
+  <main class="app">
 
-<div class="row">
-<strong id="homeLevelText">
-⛽ Fuel level
-</strong>
-
-<strong id="homeLevel">
-68%
-</strong>
-</div>
 
-<div class="progress">
-<div id="homeProgress"
-style="width:68%">
-</div>
-</div>
+    <!-- ===================================================
+         HOME
+         =================================================== -->
 
-</div>
+    <section
+      id="screen-home"
+      class="screen active"
+    >
 
-<div class="section-title">
-Puerto Rico today
-</div>
 
-<div class="price-grid">
+      <header class="top">
 
-<div class="price-box">
-<span>REGULAR</span>
-<b>$1.14</b>
-<span>from / L</span>
-</div>
-
-<div class="price-box">
-<span>PREMIUM</span>
-<b>$1.28</b>
-<span>from / L</span>
-</div>
+        <div>
 
-<div class="price-box">
-<span>DIESEL</span>
-<b>$1.41</b>
-<span>from / L</span>
-</div>
-
-</div>
-
-<div class="section-title">
-Quick actions
-</div>
-
-<div class="quick-grid">
-
-<button class="quick"
-data-go="stations">
-<span class="quick-icon">🗺️</span>
-Explore stations
-</button>
+          <div class="logo">
+            Gas<span>Go</span>
+          </div>
 
-<button class="quick"
-data-go="prices">
-<span class="quick-icon">💲</span>
-Compare prices
-</button>
+          <div class="muted mt-8">
+            Drive smarter. Save more.
+          </div>
 
-<button class="quick"
-data-go="rewards">
-<span class="quick-icon">★</span>
-Rewards
-</button>
+        </div>
 
-<button class="quick"
-data-go="car">
-<span class="quick-icon">🚗</span>
-My vehicle
-</button>
 
-</div>
+        <span class="badge">
+          PROTOTYPE
+        </span>
 
-<div class="notice"
-style="margin-top:22px;">
-GasGo uses estimated vehicle range.
-Individual station prices in this prototype
-are simulated within recent Puerto Rico
-market ranges and are labeled as demo prices.
-</div>
+      </header>
 
-</section>
 
+      <h1>
+        Ready to
+        <span class="green-text">
+          go?
+        </span>
+      </h1>
 
-<!-- STATIONS -->
 
-<section id="stations" class="screen">
+      <!-- RANGE HERO -->
 
-<div class="top">
+      <article class="card hero">
 
-<div>
-<div class="eyebrow">
-Puerto Rico
-</div>
-<div class="logo">
-Stations
-</div>
-</div>
+        <div class="hero-title">
+          Estimated range
+        </div>
 
-<div class="badge">
-MAP
-</div>
 
-</div>
+        <div
+          id="homeRange"
+          class="range"
+        >
+          238 <small>mi</small>
+        </div>
 
-<h1>
-Find your<br>
-next stop.
-</h1>
 
-<div class="map-filter">
+        <div class="row">
 
-<button class="chip active"
-data-filter="all">
-All
-</button>
+          <div>
 
-<button class="chip"
-data-filter="Puma">
-Puma
-</button>
-
-<button class="chip"
-data-filter="Shell">
-Shell
-</button>
-
-<button class="chip"
-data-filter="Total">
-Total
-</button>
-
-<button class="chip"
-data-filter="Gulf">
-Gulf
-</button>
-
-<button class="chip"
-data-filter="Texaco">
-Texaco
-</button>
-
-<button class="chip"
-data-filter="Mobil">
-Mobil
-</button>
-
-</div>
-
-<div class="map-wrap">
-
-<div id="map"></div>
-
-<div id="mapLoader"
-class="map-loader">
-Loading stations…
-</div>
-
-</div>
-
-<div class="map-actions">
-
-<button id="locateButton"
-class="secondary">
-📍 My location
-</button>
-
-<button id="resetMap"
-class="ghost">
-🇵🇷 Puerto Rico
-</button>
-
-</div>
-
-<div id="mapStatus"
-class="map-status">
-Move and zoom around Puerto Rico.
-</div>
-
-
-<div id="stationSheet"
-class="card station-sheet">
-
-<div class="eyebrow">
-SELECTED STATION
-</div>
-
-<div id="selectedName"
-class="selected-name">
-Station
-</div>
-
-<div id="selectedBrand"
-class="selected-brand">
-Brand
-</div>
+            <strong id="homeLevel">
+              68%
+            </strong>
 
-<div class="selected-price-grid">
+            <div
+              id="homeFuelLabel"
+              class="small"
+            >
+              Fuel
+            </div>
 
-<div class="selected-price">
-<span>REGULAR</span>
-<strong id="selectedRegular">
-—
-</strong>
-<div class="best-tag">
-DEMO
-</div>
-</div>
+          </div>
 
-<div class="selected-price">
-<span>PREMIUM</span>
-<strong id="selectedPremium">
-—
-</strong>
-<div class="best-tag">
-DEMO
-</div>
-</div>
 
-<div class="selected-price">
-<span>DIESEL</span>
-<strong id="selectedDiesel">
-—
-</strong>
-<div class="best-tag">
-DEMO
-</div>
-</div>
+          <div class="text-center">
 
-</div>
+            <strong id="homeVehicleName">
+              2015 Chevrolet Sonic
+            </strong>
 
-<div id="stationRangeResult"
-class="notice">
-Add a vehicle to compare this station
-with your estimated range.
-</div>
+            <div class="small">
+              Primary vehicle
+            </div>
 
-<button id="checkRangeButton"
-class="primary"
-style="margin-top:12px;">
-CAN I MAKE IT?
-</button>
+          </div>
 
-</div>
+        </div>
 
-<div class="notice"
-style="margin-top:14px;">
-🟢 lower demo price · 🟡 average · 🔴 higher.
-Station locations come from map data when available.
-Prices shown for individual locations are simulated
-for the GasGo prototype.
-</div>
 
-</section>
+        <div class="progress">
 
+          <div
+            id="homeLevelBar"
+            style="width:68%"
+          ></div>
 
-<!-- PRICES -->
+        </div>
 
-<section id="prices" class="screen">
+      </article>
 
-<div class="top">
 
-<div>
-<div class="eyebrow">
-Puerto Rico
-</div>
-<div class="logo">
-Compare
-</div>
-</div>
+      <!-- SMART STOP -->
 
-<div class="badge">
-DACO BASE
-</div>
+      <div class="section-title">
 
-</div>
+        <span>
+          Smart Stop
+        </span>
 
-<h1>
-Compare fuel<br>
-brands.
-</h1>
+        <button
+          class="section-link"
+          onclick="GasGoApp.openStations()"
+        >
+          Explore map
+        </button>
 
-<div id="priceList"></div>
+      </div>
 
-<div class="notice">
-Brand baselines are based on recent DACO data.
-Individual station prices shown on the map
-are prototype demo values.
-</div>
 
-</section>
+      <article
+        id="smartStopCard"
+        class="card smart-stop"
+      >
 
+        <div class="smart-stop-title">
+          Finding your Smart Stop…
+        </div>
 
-<!-- REWARDS -->
+        <div class="smart-stop-subtitle">
+          Comparing mapped fuel options.
+        </div>
 
-<section id="rewards" class="screen">
+      </article>
 
-<div class="top">
 
-<div>
-<div class="eyebrow">
-GasGo
-</div>
-<div class="logo">
-Rewards
-</div>
-</div>
+      <!-- PRICE SNAPSHOT -->
 
-<div class="badge">
-DEMO
-</div>
+      <div class="section-title">
 
-</div>
+        <span>
+          Puerto Rico today
+        </span>
 
-<h1>
-Drive. Earn.<br>
-Get rewarded.
-</h1>
+        <button
+          class="section-link"
+          onclick="GasGoApp.openPrices()"
+        >
+          View brands
+        </button>
 
-<div class="card"
-style="margin-bottom:17px;">
+      </div>
 
-<div class="eyebrow">
-TOTAL POINTS
-</div>
 
-<div class="range"
-style="font-size:42px;margin-bottom:5px;">
+      <div class="price-grid">
 
-<span id="totalPoints">
-1170
-</span>
+        <div class="price-box">
 
-<small>pts</small>
+          <span>
+            Regular
+          </span>
 
-</div>
+          <b>
+            $1.14
+          </b>
 
-<div class="muted">
-Your points stay separated by participating brand.
-</div>
+          <span>
+            from / L
+          </span>
 
-</div>
+        </div>
 
-<div id="rewardList"></div>
 
-</section>
+        <div class="price-box">
 
+          <span>
+            Premium
+          </span>
 
-<!-- CAR -->
+          <b>
+            $1.28
+          </b>
 
-<section id="car" class="screen">
+          <span>
+            from / L
+          </span>
 
-<div class="top">
+        </div>
 
-<div>
-<div class="eyebrow">
-Garage
-</div>
-<div class="logo">
-My Car
-</div>
-</div>
 
-<div class="badge">
-GASGO LINK
-</div>
+        <div class="price-box">
 
-</div>
+          <span>
+            Diesel
+          </span>
 
+          <b>
+            $1.41
+          </b>
 
-<div id="emptyVehicle"
-class="card">
+          <span>
+            from / L
+          </span>
 
-<div class="vehicle-head">
+        </div>
 
-<div class="vehicle-icon">
-🚗
-</div>
+      </div>
 
-<div class="vehicle-info">
-<h3>Add your vehicle</h3>
-<p class="muted">
-Personalize your estimated range.
-</p>
-</div>
 
-</div>
+      <!-- QUICK ACTIONS -->
 
-<button id="addVehicle"
-class="primary"
-style="margin-top:16px;">
-+ ADD VEHICLE
-</button>
+      <div class="section-title">
+        Quick actions
+      </div>
 
-</div>
 
+      <div class="quick-grid">
 
-<div id="savedVehicle"
-style="display:none;">
 
-<div class="card">
+        <button
+          class="quick"
+          onclick="GasGoApp.openStations()"
+        >
 
-<div class="vehicle-head">
+          <span class="quick-icon">
+            🗺️
+          </span>
 
-<div id="vehicleIcon"
-class="vehicle-icon">
-🚗
-</div>
+          Find stations
 
-<div class="vehicle-info">
+        </button>
 
-<h3 id="vehicleName">
-Vehicle
-</h3>
 
-<p id="vehicleTypeText"
-class="muted">
-Gasoline
-</p>
+        <button
+          class="quick"
+          onclick="GasGoApp.openDashboard()"
+        >
 
-</div>
+          <span class="quick-icon">
+            📊
+          </span>
 
-</div>
+          My spending
 
-<button id="editVehicle"
-class="secondary"
-style="width:100%;margin-top:15px;">
-Edit vehicle
-</button>
+        </button>
 
-</div>
 
-<div class="section-title">
-Vehicle status
-</div>
+        <button
+          class="quick"
+          onclick="GasGoApp.openRewards()"
+        >
 
-<div class="stats">
+          <span class="quick-icon">
+            ⭐
+          </span>
 
-<div class="stat">
-<div class="muted">
-Estimated range
-</div>
-<strong id="carRange">
-—
-</strong>
-</div>
+          Rewards
 
-<div class="stat">
-<div class="muted">
-Fuel / battery
-</div>
-<strong id="carLevel">
-—
-</strong>
-</div>
+        </button>
 
-</div>
 
-<div class="section-title">
-GasGo Link
-</div>
+        <button
+          class="quick"
+          onclick="GasGoApp.openCar()"
+        >
 
-<div class="card">
+          <span class="quick-icon">
+            🚗
+          </span>
 
-<div class="row">
+          My vehicle
 
-<div>
-<strong>
-GasGo Link
-</strong>
-<div class="muted">
-OBD-II smart connection
-</div>
-</div>
+        </button>
 
-<strong style="color:var(--green)">
-● DEMO
-</strong>
 
-</div>
+      </div>
 
-<p class="muted"
-style="margin:13px 0 0;">
-Available vehicle data depends on
-vehicle compatibility.
-</p>
 
-</div>
+      <!-- DISCLAIMER -->
 
-</div>
+      <div class="notice mt-20">
 
-</section>
+        GasGo is currently a prototype.
+        Individual station fuel prices shown in the app are
+        simulated estimates for demonstration and are not
+        live station-specific prices.
 
-</div>
+      </div>
 
 
-<!-- BOTTOM NAV -->
+    </section>
 
-<nav class="bottom">
 
-<button class="nav active"
-data-nav="home">
-<span>⌂</span>
-Home
-</button>
 
-<button class="nav"
-data-nav="stations">
-<span>🗺️</span>
-Stations
-</button>
+    <!-- ===================================================
+         STATIONS / MAP
+         =================================================== -->
 
-<button class="nav"
-data-nav="rewards">
-<span>★</span>
-Rewards
-</button>
+    <section
+      id="screen-stations"
+      class="screen"
+    >
 
-<button class="nav"
-data-nav="car">
-<span>🚗</span>
-My Car
-</button>
 
-</nav>
+      <header class="top">
 
+        <div>
 
-<!-- VEHICLE MODAL -->
+          <div class="eyebrow">
+            GasGo Map
+          </div>
 
-<div id="vehicleModal"
-class="modal">
+          <h2 class="mb-0">
+            Find your stop
+          </h2>
 
-<div class="sheet">
+        </div>
 
-<div class="sheet-head">
 
-<div>
-<div class="eyebrow">
-GARAGE
-</div>
-<h2 style="margin:3px 0 0;">
-Your vehicle
-</h2>
-</div>
+        <span class="badge">
+          PR
+        </span>
 
-<button id="closeVehicle"
-class="close"
-type="button">
-×
-</button>
+      </header>
 
-</div>
 
-<form id="vehicleForm">
+      <!-- SEARCH -->
 
-<div class="form-grid">
+      <div class="search-wrap">
 
-<div class="field">
-<label>
-Year
-</label>
-<select id="yearSelect">
-</select>
-</div>
+        <span class="search-icon">
+          🔎
+        </span>
 
-<div class="field">
-<label>
-Make
-</label>
-<select id="makeSelect">
-</select>
-</div>
+        <input
+          id="stationSearch"
+          class="search-input"
+          type="search"
+          placeholder="Search station, brand or municipality"
+          autocomplete="off"
+        >
 
-<div class="field full">
-<label>
-Model
-</label>
-<select id="modelSelect">
-</select>
-</div>
+        <button
+          class="search-clear"
+          type="button"
+          aria-label="Clear search"
+          onclick="GasGoApp.clearStationSearch()"
+        >
+          ×
+        </button>
 
-<div class="field full">
-<label>
-Powertrain
-</label>
+      </div>
 
-<select id="powerSelect">
 
-<option>
-Gasoline
-</option>
+      <!-- FUEL -->
 
-<option>
-Hybrid
-</option>
+      <div class="chips">
 
-<option>
-Plug-in Hybrid
-</option>
+        <button
+          class="chip active"
+          data-fuel="regular"
+          onclick="GasGoApp.setFuelType('regular', this)"
+        >
+          Regular
+        </button>
 
-<option>
-Electric
-</option>
+        <button
+          class="chip"
+          data-fuel="premium"
+          onclick="GasGoApp.setFuelType('premium', this)"
+        >
+          Premium
+        </button>
 
-<option>
-Diesel
-</option>
+        <button
+          class="chip"
+          data-fuel="diesel"
+          onclick="GasGoApp.setFuelType('diesel', this)"
+        >
+          Diesel
+        </button>
 
-</select>
+      </div>
 
-</div>
 
+      <!-- SORT -->
 
-<div class="field full">
+      <div class="sort-card">
 
-<label>
-Fuel / battery level
-</label>
 
-<div class="slider-card">
+        <button
+          class="sort-button active"
+          data-sort="best"
+          onclick="GasGoApp.setSortMode('best', this)"
+        >
 
-<div class="slider-title">
+          <span>
+            ✨
+          </span>
 
-<span class="muted">
-Current level
-</span>
+          Best Value
 
-<span id="levelValue"
-class="slider-value">
-68%
-</span>
+        </button>
 
-</div>
 
-<input
-id="levelSlider"
-type="range"
-min="0"
-max="100"
-step="1"
-value="68">
+        <button
+          class="sort-button"
+          data-sort="cheap"
+          onclick="GasGoApp.setSortMode('cheap', this)"
+        >
 
-</div>
+          <span>
+            💵
+          </span>
 
-</div>
+          Cheapest
 
+        </button>
 
-<div class="field full">
 
-<label>
-Estimated range at 100%
-</label>
+        <button
+          class="sort-button"
+          data-sort="closest"
+          onclick="GasGoApp.setSortMode('closest', this)"
+        >
 
-<div class="slider-card">
+          <span>
+            📍
+          </span>
 
-<div class="slider-title">
+          Closest
 
-<span class="muted">
-Full range
-</span>
+        </button>
 
-<span id="rangeValue"
-class="slider-value">
-350 mi
-</span>
 
-</div>
+      </div>
 
-<input
-id="rangeSlider"
-type="range"
-min="50"
-max="650"
-step="5"
-value="350">
 
-</div>
+      <!-- BRAND FILTERS -->
 
-</div>
+      <div class="map-filter">
 
-</div>
 
-<button type="submit"
-class="primary"
-style="margin-top:15px;">
-SAVE VEHICLE
-</button>
+        <button
+          class="chip active"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('all', this)"
+        >
+          All
+        </button>
 
-</form>
 
-</div>
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Puma', this)"
+        >
+          Puma
+        </button>
 
-</div>
 
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Shell', this)"
+        >
+          Shell
+        </button>
 
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Total', this)"
+        >
+          Total
+        </button>
 
-(function(){
 
-"use strict";
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Gulf', this)"
+        >
+          Gulf
+        </button>
 
 
-/* ========================================
-   CONFIG
-======================================== */
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Texaco', this)"
+        >
+          Texaco
+        </button>
 
-const PR_CENTER=[
-18.2208,
--66.5901
-];
 
+        <button
+          class="chip"
+          data-brand-filter
+          onclick="GasGoApp.setBrandFilter('Mobil', this)"
+        >
+          Mobil
+        </button>
 
-const BRAND_PRICES={
 
-"76":{
-regular:1.15,
-premium:1.29,
-diesel:1.44
-},
+      </div>
 
-"American":{
-regular:1.17,
-premium:1.28,
-diesel:1.43
-},
 
-"Bita's":{
-regular:1.16,
-premium:1.30,
-diesel:1.44
-},
+      <!-- MAP -->
 
-"EcoMaxx":{
-regular:1.16,
-premium:1.30,
-diesel:1.45
-},
+      <div class="map-wrap">
 
-"Gulf":{
-regular:1.16,
-premium:1.30,
-diesel:1.45
-},
+        <div id="map"></div>
 
-"Mobil":{
-regular:1.17,
-premium:1.34,
-diesel:1.45
-},
 
-"Phillips 66":{
-regular:1.15,
-premium:1.29,
-diesel:1.44
-},
+        <div
+          id="mapLoader"
+          class="map-loader"
+        >
+          Loading GasGo map…
+        </div>
 
-"Puma":{
-regular:1.17,
-premium:1.34,
-diesel:1.44
-},
+      </div>
 
-"Shell":{
-regular:1.17,
-premium:1.34,
-diesel:1.45
-},
 
-"Sunoco":{
-regular:1.17,
-premium:1.36,
-diesel:1.45
-},
+      <!-- MAP ACTIONS -->
 
-"Texaco":{
-regular:1.17,
-premium:1.34,
-diesel:1.44
-},
+      <div class="map-actions">
 
-"T-Express":{
-regular:1.15,
-premium:1.30,
-diesel:1.41
-},
 
-"Total":{
-regular:1.18,
-premium:1.34,
-diesel:1.44
-},
+        <button
+          class="secondary"
+          onclick="GasGoApp.requestLocation()"
+        >
+          📍 MY LOCATION
+        </button>
 
-"Ultra Top Fuel":{
-regular:1.14,
-premium:1.29,
-diesel:1.43
-}
 
-};
+        <button
+          class="secondary"
+          onclick="GasGoApp.resetMap()"
+        >
+          🇵🇷 VIEW PR
+        </button>
 
 
-/* ========================================
-   VEHICLE MODELS
-======================================== */
-
-const VEHICLES={
+      </div>
 
-Toyota:[
-"Corolla",
-"Camry",
-"RAV4",
-"Corolla Cross",
-"Highlander",
-"Tacoma",
-"4Runner",
-"Prius",
-"Tundra",
-"Other"
-],
-
-Honda:[
-"Civic",
-"Accord",
-"CR-V",
-"HR-V",
-"Pilot",
-"Ridgeline",
-"Odyssey",
-"Other"
-],
-
-Chevrolet:[
-"Sonic",
-"Spark",
-"Malibu",
-"Trax",
-"Equinox",
-"Traverse",
-"Tahoe",
-"Silverado",
-"Blazer",
-"Suburban",
-"Other"
-],
-
-Hyundai:[
-"Accent",
-"Elantra",
-"Sonata",
-"Venue",
-"Kona",
-"Tucson",
-"Santa Fe",
-"Ioniq 5",
-"Other"
-],
-
-Kia:[
-"Rio",
-"Forte",
-"K4",
-"Soul",
-"Seltos",
-"Sportage",
-"Sorento",
-"Telluride",
-"EV6",
-"Other"
-],
-
-Nissan:[
-"Versa",
-"Sentra",
-"Altima",
-"Kicks",
-"Rogue",
-"Pathfinder",
-"Frontier",
-"Leaf",
-"Other"
-],
-
-Ford:[
-"Mustang",
-"Escape",
-"Explorer",
-"Bronco",
-"Bronco Sport",
-"Maverick",
-"Ranger",
-"F-150",
-"Mustang Mach-E",
-"Other"
-],
-
-Jeep:[
-"Wrangler",
-"Compass",
-"Renegade",
-"Cherokee",
-"Grand Cherokee",
-"Gladiator",
-"Other"
-],
-
-Mitsubishi:[
-"Mirage",
-"Outlander",
-"Outlander Sport",
-"Eclipse Cross",
-"Outlander PHEV",
-"Other"
-],
-
-Mazda:[
-"Mazda3",
-"CX-30",
-"CX-5",
-"CX-50",
-"CX-90",
-"MX-5 Miata",
-"Other"
-],
-
-Subaru:[
-"Impreza",
-"Legacy",
-"Crosstrek",
-"Forester",
-"Outback",
-"WRX",
-"Other"
-],
-
-Volkswagen:[
-"Jetta",
-"Golf",
-"Taos",
-"Tiguan",
-"Atlas",
-"ID.4",
-"Other"
-],
-
-BMW:[
-"3 Series",
-"4 Series",
-"5 Series",
-"X1",
-"X3",
-"X5",
-"i4",
-"iX",
-"Other"
-],
-
-"Mercedes-Benz":[
-"A-Class",
-"C-Class",
-"E-Class",
-"CLA",
-"GLA",
-"GLC",
-"GLE",
-"EQS",
-"Other"
-],
-
-Audi:[
-"A3",
-"A4",
-"A5",
-"Q3",
-"Q5",
-"Q7",
-"e-tron",
-"Other"
-],
-
-Lexus:[
-"IS",
-"ES",
-"UX",
-"NX",
-"RX",
-"GX",
-"Other"
-],
-
-Tesla:[
-"Model 3",
-"Model Y",
-"Model S",
-"Model X",
-"Cybertruck",
-"Other"
-],
-
-Acura:[
-"Integra",
-"TLX",
-"RDX",
-"MDX",
-"Other"
-],
-
-GMC:[
-"Terrain",
-"Acadia",
-"Canyon",
-"Sierra",
-"Yukon",
-"Hummer EV",
-"Other"
-],
-
-Dodge:[
-"Charger",
-"Challenger",
-"Durango",
-"Hornet",
-"Other"
-],
-
-Ram:[
-"1500",
-"2500",
-"3500",
-"ProMaster",
-"Other"
-],
-
-Volvo:[
-"S60",
-"XC40",
-"XC60",
-"XC90",
-"EX30",
-"Other"
-],
-
-Other:[
-"Other"
-]
-
-};
-
-
-/* ========================================
-   FALLBACK STATIONS
-
-   These are demo markers used only if
-   external station data cannot load.
-======================================== */
-
-const FALLBACK_STATIONS=[
-
-{
-name:"GasGo Demo • San Juan",
-brand:"Puma",
-lat:18.447,
-lon:-66.073
-},
-
-{
-name:"GasGo Demo • Hato Rey",
-brand:"Shell",
-lat:18.421,
-lon:-66.058
-},
-
-{
-name:"GasGo Demo • Carolina",
-brand:"Total",
-lat:18.401,
-lon:-65.957
-},
-
-{
-name:"GasGo Demo • Trujillo Alto",
-brand:"Gulf",
-lat:18.357,
-lon:-66.007
-},
-
-{
-name:"GasGo Demo • Bayamón",
-brand:"Puma",
-lat:18.398,
-lon:-66.155
-},
-
-{
-name:"GasGo Demo • Guaynabo",
-brand:"Texaco",
-lat:18.366,
-lon:-66.111
-},
-
-{
-name:"GasGo Demo • Cataño",
-brand:"Total",
-lat:18.440,
-lon:-66.118
-},
-
-{
-name:"GasGo Demo • Toa Baja",
-brand:"Shell",
-lat:18.443,
-lon:-66.259
-},
-
-{
-name:"GasGo Demo • Dorado",
-brand:"Mobil",
-lat:18.459,
-lon:-66.267
-},
-
-{
-name:"GasGo Demo • Vega Baja",
-brand:"Gulf",
-lat:18.446,
-lon:-66.387
-},
-
-{
-name:"GasGo Demo • Manatí",
-brand:"Puma",
-lat:18.427,
-lon:-66.493
-},
-
-{
-name:"GasGo Demo • Arecibo",
-brand:"Shell",
-lat:18.472,
-lon:-66.716
-},
-
-{
-name:"GasGo Demo • Aguadilla",
-brand:"Total",
-lat:18.428,
-lon:-67.154
-},
-
-{
-name:"GasGo Demo • Mayagüez",
-brand:"Puma",
-lat:18.202,
-lon:-67.139
-},
-
-{
-name:"GasGo Demo • San Germán",
-brand:"Gulf",
-lat:18.082,
-lon:-67.045
-},
-
-{
-name:"GasGo Demo • Cabo Rojo",
-brand:"Texaco",
-lat:18.086,
-lon:-67.145
-},
-
-{
-name:"GasGo Demo • Ponce",
-brand:"Shell",
-lat:18.012,
-lon:-66.614
-},
-
-{
-name:"GasGo Demo • Juana Díaz",
-brand:"Puma",
-lat:18.053,
-lon:-66.507
-},
-
-{
-name:"GasGo Demo • Coamo",
-brand:"Total",
-lat:18.080,
-lon:-66.358
-},
-
-{
-name:"GasGo Demo • Cayey",
-brand:"Gulf",
-lat:18.112,
-lon:-66.166
-},
-
-{
-name:"GasGo Demo • Caguas",
-brand:"Puma",
-lat:18.234,
-lon:-66.048
-},
-
-{
-name:"GasGo Demo • Humacao",
-brand:"Shell",
-lat:18.150,
-lon:-65.827
-},
-
-{
-name:"GasGo Demo • Fajardo",
-brand:"Total",
-lat:18.325,
-lon:-65.652
-},
-
-{
-name:"GasGo Demo • Yabucoa",
-brand:"Texaco",
-lat:18.050,
-lon:-65.879
-}
-
-];
-
-
-/* ========================================
-   HELPERS
-======================================== */
-
-function escapeHTML(value){
-
-return String(value)
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;")
-.replace(/"/g,"&quot;")
-.replace(/'/g,"&#039;");
-
-}
-
-
-function formatPrice(value){
-
-return "$"+
-Number(value).toFixed(2);
-
-}
-
-
-/*
-Creates deterministic variation.
-
-Same station always receives
-the same demo price after refresh.
-*/
-
-function hashString(text){
-
-let hash=0;
-
-for(let i=0;i<text.length;i++){
-
-hash=
-((hash<<5)-hash)+
-text.charCodeAt(i);
-
-hash|=0;
-
-}
-
-return Math.abs(hash);
-
-}
-
-
-function variationFromHash(
-hash,
-offset
-){
-
-const options=[
--.02,
--.01,
-0,
-.01
-];
-
-return options[
-(hash+offset)%
-options.length
-];
-
-}
-
-
-function stationPrices(station){
-
-const base=
-BRAND_PRICES[station.brand] ||
-{
-regular:1.16,
-premium:1.32,
-diesel:1.43
-};
-
-
-const hash=
-hashString(
-station.name+
-station.lat+
-station.lon
-);
-
-
-function clamp(
-value,
-min,
-max
-){
-
-return Math.max(
-min,
-Math.min(max,value)
-);
-
-}
-
-
-return{
-
-regular:
-clamp(
-base.regular+
-variationFromHash(hash,0),
-1.14,
-1.18
-),
-
-premium:
-clamp(
-base.premium+
-variationFromHash(hash,1),
-1.28,
-1.36
-),
-
-diesel:
-clamp(
-base.diesel+
-variationFromHash(hash,2),
-1.41,
-1.45
-)
-
-};
-
-}
-
-
-/* ========================================
-   NAVIGATION
-======================================== */
-
-function showScreen(id){
-
-document
-.querySelectorAll(".screen")
-.forEach(screen=>{
-
-screen.classList.toggle(
-"active",
-screen.id===id
-);
-
-});
-
-
-document
-.querySelectorAll(".nav")
-.forEach(nav=>{
-
-nav.classList.toggle(
-"active",
-nav.dataset.nav===id
-);
-
-});
-
-
-window.scrollTo(0,0);
-
-
-if(id==="stations"){
-
-setTimeout(()=>{
-
-initializeMap();
-
-if(map){
-
-map.invalidateSize(true);
-
-}
-
-},200);
-
-}
-
-}
-
-
-document
-.querySelectorAll("[data-nav]")
-.forEach(button=>{
-
-button.addEventListener(
-"click",
-()=>showScreen(
-button.dataset.nav
-)
-);
-
-});
-
-
-document
-.querySelectorAll("[data-go]")
-.forEach(button=>{
-
-button.addEventListener(
-"click",
-()=>showScreen(
-button.dataset.go
-)
-);
-
-});
-
-
-/* ========================================
-   PRICE PAGE
-======================================== */
-
-const priceList=
-document.getElementById(
-"priceList"
-);
 
-
-Object.entries(
-BRAND_PRICES
-)
-.forEach(
-([brand,price])=>{
+      <div
+        id="stationStatus"
+        class="map-status"
+      >
+        Loading mapped fuel stations…
+      </div>
 
-const card=
-document.createElement("div");
 
-card.className=
-"card price-card";
+      <!-- SELECTED STATION -->
 
+      <article
+        id="stationSheet"
+        class="card station-sheet"
+      >
 
-card.innerHTML=`
 
-<div class="row">
+        <div class="row">
 
-<div>
+          <div class="flex-1">
 
-<strong>
-${escapeHTML(brand)}
-</strong>
+            <div class="eyebrow">
+              Selected station
+            </div>
 
-<div class="muted">
-Puerto Rico brand reference
-</div>
+            <div
+              id="selectedStationName"
+              class="station-name"
+            >
+              Station
+            </div>
 
-</div>
+            <div
+              id="selectedStationBrand"
+              class="station-brand"
+            >
+              Brand
+            </div>
 
-<div class="brand-price">
-${formatPrice(price.regular)}
-</div>
+          </div>
 
-</div>
 
+          <div
+            id="selectedStationDistance"
+            class="station-distance"
+          >
+            —
+          </div>
 
-<div class="price-grid"
-style="margin-top:14px;">
+        </div>
 
-<div class="price-box">
 
-<span>REGULAR</span>
+        <!-- STATION PRICES -->
 
-<b>
-${formatPrice(price.regular)}
-</b>
+        <div class="station-price-grid">
 
-<span>per L</span>
 
-</div>
+          <div class="station-price">
 
+            <span>
+              Regular
+            </span>
 
-<div class="price-box">
+            <strong id="selectedRegular">
+              $0.00
+            </strong>
 
-<span>PREMIUM</span>
+            <small>
+              DEMO / L
+            </small>
 
-<b>
-${formatPrice(price.premium)}
-</b>
+          </div>
 
-<span>per L</span>
 
-</div>
+          <div class="station-price">
 
+            <span>
+              Premium
+            </span>
 
-<div class="price-box">
+            <strong id="selectedPremium">
+              $0.00
+            </strong>
 
-<span>DIESEL</span>
+            <small>
+              DEMO / L
+            </small>
 
-<b>
-${formatPrice(price.diesel)}
-</b>
+          </div>
 
-<span>per L</span>
 
-</div>
+          <div class="station-price">
 
-</div>
+            <span>
+              Diesel
+            </span>
 
-`;
+            <strong id="selectedDiesel">
+              $0.00
+            </strong>
 
-priceList.appendChild(card);
+            <small>
+              DEMO / L
+            </small>
 
-});
+          </div>
 
 
-/* ========================================
-   MAP
-======================================== */
+        </div>
 
-let map=null;
 
-let stationLayer=null;
+        <!-- RANGE RESULT -->
 
-let stations=[];
+        <div
+          id="rangeResult"
+          class="range-result"
+        >
+          Select a station to estimate range.
+        </div>
 
-let activeFilter="all";
 
-let selectedStation=null;
+        <div class="button-row mt-12">
 
-let userPosition=null;
 
-let userMarker=null;
+          <button
+            class="secondary"
+            onclick="GasGoApp.findSaferOption()"
+          >
+            SAFER OPTION
+          </button>
 
 
-function initializeMap(){
+          <button
+            class="primary"
+            onclick="GasGoApp.openDirections()"
+          >
+            GO →
+          </button>
 
-if(map){
 
-map.invalidateSize(true);
+        </div>
 
-return;
 
-}
+        <button
+          class="ghost full-button mt-10"
+          onclick="GasGoApp.openFuelLogModal()"
+        >
+          + LOG PURCHASE HERE
+        </button>
 
 
-if(typeof L==="undefined"){
+      </article>
 
-document.getElementById(
-"mapLoader"
-).textContent=
-"Map library failed to load.";
 
-return;
+      <!-- STATION LIST -->
 
-}
+      <div class="section-title">
 
+        <span>
+          Stations
+        </span>
 
-map=L.map(
-"map",
-{
-zoomControl:true,
-touchZoom:true,
-dragging:true,
-doubleClickZoom:true,
-scrollWheelZoom:true
-}
-);
+        <span class="muted">
+          Tap to view
+        </span>
 
+      </div>
 
-map.setView(
-PR_CENTER,
-9
-);
 
+      <div
+        id="stationList"
+        class="station-list"
+      >
 
-const tileLayer=
-L.tileLayer(
-"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-{
-maxZoom:19,
-subdomains:"abc",
-attribution:
-"&copy; OpenStreetMap contributors"
-}
-);
+        <div class="empty-state">
 
+          <div class="empty-icon">
+            ⛽
+          </div>
 
-tileLayer.on(
-"load",
-()=>{
+          <strong>
+            Loading stations…
+          </strong>
 
-document.getElementById(
-"mapLoader"
-).style.display=
-"none";
+        </div>
 
-}
-);
+      </div>
 
 
-tileLayer.addTo(map);
+      <div class="notice mt-20">
 
+        Station locations may come from OpenStreetMap and
+        coverage can be incomplete. GasGo's individual
+        station prices are simulated for this prototype.
+        Distance shown by the range tool is approximate
+        straight-line distance, not a driving route.
 
-stationLayer=
-L.layerGroup()
-.addTo(map);
+      </div>
 
 
-setTimeout(()=>{
+    </section>
 
-map.invalidateSize(true);
 
-},300);
 
+    <!-- ===================================================
+         PRICES
+         =================================================== -->
 
-loadStations();
+    <section
+      id="screen-prices"
+      class="screen"
+    >
 
-}
 
+      <header class="top">
 
-/* ========================================
-   LOAD REAL MAP STATIONS
-======================================== */
+        <div>
 
-async function loadStations(){
+          <div class="eyebrow">
+            Market snapshot
+          </div>
 
-const status=
-document.getElementById(
-"mapStatus"
-);
+          <h2 class="mb-0">
+            Fuel prices
+          </h2>
 
+        </div>
 
-status.textContent=
-"Loading Puerto Rico stations…";
 
+        <span class="badge">
+          $ / L
+        </span>
 
-const query=`
+      </header>
 
-[out:json][timeout:25];
 
-(
+      <div class="card savings-card">
 
-node["amenity"="fuel"]
-(17.80,-67.40,18.60,-65.20);
+        <div class="eyebrow">
+          Compare before you drive
+        </div>
 
-way["amenity"="fuel"]
-(17.80,-67.40,18.60,-65.20);
+        <div class="savings-number">
+          Save smarter.
+        </div>
 
-);
+        <div class="muted">
 
-out center tags;
+          GasGo compares price and distance so a station
+          isn't recommended just because it is a few cents
+          cheaper but much farther away.
 
-`;
+        </div>
 
+      </div>
 
-const endpoints=[
 
-"https://overpass-api.de/api/interpreter",
+      <div class="section-title">
+        Brand references
+      </div>
 
-"https://overpass.kumi.systems/api/interpreter"
 
-];
+      <div id="brandPriceList"></div>
 
 
-let loaded=false;
+      <div class="notice mt-20">
 
+        These brand-level values are prototype reference
+        prices. They are not live prices for every individual
+        station. Actual retail prices can vary by location
+        and time.
 
-for(
-const endpoint
-of endpoints
-){
+      </div>
 
-try{
 
-const controller=
-new AbortController();
+    </section>
 
 
-const timeout=
-setTimeout(
-()=>controller.abort(),
-9000
-);
 
+    <!-- ===================================================
+         DASHBOARD
+         =================================================== -->
 
-const response=
-await fetch(
-endpoint+
-"?data="+
-encodeURIComponent(query),
-{
-signal:
-controller.signal
-}
-);
+    <section
+      id="screen-dashboard"
+      class="screen"
+    >
 
 
-clearTimeout(timeout);
+      <header class="top">
 
+        <div>
 
-if(!response.ok){
+          <div class="eyebrow">
+            GasGo Insights
+          </div>
 
-continue;
+          <h2 class="mb-0">
+            Dashboard
+          </h2>
 
-}
+        </div>
 
 
-const data=
-await response.json();
+        <button
+          class="primary"
+          onclick="GasGoApp.openFuelLogModal()"
+        >
+          + FILL-UP
+        </button>
 
+      </header>
 
-if(
-!data ||
-!Array.isArray(
-data.elements
-)
-){
 
-continue;
+      <!-- STATS -->
 
-}
+      <div class="dashboard-grid">
 
 
-const parsed=
-data.elements
-.map(item=>{
+        <div class="dashboard-stat">
 
-const lat=
-item.lat ??
-item.center?.lat;
+          <div class="dashboard-icon">
+            💳
+          </div>
 
-const lon=
-item.lon ??
-item.center?.lon;
+          <span>
+            Total spent
+          </span>
 
+          <strong id="dashSpent">
+            $0.00
+          </strong>
 
-if(
-!Number.isFinite(lat) ||
-!Number.isFinite(lon)
-){
+          <small>
+            Saved fill-ups
+          </small>
 
-return null;
+        </div>
 
-}
 
+        <div class="dashboard-stat">
 
-const tags=
-item.tags || {};
+          <div class="dashboard-icon">
+            ⛽
+          </div>
 
+          <span>
+            Fuel logged
+          </span>
 
-const brand=
-detectBrand(tags);
+          <strong id="dashLiters">
+            0.0 L
+          </strong>
 
+          <small>
+            Across all purchases
+          </small>
 
-const name=
-tags.name ||
-tags.operator ||
-brand+
-" Station";
+        </div>
 
 
-return{
+        <div class="dashboard-stat">
 
-name:name,
+          <div class="dashboard-icon">
+            💚
+          </div>
 
-brand:brand,
+          <span>
+            Est. savings
+          </span>
 
-lat:lat,
+          <strong
+            id="dashSavings"
+            class="savings-positive"
+          >
+            $0.00
+          </strong>
 
-lon:lon,
+          <small>
+            Prototype estimate
+          </small>
 
-source:"OpenStreetMap"
+        </div>
 
-};
 
-})
-.filter(Boolean);
+        <div class="dashboard-stat">
 
+          <div class="dashboard-icon">
+            🧾
+          </div>
 
-if(parsed.length>0){
+          <span>
+            Fill-ups
+          </span>
 
-stations=parsed;
+          <strong id="dashFillUps">
+            0
+          </strong>
 
-loaded=true;
+          <small>
+            Purchases recorded
+          </small>
 
-break;
+        </div>
 
-}
 
-}
+      </div>
 
-catch(error){
 
-/*
-Try next endpoint.
-*/
+      <!-- AVERAGE -->
 
-}
+      <div class="card mt-12">
 
-}
+        <div class="row">
 
+          <div>
 
-if(!loaded){
+            <div class="eyebrow">
+              Your average
+            </div>
 
-stations=
-FALLBACK_STATIONS.map(
-station=>({
-...station,
-source:"GasGo demo location"
-})
-);
+            <strong>
+              Fuel price
+            </strong>
 
+          </div>
 
-status.textContent=
-"Live station data unavailable. Showing demo locations around Puerto Rico.";
 
-}
+          <div
+            id="dashAveragePrice"
+            class="brand-price"
+          >
+            —
+          </div>
 
-else{
+        </div>
 
-status.textContent=
-stations.length+
-" mapped fuel locations loaded.";
+      </div>
 
-}
 
+      <!-- CHART -->
 
-renderStations();
+      <div class="section-title">
+        Spending
+      </div>
 
-}
 
+      <article class="card chart-card">
 
-/* ========================================
-   BRAND DETECTION
-======================================== */
+        <div class="row">
 
-function detectBrand(tags){
+          <div>
 
-const text=[
+            <strong>
+              Last 6 months
+            </strong>
 
-tags.name,
-tags.brand,
-tags.operator
+            <div class="muted">
+              Based on your saved fill-ups
+            </div>
 
-]
-.filter(Boolean)
-.join(" ")
-.toLowerCase();
+          </div>
 
+          <span class="badge">
+            HISTORY
+          </span>
 
-if(text.includes("puma"))
-return "Puma";
+        </div>
 
-if(text.includes("shell"))
-return "Shell";
 
-if(text.includes("total"))
-return "Total";
+        <div
+          id="spendingChart"
+          class="bar-chart"
+        ></div>
 
-if(text.includes("gulf"))
-return "Gulf";
+      </article>
 
-if(text.includes("texaco"))
-return "Texaco";
 
-if(text.includes("mobil"))
-return "Mobil";
+      <!-- LOGS -->
 
-if(text.includes("sunoco"))
-return "Sunoco";
+      <div class="section-title">
 
-if(text.includes("phillips"))
-return "Phillips 66";
+        <span>
+          Fuel Log
+        </span>
 
-if(text.includes("ecomaxx"))
-return "EcoMaxx";
+        <button
+          class="section-link"
+          onclick="GasGoApp.openFuelLogModal()"
+        >
+          Add
+        </button>
 
-if(text.includes("american"))
-return "American";
+      </div>
 
-if(text.includes("t-express"))
-return "T-Express";
 
-if(text.includes("ultra"))
-return "Ultra Top Fuel";
+      <div
+        id="fuelLogList"
+        class="log-list"
+      ></div>
 
-if(text.includes("bita"))
-return "Bita's";
 
-if(
-text.includes("76")
-)
-return "76";
+    </section>
 
 
-return(
-tags.brand ||
-tags.operator ||
-"Independent"
-);
 
-}
+    <!-- ===================================================
+         REWARDS
+         =================================================== -->
 
+    <section
+      id="screen-rewards"
+      class="screen"
+    >
 
-/* ========================================
-   PRICE LEVEL
-======================================== */
 
-function priceLevel(
-regular
-){
+      <header class="top">
 
-if(regular<=1.15){
+        <div>
 
-return "best";
+          <div class="eyebrow">
+            GasGo Rewards
+          </div>
 
-}
+          <h2 class="mb-0">
+            Your rewards
+          </h2>
 
-if(regular>=1.18){
+        </div>
 
-return "high";
 
-}
+        <span class="badge">
+          DEMO
+        </span>
 
-return "normal";
+      </header>
 
-}
 
+      <article class="card hero">
 
-/* ========================================
-   RENDER STATIONS
-======================================== */
+        <div class="hero-title">
+          Total reward points
+        </div>
 
-function renderStations(){
 
-if(!stationLayer){
+        <div class="range">
 
-return;
+          <span id="totalRewardPoints">
+            1,170
+          </span>
 
-}
+          <small>
+            pts
+          </small>
 
+        </div>
 
-stationLayer.clearLayers();
 
+        <div class="small">
 
-let visible=0;
+          Points remain separate for each participating
+          brand.
 
+        </div>
 
-stations.forEach(
-station=>{
+      </article>
 
-if(
-activeFilter!=="all" &&
-station.brand!==activeFilter
-){
 
-return;
+      <div class="section-title">
 
-}
+        <span>
+          Participating brands
+        </span>
 
+        <span class="muted">
+          Tap a card
+        </span>
 
-visible++;
+      </div>
 
 
-const prices=
-stationPrices(station);
+      <div id="rewardsList"></div>
 
 
-const level=
-priceLevel(
-prices.regular
-);
+      <div class="notice mt-20">
 
+        Rewards shown here are a GasGo business concept for
+        the prototype. Actual partnerships, point values and
+        redemption terms would depend on participating
+        businesses.
 
-const icon=
-L.divIcon({
+      </div>
 
-className:"",
 
-html:`
+    </section>
 
-<div class="marker ${level}">
-⛽
-</div>
 
-`,
 
-iconSize:[36,36],
+    <!-- ===================================================
+         MY CAR
+         =================================================== -->
 
-iconAnchor:[18,18],
+    <section
+      id="screen-car"
+      class="screen"
+    >
 
-popupAnchor:[0,-15]
 
-});
+      <header class="top">
 
+        <div>
 
-const marker=
-L.marker(
-[
-station.lat,
-station.lon
-],
-{
-icon:icon
-}
-);
+          <div class="eyebrow">
+            GasGo Garage
+          </div>
 
+          <h2 class="mb-0">
+            My Car
+          </h2>
 
-marker.bindPopup(`
+        </div>
 
-<div class="station-popup-title">
-${escapeHTML(station.name)}
-</div>
 
-<div class="station-popup-brand">
-${escapeHTML(station.brand)}
-</div>
+        <button
+          class="secondary"
+          onclick="GasGoApp.openVehicleModal()"
+        >
+          EDIT
+        </button>
 
+      </header>
 
-<div class="popup-prices">
 
-<div class="popup-price">
-<span>Regular</span>
-<b>
-${formatPrice(prices.regular)}
-</b>
-</div>
+      <!-- VEHICLE -->
 
-<div class="popup-price">
-<span>Premium</span>
-<b>
-${formatPrice(prices.premium)}
-</b>
-</div>
+      <article class="card">
 
-<div class="popup-price">
-<span>Diesel</span>
-<b>
-${formatPrice(prices.diesel)}
-</b>
-</div>
+        <div class="vehicle-head">
 
-</div>
+          <div class="vehicle-icon">
+            🚗
+          </div>
 
 
-<div class="demo-label">
-Demo fuel prices · location source:
-${escapeHTML(station.source)}
-</div>
+          <div class="vehicle-info">
 
-`);
+            <h3 id="vehicleTitle">
+              2015 Chevrolet Sonic
+            </h3>
 
+            <p
+              id="vehicleType"
+              class="muted"
+            >
+              Gasoline
+            </p>
 
-marker.on(
-"click",
-()=>{
+          </div>
 
-selectStation(
-station
-);
 
-});
+          <span class="badge">
+            PRIMARY
+          </span>
 
+        </div>
 
-marker.addTo(
-stationLayer
-);
+      </article>
 
-});
 
+      <!-- VEHICLE STATS -->
 
-document.getElementById(
-"mapStatus"
-).textContent=
-visible+
-" stations shown.";
+      <div class="section-title">
+        Vehicle estimate
+      </div>
 
-}
 
+      <div class="vehicle-stats">
 
-/* ========================================
-   SELECT STATION
-======================================== */
 
-function selectStation(
-station
-){
+        <div class="vehicle-stat">
 
-selectedStation=
-station;
+          <div class="eyebrow">
+            Current level
+          </div>
 
+          <strong id="vehicleLevelDisplay">
+            68%
+          </strong>
 
-const prices=
-stationPrices(station);
+        </div>
 
 
-document.getElementById(
-"selectedName"
-).textContent=
-station.name;
+        <div class="vehicle-stat">
 
+          <div class="eyebrow">
+            Est. range
+          </div>
 
-document.getElementById(
-"selectedBrand"
-).textContent=
-station.brand+
-" · "+
-station.source;
+          <strong id="vehicleRangeDisplay">
+            238 mi
+          </strong>
 
+        </div>
 
-document.getElementById(
-"selectedRegular"
-).textContent=
-formatPrice(
-prices.regular
-);
 
+        <div class="vehicle-stat">
 
-document.getElementById(
-"selectedPremium"
-).textContent=
-formatPrice(
-prices.premium
-);
+          <div class="eyebrow">
+            Full range
+          </div>
 
+          <strong id="vehicleFullRangeDisplay">
+            350 mi
+          </strong>
 
-document.getElementById(
-"selectedDiesel"
-).textContent=
-formatPrice(
-prices.diesel
-);
+        </div>
 
 
-document.getElementById(
-"stationSheet"
-).classList.add(
-"visible"
-);
+        <div class="vehicle-stat">
 
+          <div class="eyebrow">
+            Connection
+          </div>
 
-updateRangeResult();
+          <strong class="green-text">
+            Demo
+          </strong>
 
-}
+        </div>
 
 
-/* ========================================
-   FILTERS
-======================================== */
+      </div>
 
-document
-.querySelectorAll(
-"[data-filter]"
-)
-.forEach(button=>{
 
-button.addEventListener(
-"click",
-()=>{
+      <!-- GASGO LINK -->
 
-activeFilter=
-button.dataset.filter;
+      <div class="section-title">
+        GasGo Link
+      </div>
 
 
-document
-.querySelectorAll(
-"[data-filter]"
-)
-.forEach(other=>{
+      <article class="card smart-stop">
 
-other.classList.toggle(
-"active",
-other===button
-);
 
-});
+        <div class="row-start">
 
+          <div class="vehicle-icon">
+            🔌
+          </div>
 
-renderStations();
 
-}
-);
+          <div class="flex-1">
 
-});
+            <strong>
+              GasGo Link
+            </strong>
 
+            <div class="muted">
+              Bluetooth OBD-II vehicle connection
+            </div>
 
-/* ========================================
-   RESET MAP
-======================================== */
+          </div>
 
-document.getElementById(
-"resetMap"
-).addEventListener(
-"click",
-()=>{
 
-initializeMap();
+          <span class="badge">
+            CONCEPT
+          </span>
 
-if(map){
+        </div>
 
-map.setView(
-PR_CENTER,
-9
-);
 
-}
+        <div class="divider"></div>
 
-});
 
+        <div class="row">
 
-/* ========================================
-   LOCATION
-======================================== */
+          <span class="muted">
+            Connection
+          </span>
 
-document.getElementById(
-"locateButton"
-).addEventListener(
-"click",
-()=>{
+          <strong>
+            Prototype demo
+          </strong>
 
-initializeMap();
+        </div>
 
 
-const status=
-document.getElementById(
-"mapStatus"
-);
+        <div class="row mt-12">
 
+          <span class="muted">
+            Compatibility
+          </span>
 
-if(
-!navigator.geolocation
-){
+          <strong>
+            Vehicle dependent
+          </strong>
 
-status.textContent=
-"Location is not supported.";
+        </div>
 
-return;
 
-}
+        <div class="notice info-notice mt-15">
 
+          GasGo Link is designed around OBD-II connectivity.
+          Most U.S.-market light-duty vehicles from model
+          year 1996 or newer use OBD-II, but available data
+          and GasGo features can vary by vehicle.
 
-status.textContent=
-"Waiting for location permission…";
+        </div>
 
 
-navigator.geolocation
-.getCurrentPosition(
+      </article>
 
-position=>{
 
-userPosition={
+      <!-- RANGE EXPLANATION -->
 
-lat:
-position.coords.latitude,
+      <div class="section-title">
+        How range works
+      </div>
 
-lon:
-position.coords.longitude
 
-};
+      <article class="card">
 
+        <strong>
+          Estimated, never guaranteed.
+        </strong>
 
-if(userMarker){
+        <p class="muted mt-8">
 
-map.removeLayer(
-userMarker
-);
+          GasGo estimates remaining range using the vehicle
+          information available to the app. Compatible
+          vehicles could provide additional information
+          through GasGo Link.
 
-}
+        </p>
 
+        <p class="muted mb-0">
 
-userMarker=
-L.circleMarker(
-[
-userPosition.lat,
-userPosition.lon
-],
-{
-radius:9,
-color:"#fff",
-weight:3,
-fillColor:"#00c853",
-fillOpacity:1
-}
-)
-.addTo(map)
-.bindPopup(
-"Your location"
-)
-.openPopup();
+          Driving style, traffic, terrain, weather and
+          vehicle condition can change actual range.
 
+        </p>
 
-map.setView(
-[
-userPosition.lat,
-userPosition.lon
-],
-13
-);
+      </article>
 
 
-status.textContent=
-"Location found.";
+    </section>
 
 
-updateRangeResult();
+  </main>
 
-},
 
-()=>{
 
-status.textContent=
-"Location wasn't shared. You can still explore the map manually.";
+  <!-- =====================================================
+       VEHICLE MODAL
+       ===================================================== -->
 
-},
+  <div
+    id="vehicleModal"
+    class="modal"
+  >
 
-{
-enableHighAccuracy:false,
-timeout:10000,
-maximumAge:60000
-}
 
-);
+    <div class="sheet">
 
-});
 
+      <div class="sheet-head">
 
-/* ========================================
-   DISTANCE
-======================================== */
+        <div>
 
-function distanceMiles(
-lat1,
-lon1,
-lat2,
-lon2
-){
+          <div class="eyebrow">
+            GasGo Garage
+          </div>
 
-const radius=
-3958.8;
+          <h2 class="mb-0">
+            Vehicle setup
+          </h2>
 
+        </div>
 
-const toRadians=
-degrees=>
-degrees*
-Math.PI/
-180;
 
+        <button
+          class="close"
+          onclick="GasGoApp.closeVehicleModal()"
+          aria-label="Close"
+        >
+          ×
+        </button>
 
-const dLat=
-toRadians(
-lat2-lat1
-);
+      </div>
 
 
-const dLon=
-toRadians(
-lon2-lon1
-);
+      <div class="form-grid">
 
 
-const a=
+        <!-- YEAR -->
 
-Math.sin(
-dLat/2
-)**
-2
-+
-Math.cos(
-toRadians(lat1)
-)
-*
-Math.cos(
-toRadians(lat2)
-)
-*
-Math.sin(
-dLon/2
-)**
-2;
+        <div class="field">
 
+          <label for="vehicleYear">
+            YEAR
+          </label>
 
-const c=
-2*
-Math.atan2(
-Math.sqrt(a),
-Math.sqrt(1-a)
-);
+          <select id="vehicleYear"></select>
 
+        </div>
 
-return radius*c;
 
-}
+        <!-- MAKE -->
 
+        <div class="field">
 
-/* ========================================
-   CAN I MAKE IT
-======================================== */
+          <label for="vehicleMake">
+            MAKE
+          </label>
 
-function updateRangeResult(){
+          <select
+            id="vehicleMake"
+            onchange="GasGoApp.updateVehicleModels()"
+          ></select>
 
-const result=
-document.getElementById(
-"stationRangeResult"
-);
+        </div>
 
 
-if(!selectedStation){
+        <!-- MODEL -->
 
-return;
+        <div class="field full">
 
-}
+          <label for="vehicleModel">
+            MODEL
+          </label>
 
+          <select id="vehicleModel"></select>
 
-const vehicle=
-getVehicle();
+        </div>
 
 
-if(!vehicle){
+        <!-- POWERTRAIN -->
 
-result.textContent=
-"Add a vehicle to compare this station with your estimated range.";
+        <div class="field full">
 
-return;
+          <label for="vehiclePowertrain">
+            POWERTRAIN
+          </label>
 
-}
+          <select id="vehiclePowertrain">
 
+            <option value="Gasoline">
+              Gasoline
+            </option>
 
-const estimatedRange=
-Math.round(
-vehicle.fullRange*
-vehicle.level/
-100
-);
+            <option value="Hybrid">
+              Hybrid
+            </option>
 
+            <option value="Plug-in Hybrid">
+              Plug-in Hybrid
+            </option>
 
-if(!userPosition){
+            <option value="Electric">
+              Electric
+            </option>
 
-result.innerHTML=
+            <option value="Diesel">
+              Diesel
+            </option>
 
-"Your estimated vehicle range is <b>"+
-estimatedRange+
-" mi</b>. Share your location to compare it with this station.";
+          </select>
 
-return;
+        </div>
 
-}
 
+        <!-- CURRENT LEVEL -->
 
-const distance=
-distanceMiles(
+        <div class="field full">
 
-userPosition.lat,
-userPosition.lon,
+          <div class="slider-card">
 
-selectedStation.lat,
-selectedStation.lon
+            <div class="slider-title">
 
-);
+              <div>
 
+                <strong>
+                  Current level
+                </strong>
 
-const remaining=
-estimatedRange-
-distance;
+                <div class="muted">
+                  Fuel or battery percentage
+                </div>
 
+              </div>
 
-if(
-estimatedRange>=distance
-){
 
-result.innerHTML=
+              <div
+                id="vehicleLevelValue"
+                class="slider-value"
+              >
+                68%
+              </div>
 
-"✓ Estimated distance: <b>"+
-distance.toFixed(1)+
-" mi</b><br>"+
-"Estimated range: <b>"+
-estimatedRange+
-" mi</b><br>"+
-"You can likely make it with about <b>"+
-Math.max(
-0,
-remaining
-).toFixed(1)+
-" mi</b> of estimated range remaining.";
+            </div>
 
-}
 
-else{
+            <input
+              id="vehicleLevel"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="68"
+              oninput="GasGoApp.updateVehicleSliderLabels()"
+            >
 
-result.innerHTML=
+          </div>
 
-"⚠ Estimated distance: <b>"+
-distance.toFixed(1)+
-" mi</b><br>"+
-"Estimated range: <b>"+
-estimatedRange+
-" mi</b><br>"+
-"GasGo recommends choosing a closer station.";
+        </div>
 
-}
 
-}
+        <!-- FULL RANGE -->
 
+        <div class="field full">
 
-/* ========================================
-   CHECK RANGE BUTTON
-======================================== */
+          <div class="slider-card">
 
-document.getElementById(
-"checkRangeButton"
-).addEventListener(
-"click",
-()=>{
+            <div class="slider-title">
 
-updateRangeResult();
+              <div>
 
-});
+                <strong>
+                  Estimated full range
+                </strong>
 
+                <div class="muted">
+                  Approximate range at 100%
+                </div>
 
-/* ========================================
-   REWARDS
-======================================== */
+              </div>
 
-const rewards={
 
-Puma:{
-points:750,
-tiers:[
-{
-points:250,
-name:"Starter",
-reward:"$2 demo fuel reward"
-},
-{
-points:500,
-name:"Road Saver",
-reward:"Demo car wash discount"
-},
-{
-points:1000,
-name:"Premium",
-reward:"$10 demo reward"
-}
-]
-},
+              <div
+                id="vehicleFullRangeValue"
+                class="slider-value"
+              >
+                350 mi
+              </div>
 
-Shell:{
-points:420,
-tiers:[
-{
-points:200,
-name:"Starter",
-reward:"$2 demo reward"
-},
-{
-points:500,
-name:"Fuel Saver",
-reward:"$5 demo reward"
-},
-{
-points:1000,
-name:"Gold",
-reward:"$10 demo reward"
-}
-]
-},
+            </div>
 
-Total:{
-points:0,
-tiers:[
-{
-points:250,
-name:"Starter",
-reward:"Demo partner offer"
-},
-{
-points:500,
-name:"Plus",
-reward:"$5 demo reward"
-},
-{
-points:1000,
-name:"Road Pro",
-reward:"Premium demo offer"
-}
-]
-}
 
-};
+            <input
+              id="vehicleFullRange"
+              type="range"
+              min="50"
+              max="650"
+              step="5"
+              value="350"
+              oninput="GasGoApp.updateVehicleSliderLabels()"
+            >
 
+          </div>
 
-function loadRewards(){
+        </div>
 
-try{
 
-const saved=
-JSON.parse(
-localStorage.getItem(
-"gasgoRewardsV4"
-)
-);
+      </div>
 
 
-if(saved){
+      <div class="notice mt-15">
 
-Object.keys(
-rewards
-)
-.forEach(brand=>{
+        GasGo uses this information to create an estimated
+        remaining range. It should not be treated as a
+        guarantee of how far the vehicle can travel.
 
-if(
-saved[brand] &&
-Number.isFinite(
-Number(
-saved[brand].points
-)
-)
-){
+      </div>
 
-rewards[brand].points=
-Number(
-saved[brand].points
-);
 
-}
+      <button
+        class="primary full-button mt-15"
+        onclick="GasGoApp.saveVehicle()"
+      >
+        SAVE VEHICLE
+      </button>
 
-});
 
-}
+    </div>
 
-}
-catch(error){}
+  </div>
 
-}
 
 
-function saveRewards(){
+  <!-- =====================================================
+       FUEL LOG MODAL
+       ===================================================== -->
 
-try{
+  <div
+    id="fuelLogModal"
+    class="modal"
+  >
 
-localStorage.setItem(
-"gasgoRewardsV4",
-JSON.stringify(
-rewards
-)
-);
 
-}
-catch(error){}
+    <div class="sheet">
 
-}
 
+      <div class="sheet-head">
 
-function renderRewards(){
+        <div>
 
-const container=
-document.getElementById(
-"rewardList"
-);
+          <div class="eyebrow">
+            GasGo Fuel Log
+          </div>
 
+          <h2 class="mb-0">
+            Add fill-up
+          </h2>
 
-container.innerHTML="";
+        </div>
 
 
-let total=0;
+        <button
+          class="close"
+          onclick="GasGoApp.closeFuelLogModal()"
+          aria-label="Close"
+        >
+          ×
+        </button>
 
+      </div>
 
-Object.entries(
-rewards
-)
-.forEach(
-([brand,data])=>{
 
-total+=data.points;
+      <div class="form-grid">
 
 
-const max=
-Math.max(
-...data.tiers.map(
-tier=>tier.points
-)
-);
+        <!-- DATE -->
 
+        <div class="field">
 
-const percent=
-Math.min(
-100,
-data.points/
-max*
-100
-);
+          <label for="logDate">
+            DATE
+          </label>
 
+          <input
+            id="logDate"
+            type="date"
+          >
 
-const next=
-data.tiers.find(
-tier=>
-data.points<
-tier.points
-);
+        </div>
 
 
-const card=
-document.createElement(
-"div"
-);
+        <!-- FUEL -->
 
+        <div class="field">
 
-card.className=
-"card reward-card";
+          <label for="logFuel">
+            FUEL
+          </label>
 
+          <select id="logFuel">
 
-const tiers=
-data.tiers
-.map(tier=>{
+            <option value="regular">
+              Regular
+            </option>
 
-const unlocked=
-data.points>=
-tier.points;
+            <option value="premium">
+              Premium
+            </option>
 
+            <option value="diesel">
+              Diesel
+            </option>
 
-return`
+          </select>
 
-<div class="reward-tier ${
-unlocked
-?
-"unlocked"
-:
-""
-}">
+        </div>
 
-<div class="reward-lock">
-${
-unlocked
-?
-"✓"
-:
-"🔒"
-}
-</div>
 
-<div>
+        <!-- STATION -->
 
-<strong>
-${escapeHTML(tier.name)}
-</strong>
+        <div class="field full">
 
-<div class="muted">
-${tier.points} pts ·
-${escapeHTML(tier.reward)}
-</div>
+          <label for="logStation">
+            STATION
+          </label>
 
-</div>
+          <input
+            id="logStation"
+            type="text"
+            placeholder="Example: Puma Bayamón"
+          >
 
-</div>
+        </div>
 
-`;
 
-})
-.join("");
+        <!-- LITERS -->
 
+        <div class="field">
 
-card.innerHTML=`
+          <label for="logLiters">
+            LITERS
+          </label>
 
-<div class="reward-head">
+          <input
+            id="logLiters"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="20.00"
+            oninput="GasGoApp.updateFuelLogPreview()"
+          >
 
-<div class="reward-logo">
-${escapeHTML(
-brand.charAt(0)
-)}
-</div>
+        </div>
 
-<div class="reward-info">
 
-<strong>
-${escapeHTML(brand)}
-</strong>
+        <!-- PRICE -->
 
-<div class="muted">
-Tap to view rewards
-</div>
+        <div class="field">
 
-</div>
+          <label for="logPrice">
+            PRICE / L
+          </label>
 
-<div class="reward-points">
-${data.points} pts
-</div>
+          <input
+            id="logPrice"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="1.15"
+            oninput="GasGoApp.updateFuelLogPreview()"
+          >
 
-</div>
+        </div>
 
 
-<div class="reward-bar">
-<div style="width:${percent}%">
-</div>
-</div>
+        <!-- ODOMETER -->
 
+        <div class="field full">
 
-<div class="row">
+          <label for="logOdometer">
+            ODOMETER — OPTIONAL
+          </label>
 
-<div class="muted">
+          <input
+            id="logOdometer"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.1"
+            placeholder="Example: 97013"
+          >
 
-${
-next
-?
-(next.points-
-data.points)+
-" pts to next reward"
-:
-"All demo rewards unlocked"
-}
+        </div>
 
-</div>
 
-<div class="muted">
-${Math.round(percent)}%
-</div>
+      </div>
 
-</div>
 
+      <!-- TOTAL PREVIEW -->
 
-<div class="reward-details">
+      <div class="fuel-summary">
 
-<div class="eyebrow">
-REWARD JOURNEY
-</div>
 
-${tiers}
+        <div class="fuel-summary-box">
 
-<button
-class="secondary add-points"
-data-brand="${escapeHTML(brand)}"
-style="width:100%;margin-top:10px;">
+          <span>
+            Calculated total
+          </span>
 
-+ Demo purchase · 50 pts
+          <strong id="logCalculatedTotal">
+            $0.00
+          </strong>
 
-</button>
+        </div>
 
-</div>
 
-`;
+        <div class="fuel-summary-box">
 
+          <span>
+            Tracking
+          </span>
 
-card.addEventListener(
-"click",
-event=>{
+          <strong>
+            GasGo
+          </strong>
 
-if(
-event.target.closest(
-".add-points"
-)
-){
+        </div>
 
-return;
 
-}
+      </div>
 
 
-document
-.querySelectorAll(
-".reward-card"
-)
-.forEach(other=>{
+      <div class="notice mt-15">
 
-if(other!==card){
+        Savings shown by GasGo are estimates based on
+        prototype comparison prices and should not be
+        interpreted as guaranteed savings.
 
-other.classList.remove(
-"open"
-);
+      </div>
 
-}
 
-});
+      <button
+        class="primary full-button mt-15"
+        onclick="GasGoApp.saveFuelLog()"
+      >
+        SAVE FILL-UP
+      </button>
 
 
-card.classList.toggle(
-"open"
-);
+    </div>
 
-});
+  </div>
 
 
-container.appendChild(
-card
-);
 
-});
+  <!-- =====================================================
+       BOTTOM NAVIGATION
+       ===================================================== -->
 
+  <nav class="bottom">
 
-document.getElementById(
-"totalPoints"
-).textContent=
-total.toLocaleString();
 
+    <button
+      class="nav active"
+      data-screen="home"
+      onclick="GasGoApp.showScreen('home')"
+    >
 
-document
-.querySelectorAll(
-".add-points"
-)
-.forEach(button=>{
+      <span>
+        ⌂
+      </span>
 
-button.addEventListener(
-"click",
-event=>{
+      Home
 
-event.stopPropagation();
+    </button>
 
 
-const brand=
-button.dataset.brand;
+    <button
+      class="nav"
+      data-screen="stations"
+      onclick="GasGoApp.showScreen('stations')"
+    >
 
+      <span>
+        ⛽
+      </span>
 
-if(
-rewards[brand]
-){
+      Stations
 
-rewards[brand].points+=50;
+    </button>
 
-saveRewards();
 
-renderRewards();
+    <button
+      class="nav"
+      data-screen="dashboard"
+      onclick="GasGoApp.showScreen('dashboard')"
+    >
 
-}
+      <span>
+        📊
+      </span>
 
-}
-);
+      Insights
 
-});
+    </button>
 
-}
 
+    <button
+      class="nav"
+      data-screen="rewards"
+      onclick="GasGoApp.showScreen('rewards')"
+    >
 
-loadRewards();
+      <span>
+        ★
+      </span>
 
-renderRewards();
+      Rewards
 
+    </button>
 
-/* ========================================
-   VEHICLE FORM
-======================================== */
 
-const modal=
-document.getElementById(
-"vehicleModal"
-);
+    <button
+      class="nav"
+      data-screen="car"
+      onclick="GasGoApp.showScreen('car')"
+    >
 
+      <span>
+        🚗
+      </span>
 
-const yearSelect=
-document.getElementById(
-"yearSelect"
-);
+      My Car
 
+    </button>
 
-const makeSelect=
-document.getElementById(
-"makeSelect"
-);
 
+  </nav>
 
-const modelSelect=
-document.getElementById(
-"modelSelect"
-);
 
 
-const powerSelect=
-document.getElementById(
-"powerSelect"
-);
+  <!-- =====================================================
+       TOASTS
+       ===================================================== -->
 
+  <div
+    id="toastContainer"
+    class="toast-container"
+  ></div>
 
-const levelSlider=
-document.getElementById(
-"levelSlider"
-);
 
 
-const rangeSlider=
-document.getElementById(
-"rangeSlider"
-);
+  <!-- =====================================================
+       JAVASCRIPT
 
+       IMPORTANT ORDER:
+       1. Leaflet
+       2. stations.js
+       3. app.js
+       ===================================================== -->
 
-const levelValue=
-document.getElementById(
-"levelValue"
-);
+  <script
+    src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+  ></script>
 
 
-const rangeValue=
-document.getElementById(
-"rangeValue"
-);
+  <script src="stations.js"></script>
 
 
-/* YEARS */
+  <script src="app.js"></script>
 
-for(
-let year=2027;
-year>=1996;
-year--
-){
-
-const option=
-document.createElement(
-"option"
-);
-
-option.value=
-String(year);
-
-option.textContent=
-String(year);
-
-yearSelect.appendChild(
-option
-);
-
-}
-
-
-yearSelect.value=
-"2015";
-
-
-/* MAKES */
-
-Object.keys(
-VEHICLES
-)
-.forEach(make=>{
-
-const option=
-document.createElement(
-"option"
-);
-
-option.value=make;
-
-option.textContent=make;
-
-makeSelect.appendChild(
-option
-);
-
-});
-
-
-makeSelect.value=
-"Toyota";
-
-
-function updateModels(
-selected=null
-){
-
-const models=
-VEHICLES[
-makeSelect.value
-] ||
-["Other"];
-
-
-modelSelect.innerHTML="";
-
-
-models.forEach(model=>{
-
-const option=
-document.createElement(
-"option"
-);
-
-option.value=model;
-
-option.textContent=model;
-
-modelSelect.appendChild(
-option
-);
-
-});
-
-
-if(
-selected &&
-models.includes(
-selected
-)
-){
-
-modelSelect.value=
-selected;
-
-}
-
-}
-
-
-updateModels();
-
-
-makeSelect.addEventListener(
-"change",
-()=>updateModels()
-);
-
-
-/* ========================================
-   SLIDERS
-======================================== */
-
-function updateSliders(){
-
-levelValue.textContent=
-levelSlider.value+
-"%";
-
-
-rangeValue.textContent=
-rangeSlider.value+
-" mi";
-
-}
-
-
-levelSlider.addEventListener(
-"input",
-updateSliders
-);
-
-
-rangeSlider.addEventListener(
-"input",
-updateSliders
-);
-
-
-updateSliders();
-
-
-/* ========================================
-   VEHICLE STORAGE
-======================================== */
-
-function getVehicle(){
-
-try{
-
-return JSON.parse(
-localStorage.getItem(
-"gasgoVehicleV4"
-)
-);
-
-}
-catch(error){
-
-return null;
-
-}
-
-}
-
-
-function saveVehicle(
-vehicle
-){
-
-try{
-
-localStorage.setItem(
-"gasgoVehicleV4",
-JSON.stringify(
-vehicle
-)
-);
-
-return true;
-
-}
-catch(error){
-
-return false;
-
-}
-
-}
-
-
-/* ========================================
-   VEHICLE MODAL
-======================================== */
-
-function openVehicle(){
-
-const vehicle=
-getVehicle();
-
-
-if(vehicle){
-
-yearSelect.value=
-String(vehicle.year);
-
-
-if(
-VEHICLES[
-vehicle.make
-]
-){
-
-makeSelect.value=
-vehicle.make;
-
-}
-
-
-updateModels(
-vehicle.model
-);
-
-
-powerSelect.value=
-vehicle.power;
-
-
-levelSlider.value=
-String(
-vehicle.level
-);
-
-
-rangeSlider.value=
-String(
-vehicle.fullRange
-);
-
-
-updateSliders();
-
-}
-
-
-modal.classList.add(
-"open"
-);
-
-}
-
-
-function closeVehicle(){
-
-modal.classList.remove(
-"open"
-);
-
-}
-
-
-document.getElementById(
-"addVehicle"
-).addEventListener(
-"click",
-openVehicle
-);
-
-
-document.getElementById(
-"editVehicle"
-).addEventListener(
-"click",
-openVehicle
-);
-
-
-document.getElementById(
-"closeVehicle"
-).addEventListener(
-"click",
-closeVehicle
-);
-
-
-modal.addEventListener(
-"click",
-event=>{
-
-if(
-event.target===modal
-){
-
-closeVehicle();
-
-}
-
-});
-
-
-/* ========================================
-   SAVE VEHICLE
-======================================== */
-
-document.getElementById(
-"vehicleForm"
-).addEventListener(
-"submit",
-event=>{
-
-event.preventDefault();
-
-
-const vehicle={
-
-year:
-Number(
-yearSelect.value
-),
-
-make:
-makeSelect.value,
-
-model:
-modelSelect.value,
-
-power:
-powerSelect.value,
-
-level:
-Number(
-levelSlider.value
-),
-
-fullRange:
-Number(
-rangeSlider.value
-)
-
-};
-
-
-if(
-!Number.isFinite(
-vehicle.level
-) ||
-!Number.isFinite(
-vehicle.fullRange
-)
-){
-
-return;
-
-}
-
-
-vehicle.level=
-Math.max(
-0,
-Math.min(
-100,
-vehicle.level
-)
-);
-
-
-vehicle.fullRange=
-Math.max(
-50,
-Math.min(
-650,
-vehicle.fullRange
-)
-);
-
-
-saveVehicle(
-vehicle
-);
-
-
-renderVehicle();
-
-
-closeVehicle();
-
-
-updateRangeResult();
-
-});
-
-
-/* ========================================
-   RENDER VEHICLE
-======================================== */
-
-function renderVehicle(){
-
-const vehicle=
-getVehicle();
-
-
-const empty=
-document.getElementById(
-"emptyVehicle"
-);
-
-
-const saved=
-document.getElementById(
-"savedVehicle"
-);
-
-
-if(!vehicle){
-
-empty.style.display=
-"block";
-
-saved.style.display=
-"none";
-
-return;
-
-}
-
-
-empty.style.display=
-"none";
-
-saved.style.display=
-"block";
-
-
-const estimated=
-Math.round(
-vehicle.fullRange*
-vehicle.level/
-100
-);
-
-
-const electric=
-vehicle.power===
-"Electric";
-
-
-document.getElementById(
-"vehicleName"
-).textContent=
-
-vehicle.year+
-" "+
-vehicle.make+
-" "+
-vehicle.model;
-
-
-document.getElementById(
-"vehicleTypeText"
-).textContent=
-vehicle.power;
-
-
-document.getElementById(
-"vehicleIcon"
-).textContent=
-electric
-?
-"⚡"
-:
-"🚗";
-
-
-document.getElementById(
-"carRange"
-).textContent=
-estimated+
-" mi";
-
-
-document.getElementById(
-"carLevel"
-).textContent=
-vehicle.level+
-"%";
-
-
-document.getElementById(
-"homeRange"
-).textContent=
-estimated;
-
-
-document.getElementById(
-"homeLevel"
-).textContent=
-vehicle.level+
-"%";
-
-
-document.getElementById(
-"homeProgress"
-).style.width=
-vehicle.level+
-"%";
-
-
-document.getElementById(
-"homeLevelText"
-).textContent=
-electric
-?
-"⚡ Battery level"
-:
-"⛽ Fuel level";
-
-}
-
-
-renderVehicle();
-
-})();
-
-</script>
 
 </body>
+
 </html>
