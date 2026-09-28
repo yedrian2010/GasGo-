@@ -2,13 +2,21 @@
 
 /* =========================================================
    GASGO APP
-   Version 5.4.0
+   Version 5.5.0
+
+   Requires:
+   - stations.js
+   - vehicles.js
+
+   Optional enhancements loaded after this file:
+   - map-v55.js
+   - smart-v6.js
    ========================================================= */
 
 window.GasGoApp = window.GasGoApp || {};
 const App = window.GasGoApp;
 
-App.VERSION = "5.4.0";
+App.VERSION = "5.5.0";
 
 
 /* =========================================================
@@ -69,7 +77,12 @@ App.state = {
 
 
 /* =========================================================
-   VEHICLE DATABASE
+   FALLBACK VEHICLE CATALOG
+
+   GasGoVehicles is the primary database.
+
+   This catalog remains here so GasGo still works if the
+   vehicle database fails to load for any reason.
    ========================================================= */
 
 App.VEHICLES = {
@@ -302,7 +315,6 @@ App.VEHICLES = {
   Other: [
     "Other"
   ]
-
 };
 
 
@@ -314,10 +326,20 @@ App.DEFAULT_VEHICLE = {
   year: 2015,
   make: "Chevrolet",
   model: "Sonic",
+
+  configuration:
+    "Gasoline • 1.4L Turbo / 1.8L",
+
   powertrain: "Gasoline",
+
   level: 68,
   fullRange: 350,
-  tankCapacity: 46
+
+  tankCapacity: 46,
+
+  batteryCapacity: null,
+
+  capacitySource: "vehicle-database"
 };
 
 
@@ -385,7 +407,7 @@ App.DEFAULT_REWARDS = {
 
 
 /* =========================================================
-   HELPERS
+   BASIC HELPERS
    ========================================================= */
 
 App.$ = function (id) {
@@ -400,9 +422,17 @@ App.$all = function (selector) {
 };
 
 
-App.clamp = function (value, min, max) {
+App.clamp = function (
+  value,
+  min,
+  max
+) {
 
   value = Number(value);
+
+  if (!Number.isFinite(value)) {
+    return min;
+  }
 
   return Math.max(
     min,
@@ -414,13 +444,15 @@ App.clamp = function (value, min, max) {
 
 App.money = function (value) {
 
-  const number = Number(value);
+  const number =
+    Number(value);
 
   if (!Number.isFinite(number)) {
     return "—";
   }
 
-  return "$" + number.toFixed(2);
+  return "$" +
+    number.toFixed(2);
 
 };
 
@@ -430,7 +462,8 @@ App.number = function (
   decimals = 1
 ) {
 
-  const number = Number(value);
+  const number =
+    Number(value);
 
   if (!Number.isFinite(number)) {
     return "0";
@@ -469,7 +502,12 @@ App.loadStorage = function (
 
     return JSON.parse(raw);
 
-  } catch {
+  } catch (error) {
+
+    console.warn(
+      "GasGo storage read error:",
+      error
+    );
 
     return fallback;
 
@@ -492,10 +530,45 @@ App.saveStorage = function (
 
     return true;
 
-  } catch {
+  } catch (error) {
+
+    console.warn(
+      "GasGo storage save error:",
+      error
+    );
 
     return false;
 
+  }
+
+};
+
+
+App.setText = function (
+  id,
+  text
+) {
+
+  const element =
+    App.$(id);
+
+  if (element) {
+    element.textContent = text;
+  }
+
+};
+
+
+App.setDisplay = function (
+  id,
+  value
+) {
+
+  const element =
+    App.$(id);
+
+  if (element) {
+    element.style.display = value;
   }
 
 };
@@ -514,28 +587,43 @@ App.toast = function (
     App.$("toastContainer");
 
   if (!container) {
+
+    console.log(
+      "GasGo:",
+      message
+    );
+
     return;
   }
+
 
   const toast =
     document.createElement("div");
 
+
   toast.className =
     "toast " + type;
+
 
   toast.textContent =
     message;
 
-  container.appendChild(toast);
+
+  container.appendChild(
+    toast
+  );
+
 
   setTimeout(() => {
 
-    toast.style.opacity = "0";
+    toast.style.opacity =
+      "0";
 
     toast.style.transform =
       "translateY(8px)";
 
   }, 2600);
+
 
   setTimeout(() => {
 
@@ -547,150 +635,814 @@ App.toast = function (
 
 
 /* =========================================================
-   VEHICLE HELPERS
+   VEHICLE DATABASE HELPERS
    ========================================================= */
 
-App.isElectricVehicle = function () {
+App.getVehicleDB = function () {
 
-  return (
-    App.state.vehicle?.powertrain ===
-    "Electric"
-  );
+  if (
+    window.GasGoVehicles &&
+    typeof window.GasGoVehicles ===
+      "object"
+  ) {
+
+    return window.GasGoVehicles;
+
+  }
+
+  return null;
 
 };
 
 
-App.getVehicleEnergyMode = function () {
+App.normalizePowertrain = function (
+  value
+) {
 
-  const type = String(
-    App.state.vehicle?.powertrain || ""
-  ).toLowerCase();
+  const text =
+    String(value || "")
+      .trim()
+      .toLowerCase();
 
-  if (type === "electric") {
-    return "ev";
-  }
 
   if (
-    type.includes("plug-in") ||
-    type.includes("phev")
+    text === "ev" ||
+    text === "electric" ||
+    text.includes("battery electric")
   ) {
-    return "both";
+
+    return "Electric";
+
   }
 
-  return "fuel";
-
-};
-
-
-App.getVehicleRange = function () {
-
-  const vehicle =
-    App.state.vehicle;
-
-  if (!vehicle) {
-    return 0;
-  }
 
   if (
-    window.GasGoData &&
-    typeof GasGoData.getEstimatedVehicleRange ===
-      "function"
+    text.includes("plug-in") ||
+    text.includes("plug in") ||
+    text.includes("phev")
   ) {
 
-    return (
-      GasGoData.getEstimatedVehicleRange(
-        vehicle
-      ) || 0
-    );
+    return "Plug-in Hybrid";
 
   }
 
-  return (
-    Number(vehicle.fullRange) *
-    Number(vehicle.level) /
-    100
-  );
+
+  if (
+    text.includes("hybrid")
+  ) {
+
+    return "Hybrid";
+
+  }
+
+
+  if (
+    text.includes("diesel")
+  ) {
+
+    /*
+      The current GasGo UI groups ICE vehicles
+      under the Gasoline selector. Fuel type can
+      still be selected separately in station filters.
+    */
+
+    return "Gasoline";
+
+  }
+
+
+  return "Gasoline";
 
 };
 
 
 /* =========================================================
-   LOCAL DATA
+   VEHICLE CATALOG ACCESS
    ========================================================= */
 
-App.loadLocalData = function () {
+App.getVehicleYears = function () {
 
-  const savedVehicle =
-    App.loadStorage(
-      App.STORAGE.vehicle,
-      null
-    );
+  const DB =
+    App.getVehicleDB();
+
 
   if (
-    savedVehicle &&
-    typeof savedVehicle === "object"
+    DB &&
+    typeof DB.getYears ===
+      "function"
   ) {
 
-    App.state.vehicle = {
-      ...App.DEFAULT_VEHICLE,
-      ...savedVehicle
-    };
+    try {
 
-  } else {
+      const years =
+        DB.getYears();
 
-    /*
-      Technical fallback only.
+      if (
+        Array.isArray(years) &&
+        years.length
+      ) {
 
-      A new user still sees onboarding because onboarding
-      uses its own separate storage key.
-    */
+        return years
+          .map(Number)
+          .filter(Number.isFinite)
+          .sort(
+            (a, b) => b - a
+          );
 
-    App.state.vehicle = {
-      ...App.DEFAULT_VEHICLE
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "GasGo vehicle years error:",
+        error
+      );
+
+    }
+
+  }
+
+
+  const years = [];
+
+  for (
+    let year = 2027;
+    year >= 1996;
+    year--
+  ) {
+
+    years.push(year);
+
+  }
+
+  return years;
+
+};
+
+
+App.getVehicleMakes = function (
+  year = null
+) {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (
+    DB &&
+    typeof DB.getMakes ===
+      "function"
+  ) {
+
+    try {
+
+      const makes =
+        DB.getMakes(year);
+
+      if (
+        Array.isArray(makes) &&
+        makes.length
+      ) {
+
+        return makes;
+
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "GasGo vehicle makes error:",
+        error
+      );
+
+    }
+
+  }
+
+
+  return Object.keys(
+    App.VEHICLES
+  );
+
+};
+
+
+App.getVehicleModels = function (
+  year,
+  make
+) {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (
+    DB &&
+    typeof DB.getModels ===
+      "function"
+  ) {
+
+    try {
+
+      const models =
+        DB.getModels(
+          Number(year),
+          make
+        );
+
+      if (
+        Array.isArray(models) &&
+        models.length
+      ) {
+
+        return models;
+
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "GasGo vehicle models error:",
+        error
+      );
+
+    }
+
+  }
+
+
+  return (
+    App.VEHICLES[make] ||
+    ["Other"]
+  );
+
+};
+
+
+App.getVehicleConfigurations =
+function (
+  year,
+  make,
+  model
+) {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (
+    !DB ||
+    typeof DB.getConfigurations !==
+      "function"
+  ) {
+
+    return [];
+
+  }
+
+
+  try {
+
+    const results =
+      DB.getConfigurations(
+        Number(year),
+        make,
+        model
+      );
+
+    return Array.isArray(results)
+      ? results
+      : [];
+
+  } catch (error) {
+
+    console.warn(
+      "GasGo configuration error:",
+      error
+    );
+
+    return [];
+
+  }
+
+};
+
+
+App.getVehicleConfigurationLabel =
+function (record) {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (
+    DB &&
+    typeof DB.getConfigurationLabel ===
+      "function"
+  ) {
+
+    try {
+
+      return String(
+        DB.getConfigurationLabel(
+          record
+        ) || ""
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "GasGo configuration label error:",
+        error
+      );
+
+    }
+
+  }
+
+
+  const pieces = [
+    record?.powertrain,
+    record?.trim,
+    record?.engine,
+    record?.drivetrain
+  ].filter(Boolean);
+
+
+  return pieces.join(" • ");
+
+};
+
+
+/* =========================================================
+   VEHICLE LOOKUP
+   ========================================================= */
+
+App.lookupVehicleSpecification =
+function ({
+  year,
+  make,
+  model,
+  configuration = ""
+}) {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (
+    !DB ||
+    typeof DB.lookup !==
+      "function"
+  ) {
+
+    return {
+      found: false,
+      requiresConfiguration: false
     };
 
   }
 
 
-  const rewards =
-    App.loadStorage(
-      App.STORAGE.rewards,
-      null
+  try {
+
+    return DB.lookup({
+      year:
+        Number(year),
+
+      make,
+
+      model,
+
+      configuration
+    }) || {
+      found: false,
+      requiresConfiguration: false
+    };
+
+  } catch (error) {
+
+    console.warn(
+      "GasGo vehicle lookup error:",
+      error
     );
 
-  App.state.rewards =
-    rewards &&
-    typeof rewards === "object"
-      ? rewards
-      : JSON.parse(
-          JSON.stringify(
-            App.DEFAULT_REWARDS
-          )
+
+    return {
+      found: false,
+      requiresConfiguration: false
+    };
+
+  }
+
+};
+
+
+/* =========================================================
+   POPULATE YEAR
+   ========================================================= */
+
+App.populateYearSelect = function (
+  select,
+  selectedYear = null
+) {
+
+  if (!select) {
+    return;
+  }
+
+
+  const years =
+    App.getVehicleYears();
+
+
+  select.innerHTML = "";
+
+
+  years.forEach(year => {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      String(year);
+
+
+    option.textContent =
+      String(year);
+
+
+    select.appendChild(
+      option
+    );
+
+  });
+
+
+  if (
+    selectedYear &&
+    years.includes(
+      Number(selectedYear)
+    )
+  ) {
+
+    select.value =
+      String(selectedYear);
+
+  }
+
+};
+
+
+/* =========================================================
+   POPULATE MAKE
+   ========================================================= */
+
+App.populateMakeSelect = function (
+  select,
+  year = null,
+  selectedMake = null
+) {
+
+  if (!select) {
+    return;
+  }
+
+
+  const makes =
+    App.getVehicleMakes(year);
+
+
+  select.innerHTML = "";
+
+
+  makes.forEach(make => {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value = make;
+    option.textContent = make;
+
+
+    select.appendChild(
+      option
+    );
+
+  });
+
+
+  if (
+    selectedMake &&
+    makes.includes(
+      selectedMake
+    )
+  ) {
+
+    select.value =
+      selectedMake;
+
+  }
+
+};
+
+
+/* =========================================================
+   POPULATE MODEL
+   ========================================================= */
+
+App.populateModelSelect = function (
+  year,
+  make,
+  select,
+  selectedModel = null
+) {
+
+  if (!select) {
+    return;
+  }
+
+
+  const models =
+    App.getVehicleModels(
+      year,
+      make
+    );
+
+
+  select.innerHTML = "";
+
+
+  models.forEach(model => {
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+
+    option.value =
+      model;
+
+
+    option.textContent =
+      model;
+
+
+    select.appendChild(
+      option
+    );
+
+  });
+
+
+  if (
+    selectedModel &&
+    models.includes(
+      selectedModel
+    )
+  ) {
+
+    select.value =
+      selectedModel;
+
+  }
+
+};
+
+
+/* =========================================================
+   POPULATE CONFIGURATION
+   ========================================================= */
+
+App.populateConfigurationSelect =
+function (
+  select,
+  configurations,
+  selectedConfiguration = null
+) {
+
+  if (!select) {
+    return;
+  }
+
+
+  select.innerHTML = "";
+
+
+  if (
+    !Array.isArray(
+      configurations
+    ) ||
+    !configurations.length
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+    If multiple versions exist we NEVER guess.
+
+    The driver must choose the correct engine /
+    drivetrain / trim.
+  */
+
+  if (
+    configurations.length > 1
+  ) {
+
+    const placeholder =
+      document.createElement(
+        "option"
+      );
+
+
+    placeholder.value = "";
+
+    placeholder.textContent =
+      "Select configuration";
+
+
+    select.appendChild(
+      placeholder
+    );
+
+  }
+
+
+  configurations.forEach(
+    record => {
+
+      const label =
+        App.getVehicleConfigurationLabel(
+          record
         );
 
 
-  const logs =
-    App.loadStorage(
-      App.STORAGE.fuelLogs,
-      []
+      const option =
+        document.createElement(
+          "option"
+        );
+
+
+      option.value =
+        label;
+
+
+      option.textContent =
+        label;
+
+
+      select.appendChild(
+        option
+      );
+
+    }
+  );
+
+
+  if (
+    selectedConfiguration
+  ) {
+
+    const exists =
+      Array.from(
+        select.options
+      ).some(
+        option =>
+          option.value ===
+          selectedConfiguration
+      );
+
+
+    if (exists) {
+
+      select.value =
+        selectedConfiguration;
+
+    }
+
+  }
+
+
+  if (
+    configurations.length === 1
+  ) {
+
+    select.value =
+      App.getVehicleConfigurationLabel(
+        configurations[0]
+      );
+
+  }
+
+};
+
+
+/* =========================================================
+   TANK SLIDER HELPERS
+   ========================================================= */
+
+App.setTankSliderValue = function (
+  element,
+  liters
+) {
+
+  if (!element) {
+    return;
+  }
+
+
+  const capacity =
+    Number(liters);
+
+
+  if (
+    !Number.isFinite(capacity) ||
+    capacity <= 0
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+    Expand the range if a verified vehicle exceeds the
+    old 120 L prototype limit.
+  */
+
+  if (
+    capacity >
+    Number(element.max || 120)
+  ) {
+
+    element.max =
+      String(
+        Math.ceil(capacity)
+      );
+
+  }
+
+
+  if (
+    capacity <
+    Number(element.min || 0)
+  ) {
+
+    element.min =
+      String(
+        Math.floor(capacity)
+      );
+
+  }
+
+
+  element.value =
+    String(
+      Number(
+        capacity.toFixed(1)
+      )
     );
 
-  App.state.fuelLogs =
-    Array.isArray(logs)
-      ? logs
-      : [];
+};
 
 
-  const favorites =
-    App.loadStorage(
-      App.STORAGE.favorites,
-      []
+/* =========================================================
+   VEHICLE DATABASE STATUS
+   ========================================================= */
+
+App.setVehicleSpecStatus = function (
+  prefix,
+  message,
+  type = ""
+) {
+
+  const status =
+    App.$(
+      prefix + "TankStatus"
     );
 
-  App.state.favorites =
-    Array.isArray(favorites)
-      ? favorites
-      : [];
+
+  if (!status) {
+    return;
+  }
+
+
+  status.textContent =
+    message;
+
+
+  status.dataset.status =
+    type;
 
 };
 
@@ -711,110 +1463,6 @@ App.shouldShowOnboarding = function () {
 };
 
 
-App.populateYearSelect = function (
-  select
-) {
-
-  if (!select) {
-    return;
-  }
-
-  select.innerHTML = "";
-
-  for (
-    let year = 2027;
-    year >= 1996;
-    year--
-  ) {
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
-    option.value = year;
-    option.textContent = year;
-
-    select.appendChild(option);
-
-  }
-
-};
-
-
-App.populateMakeSelect = function (
-  select
-) {
-
-  if (!select) {
-    return;
-  }
-
-  select.innerHTML = "";
-
-  Object.keys(
-    App.VEHICLES
-  ).forEach(make => {
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
-    option.value = make;
-    option.textContent = make;
-
-    select.appendChild(option);
-
-  });
-
-};
-
-
-App.populateModelSelect = function (
-  make,
-  select,
-  selectedModel = null
-) {
-
-  if (!select) {
-    return;
-  }
-
-  const models =
-    App.VEHICLES[make] ||
-    ["Other"];
-
-  select.innerHTML = "";
-
-  models.forEach(model => {
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
-    option.value = model;
-    option.textContent = model;
-
-    select.appendChild(option);
-
-  });
-
-
-  if (
-    selectedModel &&
-    models.includes(selectedModel)
-  ) {
-
-    select.value =
-      selectedModel;
-
-  }
-
-};
-
-
 App.prepareOnboarding = function () {
 
   const year =
@@ -823,9 +1471,18 @@ App.prepareOnboarding = function () {
   const make =
     App.$("onboardingMake");
 
-  App.populateYearSelect(year);
 
-  App.populateMakeSelect(make);
+  App.populateYearSelect(
+    year,
+    2020
+  );
+
+
+  App.populateMakeSelect(
+    make,
+    2020,
+    "Toyota"
+  );
 
 
   if (year) {
@@ -833,18 +1490,19 @@ App.prepareOnboarding = function () {
   }
 
 
-  if (make) {
-
-    if (
-      Object.prototype.hasOwnProperty.call(
-        App.VEHICLES,
+  if (
+    make &&
+    Array.from(
+      make.options
+    ).some(
+      option =>
+        option.value ===
         "Toyota"
-      )
-    ) {
+    )
+  ) {
 
-      make.value = "Toyota";
-
-    }
+    make.value =
+      "Toyota";
 
   }
 
@@ -860,14 +1518,23 @@ App.prepareOnboarding = function () {
 
 App.showOnboarding = function () {
 
+  /*
+    Current V5 index uses #onboarding.
+    #onboardingModal is also supported.
+  */
+
   const onboarding =
-    App.$("onboarding");
+    App.$("onboarding") ||
+    App.$("onboardingModal");
+
 
   if (!onboarding) {
     return;
   }
 
+
   App.prepareOnboarding();
+
 
   onboarding.classList.add(
     "open"
@@ -876,29 +1543,404 @@ App.showOnboarding = function () {
 };
 
 
+/* =========================================================
+   ONBOARDING YEAR
+   ========================================================= */
+
+App.updateOnboardingYear = function () {
+
+  const year =
+    Number(
+      App.$(
+        "onboardingYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "onboardingMake"
+    );
+
+
+  const previousMake =
+    make?.value || "";
+
+
+  App.populateMakeSelect(
+    make,
+    year,
+    previousMake
+  );
+
+
+  App.updateOnboardingModels();
+
+};
+
+
+/* =========================================================
+   ONBOARDING MODELS
+   ========================================================= */
+
 App.updateOnboardingModels =
 function () {
 
+  const year =
+    Number(
+      App.$(
+        "onboardingYear"
+      )?.value
+    );
+
+
   const make =
-    App.$("onboardingMake");
+    App.$(
+      "onboardingMake"
+    );
+
 
   const model =
-    App.$("onboardingModel");
+    App.$(
+      "onboardingModel"
+    );
+
 
   if (
     !make ||
     !model
   ) {
+
     return;
+
   }
 
+
+  const previousModel =
+    model.value;
+
+
   App.populateModelSelect(
+    year,
     make.value,
-    model
+    model,
+    previousModel
   );
+
+
+  App.updateOnboardingVehicleSpec();
 
 };
 
+
+/* =========================================================
+   ONBOARDING VEHICLE SPEC
+   ========================================================= */
+
+App.updateOnboardingVehicleSpec =
+function () {
+
+  const year =
+    Number(
+      App.$(
+        "onboardingYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "onboardingMake"
+    )?.value;
+
+
+  const model =
+    App.$(
+      "onboardingModel"
+    )?.value;
+
+
+  const configurationField =
+    App.$(
+      "onboardingConfigurationField"
+    );
+
+
+  const configurationSelect =
+    App.$(
+      "onboardingConfiguration"
+    );
+
+
+  if (
+    !year ||
+    !make ||
+    !model
+  ) {
+
+    if (configurationField) {
+      configurationField.style.display =
+        "none";
+    }
+
+    return;
+
+  }
+
+
+  const configurations =
+    App.getVehicleConfigurations(
+      year,
+      make,
+      model
+    );
+
+
+  /*
+    No exact specification in database.
+    Keep the tank manually adjustable.
+  */
+
+  if (!configurations.length) {
+
+    if (configurationField) {
+      configurationField.style.display =
+        "none";
+    }
+
+
+    if (configurationSelect) {
+      configurationSelect.innerHTML =
+        "";
+    }
+
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Specification unavailable — adjust tank capacity manually.",
+      "manual"
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+    Show configuration only when multiple variants
+    actually exist.
+
+    With one configuration GasGo can resolve it safely.
+  */
+
+  if (configurationField) {
+
+    configurationField.style.display =
+      configurations.length > 1
+        ? ""
+        : "none";
+
+  }
+
+
+  App.populateConfigurationSelect(
+    configurationSelect,
+    configurations
+  );
+
+
+  if (
+    configurations.length > 1 &&
+    !configurationSelect?.value
+  ) {
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Select the correct configuration to detect tank capacity.",
+      "select"
+    );
+
+    return;
+
+  }
+
+
+  App.applyOnboardingVehicleSpecification();
+
+};
+
+
+/* =========================================================
+   APPLY ONBOARDING SPECIFICATION
+   ========================================================= */
+
+App.applyOnboardingVehicleSpecification =
+function () {
+
+  const year =
+    Number(
+      App.$(
+        "onboardingYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "onboardingMake"
+    )?.value;
+
+
+  const model =
+    App.$(
+      "onboardingModel"
+    )?.value;
+
+
+  const configuration =
+    App.$(
+      "onboardingConfiguration"
+    )?.value || "";
+
+
+  const result =
+    App.lookupVehicleSpecification({
+      year,
+      make,
+      model,
+      configuration
+    });
+
+
+  if (
+    result.requiresConfiguration
+  ) {
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Select the correct configuration to detect tank capacity.",
+      "select"
+    );
+
+    return;
+
+  }
+
+
+  if (!result.found) {
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Specification unavailable — adjust tank capacity manually.",
+      "manual"
+    );
+
+    return;
+
+  }
+
+
+  const powertrain =
+    App.normalizePowertrain(
+      result.powertrain
+    );
+
+
+  const powertrainSelect =
+    App.$(
+      "onboardingPowertrain"
+    );
+
+
+  if (powertrainSelect) {
+
+    const optionExists =
+      Array.from(
+        powertrainSelect.options
+      ).some(
+        option =>
+          option.value ===
+          powertrain
+      );
+
+
+    if (optionExists) {
+
+      powertrainSelect.value =
+        powertrain;
+
+    }
+
+  }
+
+
+  const tank =
+    Number(
+      result.tankCapacity ??
+      result.tankLiters
+    );
+
+
+  if (
+    powertrain !== "Electric" &&
+    Number.isFinite(tank) &&
+    tank > 0
+  ) {
+
+    App.setTankSliderValue(
+      App.$("onboardingTank"),
+      tank
+    );
+
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "✓ Vehicle specification detected • " +
+      App.number(
+        tank,
+        1
+      ) +
+      " L",
+      "verified"
+    );
+
+  } else if (
+    powertrain === "Electric"
+  ) {
+
+    const battery =
+      Number(
+        result.batteryCapacity
+      );
+
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      Number.isFinite(battery)
+        ? "✓ Electric vehicle detected • " +
+          App.number(
+            battery,
+            1
+          ) +
+          " kWh"
+        : "✓ Electric vehicle detected.",
+      "verified"
+    );
+
+  }
+
+
+  App.updateOnboardingPowertrain();
+
+  App.updateOnboardingSliderLabels();
+
+};
+
+
+/* =========================================================
+   ONBOARDING POWERTRAIN
+   ========================================================= */
 
 App.updateOnboardingPowertrain =
 function () {
@@ -908,13 +1950,18 @@ function () {
       "onboardingPowertrain"
     )?.value;
 
+
   const tankField =
-    App.$("onboardingTankField");
+    App.$(
+      "onboardingTankField"
+    );
+
 
   const levelDescription =
     App.$(
       "onboardingLevelDescription"
     );
+
 
   if (
     powertrain === "Electric"
@@ -925,9 +1972,12 @@ function () {
         "none";
     }
 
+
     if (levelDescription) {
+
       levelDescription.textContent =
         "Current battery percentage";
+
     }
 
   } else {
@@ -937,12 +1987,15 @@ function () {
         "";
     }
 
+
     if (levelDescription) {
+
       levelDescription.textContent =
         powertrain ===
           "Plug-in Hybrid"
           ? "Current fuel / energy estimate"
           : "Current fuel percentage";
+
     }
 
   }
@@ -950,16 +2003,24 @@ function () {
 };
 
 
+/* =========================================================
+   ONBOARDING SLIDER LABELS
+   ========================================================= */
+
 App.updateOnboardingSliderLabels =
 function () {
 
   const level =
-    App.$("onboardingLevel");
+    App.$(
+      "onboardingLevel"
+    );
+
 
   const levelValue =
     App.$(
       "onboardingLevelValue"
     );
+
 
   if (
     level &&
@@ -973,12 +2034,16 @@ function () {
 
 
   const range =
-    App.$("onboardingRange");
+    App.$(
+      "onboardingRange"
+    );
+
 
   const rangeValue =
     App.$(
       "onboardingRangeValue"
     );
+
 
   if (
     range &&
@@ -992,12 +2057,16 @@ function () {
 
 
   const tank =
-    App.$("onboardingTank");
+    App.$(
+      "onboardingTank"
+    );
+
 
   const tankValue =
     App.$(
       "onboardingTankValue"
     );
+
 
   if (
     tank &&
@@ -1012,6 +2081,48 @@ function () {
 };
 
 
+/* =========================================================
+   MANUAL ONBOARDING TANK
+   ========================================================= */
+
+App.onOnboardingTankManualInput =
+function () {
+
+  App.updateOnboardingSliderLabels();
+
+
+  const tank =
+    Number(
+      App.$(
+        "onboardingTank"
+      )?.value
+    );
+
+
+  if (
+    Number.isFinite(tank)
+  ) {
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Manual capacity • " +
+      App.number(
+        tank,
+        1
+      ) +
+      " L",
+      "manual"
+    );
+
+  }
+
+};
+
+
+/* =========================================================
+   FINISH ONBOARDING
+   ========================================================= */
+
 App.finishOnboarding = function () {
 
   const year =
@@ -1021,20 +2132,30 @@ App.finishOnboarding = function () {
       )?.value
     );
 
+
   const make =
     App.$(
       "onboardingMake"
     )?.value;
+
 
   const model =
     App.$(
       "onboardingModel"
     )?.value;
 
+
+  const configuration =
+    App.$(
+      "onboardingConfiguration"
+    )?.value || "";
+
+
   const powertrain =
     App.$(
       "onboardingPowertrain"
     )?.value;
+
 
   const level =
     Number(
@@ -1043,12 +2164,14 @@ App.finishOnboarding = function () {
       )?.value
     );
 
+
   const fullRange =
     Number(
       App.$(
         "onboardingRange"
       )?.value
     );
+
 
   const tankCapacity =
     Number(
@@ -1075,6 +2198,46 @@ App.finishOnboarding = function () {
   }
 
 
+  const configurations =
+    App.getVehicleConfigurations(
+      year,
+      make,
+      model
+    );
+
+
+  if (
+    configurations.length > 1 &&
+    !configuration
+  ) {
+
+    App.toast(
+      "Select your vehicle configuration.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const specification =
+    App.lookupVehicleSpecification({
+      year,
+      make,
+      model,
+      configuration
+    });
+
+
+  const batteryCapacity =
+    specification.found
+      ? Number(
+          specification.batteryCapacity
+        )
+      : null;
+
+
   App.state.vehicle = {
 
     year,
@@ -1082,6 +2245,8 @@ App.finishOnboarding = function () {
     make,
 
     model,
+
+    configuration,
 
     powertrain,
 
@@ -1101,12 +2266,29 @@ App.finishOnboarding = function () {
 
     tankCapacity:
       powertrain === "Electric"
-        ? 46
-        : App.clamp(
-            tankCapacity,
-            20,
-            120
-          )
+        ? null
+        : (
+            Number.isFinite(
+              tankCapacity
+            ) &&
+            tankCapacity > 0
+              ? Number(
+                  tankCapacity.toFixed(1)
+                )
+              : 46
+          ),
+
+    batteryCapacity:
+      Number.isFinite(
+        batteryCapacity
+      )
+        ? batteryCapacity
+        : null,
+
+    capacitySource:
+      specification.found
+        ? "vehicle-database"
+        : "manual"
 
   };
 
@@ -1123,8 +2305,14 @@ App.finishOnboarding = function () {
   );
 
 
-  App.$("onboarding")
-    ?.classList.remove("open");
+  const onboarding =
+    App.$("onboarding") ||
+    App.$("onboardingModal");
+
+
+  onboarding?.classList.remove(
+    "open"
+  );
 
 
   App.refreshVehicleUI();
@@ -1133,10 +2321,202 @@ App.finishOnboarding = function () {
 
   App.applyStationFilters();
 
+
   App.toast(
     "Vehicle added. Welcome to GasGo 🚗",
     "success"
   );
+
+};
+
+
+/* =========================================================
+   VEHICLE HELPERS
+   ========================================================= */
+
+App.isElectricVehicle = function () {
+
+  return (
+    App.state.vehicle?.powertrain ===
+    "Electric"
+  );
+
+};
+
+
+App.getVehicleEnergyMode = function () {
+
+  const type =
+    String(
+      App.state.vehicle?.powertrain ||
+      ""
+    ).toLowerCase();
+
+
+  if (
+    type === "electric"
+  ) {
+
+    return "ev";
+
+  }
+
+
+  if (
+    type.includes("plug-in") ||
+    type.includes("phev")
+  ) {
+
+    return "both";
+
+  }
+
+
+  return "fuel";
+
+};
+
+
+App.getVehicleRange = function () {
+
+  const vehicle =
+    App.state.vehicle;
+
+
+  if (!vehicle) {
+    return 0;
+  }
+
+
+  if (
+    window.GasGoData &&
+    typeof GasGoData.getEstimatedVehicleRange ===
+      "function"
+  ) {
+
+    const result =
+      Number(
+        GasGoData.getEstimatedVehicleRange(
+          vehicle
+        )
+      );
+
+
+    if (
+      Number.isFinite(result)
+    ) {
+
+      return result;
+
+    }
+
+  }
+
+
+  return (
+    Number(
+      vehicle.fullRange || 0
+    ) *
+    Number(
+      vehicle.level || 0
+    ) /
+    100
+  );
+
+};
+
+
+/* =========================================================
+   LOCAL DATA
+   ========================================================= */
+
+App.loadLocalData = function () {
+
+  const savedVehicle =
+    App.loadStorage(
+      App.STORAGE.vehicle,
+      null
+    );
+
+
+  if (
+    savedVehicle &&
+    typeof savedVehicle ===
+      "object"
+  ) {
+
+    App.state.vehicle = {
+      ...App.DEFAULT_VEHICLE,
+      ...savedVehicle
+    };
+
+  } else {
+
+    App.state.vehicle = {
+      ...App.DEFAULT_VEHICLE
+    };
+
+  }
+
+
+  /*
+    Old V5 saves may contain a fake 46 L capacity for EVs.
+    V5.5 cleans that up.
+  */
+
+  if (
+    App.state.vehicle.powertrain ===
+    "Electric"
+  ) {
+
+    App.state.vehicle.tankCapacity =
+      null;
+
+  }
+
+
+  const rewards =
+    App.loadStorage(
+      App.STORAGE.rewards,
+      null
+    );
+
+
+  App.state.rewards =
+    rewards &&
+    typeof rewards === "object"
+      ? rewards
+      : JSON.parse(
+          JSON.stringify(
+            App.DEFAULT_REWARDS
+          )
+        );
+
+
+  const logs =
+    App.loadStorage(
+      App.STORAGE.fuelLogs,
+      []
+    );
+
+
+  App.state.fuelLogs =
+    Array.isArray(logs)
+      ? logs
+      : [];
+
+
+  const favorites =
+    App.loadStorage(
+      App.STORAGE.favorites,
+      []
+    );
+
+
+  App.state.favorites =
+    Array.isArray(favorites)
+      ? favorites
+      : [];
 
 };
 
@@ -1151,14 +2531,26 @@ function () {
   const mode =
     App.getVehicleEnergyMode();
 
-  if (mode === "ev") {
-    App.state.selectedKind = "ev";
+
+  if (
+    mode === "ev"
+  ) {
+
+    App.state.selectedKind =
+      "ev";
+
   } else if (
     mode === "both"
   ) {
-    App.state.selectedKind = "all";
+
+    App.state.selectedKind =
+      "all";
+
   } else {
-    App.state.selectedKind = "fuel";
+
+    App.state.selectedKind =
+      "fuel";
+
   }
 
 
@@ -1184,20 +2576,27 @@ App.updateEnergyFilterUI =
 function () {
 
   const fuelFilters =
-    App.$("fuelTypeFilters");
+    App.$(
+      "fuelTypeFilters"
+    );
+
 
   const brandFilters =
-    App.$("brandFilters");
+    App.$(
+      "brandFilters"
+    );
 
 
   if (
-    App.state.selectedKind === "ev"
+    App.state.selectedKind ===
+    "ev"
   ) {
 
     if (fuelFilters) {
       fuelFilters.style.display =
         "none";
     }
+
 
     if (brandFilters) {
       brandFilters.style.display =
@@ -1210,6 +2609,7 @@ function () {
       fuelFilters.style.display =
         "";
     }
+
 
     if (brandFilters) {
       brandFilters.style.display =
@@ -1230,6 +2630,7 @@ App.renderHomeVehicle = function () {
   const vehicle =
     App.state.vehicle;
 
+
   if (!vehicle) {
     return;
   }
@@ -1240,7 +2641,10 @@ App.renderHomeVehicle = function () {
 
 
   const homeRange =
-    App.$("homeRange");
+    App.$(
+      "homeRange"
+    );
+
 
   if (homeRange) {
 
@@ -1251,50 +2655,40 @@ App.renderHomeVehicle = function () {
   }
 
 
-  const homeLevel =
-    App.$("homeLevel");
-
-  if (homeLevel) {
-
-    homeLevel.textContent =
-      Math.round(
-        Number(vehicle.level)
-      ) + "%";
-
-  }
+  App.setText(
+    "homeLevel",
+    Math.round(
+      Number(
+        vehicle.level
+      )
+    ) + "%"
+  );
 
 
-  const label =
-    App.$("homeFuelLabel");
-
-  if (label) {
-
-    label.textContent =
-      vehicle.powertrain ===
-        "Electric"
-        ? "Battery"
-        : "Fuel";
-
-  }
+  App.setText(
+    "homeFuelLabel",
+    vehicle.powertrain ===
+      "Electric"
+      ? "Battery"
+      : "Fuel"
+  );
 
 
-  const name =
-    App.$("homeVehicleName");
-
-  if (name) {
-
-    name.textContent =
-      vehicle.year +
-      " " +
-      vehicle.make +
-      " " +
-      vehicle.model;
-
-  }
+  App.setText(
+    "homeVehicleName",
+    vehicle.year +
+    " " +
+    vehicle.make +
+    " " +
+    vehicle.model
+  );
 
 
   const bar =
-    App.$("homeLevelBar");
+    App.$(
+      "homeLevelBar"
+    );
+
 
   if (bar) {
 
@@ -1313,10 +2707,12 @@ App.renderHomeVehicle = function () {
       "planMyStopSubtitle"
     );
 
+
   const planQuestion =
     App.$(
       "planMyStopQuestion"
     );
+
 
   const amountButtons =
     App.$(
@@ -1330,35 +2726,51 @@ App.renderHomeVehicle = function () {
   ) {
 
     if (planSubtitle) {
+
       planSubtitle.textContent =
         "Smart charging planner";
+
     }
+
 
     if (planQuestion) {
+
       planQuestion.textContent =
         "FIND A CHARGER";
+
     }
 
+
     if (amountButtons) {
+
       amountButtons.style.display =
         "none";
+
     }
 
   } else {
 
     if (planSubtitle) {
+
       planSubtitle.textContent =
         "Smart fuel planner";
+
     }
+
 
     if (planQuestion) {
+
       planQuestion.textContent =
         "HOW MUCH ARE YOU ADDING?";
+
     }
 
+
     if (amountButtons) {
+
       amountButtons.style.display =
         "";
+
     }
 
   }
@@ -1378,29 +2790,31 @@ App.showScreen = function (
     screenName;
 
 
-  App.$all(".screen")
-    .forEach(screen => {
+  App.$all(
+    ".screen"
+  ).forEach(screen => {
 
-      screen.classList.toggle(
-        "active",
-        screen.id ===
-          "screen-" +
-          screenName
-      );
+    screen.classList.toggle(
+      "active",
+      screen.id ===
+        "screen-" +
+        screenName
+    );
 
-    });
+  });
 
 
-  App.$all(".nav")
-    .forEach(nav => {
+  App.$all(
+    ".nav"
+  ).forEach(nav => {
 
-      nav.classList.toggle(
-        "active",
-        nav.dataset.screen ===
-          screenName
-      );
+    nav.classList.toggle(
+      "active",
+      nav.dataset.screen ===
+        screenName
+    );
 
-    });
+  });
 
 
   window.scrollTo({
@@ -1410,10 +2824,12 @@ App.showScreen = function (
 
 
   if (
-    screenName === "stations"
+    screenName ===
+    "stations"
   ) {
 
     App.initializeMap();
+
 
     setTimeout(() => {
 
@@ -1426,23 +2842,32 @@ App.showScreen = function (
 
 
   if (
-    screenName === "dashboard"
+    screenName ===
+    "dashboard"
   ) {
+
     App.renderDashboard();
+
   }
 
 
   if (
-    screenName === "rewards"
+    screenName ===
+    "rewards"
   ) {
+
     App.renderRewards();
+
   }
 
 
   if (
-    screenName === "car"
+    screenName ===
+    "car"
   ) {
+
     App.renderVehicle();
+
   }
 
 };
@@ -1456,12 +2881,10 @@ App.setStationStatus = function (
   text
 ) {
 
-  const status =
-    App.$("stationStatus");
-
-  if (status) {
-    status.textContent = text;
-  }
+  App.setText(
+    "stationStatus",
+    text
+  );
 
 };
 
@@ -1475,7 +2898,9 @@ App.loadStations = async function () {
   if (
     App.state.stationsLoading
   ) {
+
     return;
+
   }
 
 
@@ -1490,7 +2915,9 @@ App.loadStations = async function () {
 
   try {
 
-    if (!window.GasGoData) {
+    if (
+      !window.GasGoData
+    ) {
 
       throw new Error(
         "stations.js missing"
@@ -1499,26 +2926,75 @@ App.loadStations = async function () {
     }
 
 
-    const result =
-      await GasGoData.fetchStations();
+    let result = null;
 
 
-    App.state.stations =
-      Array.isArray(
-        result.stations
-      )
-        ? result.stations
-        : [];
+    if (
+      typeof GasGoData.fetchStations ===
+        "function"
+    ) {
+
+      result =
+        await GasGoData.fetchStations();
+
+    } else if (
+      typeof GasGoData.loadStations ===
+        "function"
+    ) {
+
+      result =
+        await GasGoData.loadStations();
+
+    } else if (
+      typeof GasGoData.getStations ===
+        "function"
+    ) {
+
+      result =
+        await GasGoData.getStations();
+
+    }
 
 
-    App.state.stationSource =
-      result.source || "";
+    /*
+      Support both:
+      { stations: [...] }
+      and a direct [...]
+    */
+
+    if (
+      Array.isArray(result)
+    ) {
+
+      App.state.stations =
+        result;
+
+      App.state.stationSource =
+        "mapped";
+
+      App.state.usingFallback =
+        false;
+
+    } else {
+
+      App.state.stations =
+        Array.isArray(
+          result?.stations
+        )
+          ? result.stations
+          : [];
 
 
-    App.state.usingFallback =
-      Boolean(
-        result.fallback
-      );
+      App.state.stationSource =
+        result?.source || "";
+
+
+      App.state.usingFallback =
+        Boolean(
+          result?.fallback
+        );
+
+    }
 
 
     App.state.stationsLoaded =
@@ -1589,16 +3065,26 @@ App.loadStations = async function () {
       App.state.stations =
         GasGoData.getFallbackStations();
 
+
       App.state.stationsLoaded =
         true;
+
 
       App.state.usingFallback =
         true;
 
+
       App.applyStationFilters();
+
 
       App.setStationStatus(
         "Live map data unavailable. Showing GasGo demo locations."
+      );
+
+    } else {
+
+      App.setStationStatus(
+        "Unable to load mapped locations."
       );
 
     }
@@ -1608,6 +3094,23 @@ App.loadStations = async function () {
     App.state.stationsLoading =
       false;
 
+
+    const loader =
+      App.$(
+        "mapLoader"
+      );
+
+
+    if (
+      loader &&
+      App.state.mapInitialized
+    ) {
+
+      loader.style.display =
+        "none";
+
+    }
+
   }
 
 };
@@ -1615,6 +3118,8 @@ App.loadStations = async function () {
 
 /* =========================================================
    MAP
+
+   map-v55.js may replace these functions after app.js loads.
    ========================================================= */
 
 App.initializeMap = function () {
@@ -1637,9 +3142,12 @@ App.initializeMap = function () {
 
   if (
     !mapElement ||
-    typeof L === "undefined"
+    typeof L ===
+      "undefined"
   ) {
+
     return;
+
   }
 
 
@@ -1679,6 +3187,7 @@ App.initializeMap = function () {
       "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       {
         maxZoom: 19,
+
         attribution:
           "&copy; OpenStreetMap contributors"
       }
@@ -1690,17 +3199,23 @@ App.initializeMap = function () {
   );
 
 
-  const hideLoader = () => {
+  const hideLoader =
+    function () {
 
-    const loader =
-      App.$("mapLoader");
+      const loader =
+        App.$(
+          "mapLoader"
+        );
 
-    if (loader) {
-      loader.style.display =
-        "none";
-    }
 
-  };
+      if (loader) {
+
+        loader.style.display =
+          "none";
+
+      }
+
+    };
 
 
   tiles.once(
@@ -1756,8 +3271,14 @@ App.stationPopupHTML = function (
   station
 ) {
 
+  if (!station) {
+    return "";
+  }
+
+
   if (
-    station.type === "ev"
+    station.type ===
+    "ev"
   ) {
 
     const ev =
@@ -1765,7 +3286,9 @@ App.stationPopupHTML = function (
 
 
     const sockets =
-      Array.isArray(ev.sockets)
+      Array.isArray(
+        ev.sockets
+      )
         ? ev.sockets.join(", ")
         : ev.sockets ||
           "Not listed";
@@ -1773,6 +3296,7 @@ App.stationPopupHTML = function (
 
     return `
       <div>
+
         <div class="popup-title">
           ⚡ ${App.escape(station.name)}
         </div>
@@ -1819,6 +3343,7 @@ App.stationPopupHTML = function (
           EV information is displayed only when
           provided by map data.
         </div>
+
       </div>
     `;
 
@@ -1827,8 +3352,13 @@ App.stationPopupHTML = function (
 
   const prices =
     station.prices ||
-    GasGoData.getStationPrices(
-      station
+    (
+      typeof GasGoData.getStationPrices ===
+        "function"
+        ? GasGoData.getStationPrices(
+            station
+          )
+        : {}
     );
 
 
@@ -1840,7 +3370,9 @@ App.stationPopupHTML = function (
       </div>
 
       <div class="popup-brand">
-        ${App.escape(station.brand)}
+        ${App.escape(
+          station.brand || ""
+        )}
       </div>
 
       <div class="popup-prices">
@@ -1848,21 +3380,27 @@ App.stationPopupHTML = function (
         <div class="popup-price">
           <span>Regular</span>
           <strong>
-            ${App.money(prices.regular)}
+            ${App.money(
+              prices.regular
+            )}
           </strong>
         </div>
 
         <div class="popup-price">
           <span>Premium</span>
           <strong>
-            ${App.money(prices.premium)}
+            ${App.money(
+              prices.premium
+            )}
           </strong>
         </div>
 
         <div class="popup-price">
           <span>Diesel</span>
           <strong>
-            ${App.money(prices.diesel)}
+            ${App.money(
+              prices.diesel
+            )}
           </strong>
         </div>
 
@@ -1880,13 +3418,17 @@ App.stationPopupHTML = function (
 
 /* =========================================================
    MAP MARKERS
+
+   This is the safe base implementation.
+   map-v55.js V5.6.2 can override it.
    ========================================================= */
 
 App.renderMapStations = function () {
 
   if (
     !App.state.map ||
-    !App.state.markerLayer
+    !App.state.markerLayer ||
+    typeof L === "undefined"
   ) {
 
     App.renderStationList();
@@ -1906,7 +3448,6 @@ App.renderMapStations = function () {
   App.state.filteredStations
     .forEach(station => {
 
-
       const selected =
         String(
           App.state.selectedStation?.id
@@ -1917,8 +3458,8 @@ App.renderMapStations = function () {
       const marker =
         L.circleMarker(
           [
-            station.lat,
-            station.lon
+            Number(station.lat),
+            Number(station.lon)
           ],
           {
             radius:
@@ -1939,7 +3480,8 @@ App.renderMapStations = function () {
 
 
       marker.bindTooltip(
-        station.type === "ev"
+        station.type ===
+          "ev"
           ? "⚡"
           : "⛽",
         {
@@ -1958,14 +3500,25 @@ App.renderMapStations = function () {
       );
 
 
+      /*
+        IMPORTANT:
+
+        We do NOT rebuild the entire marker layer when
+        a map marker is clicked.
+
+        map-v55.js improves this further and controls
+        the selected marker styling.
+      */
+
       marker.on(
         "click",
         () => {
 
-          App.selectStation(
-            station,
-            false
-          );
+          App.state.selectedStation =
+            station;
+
+
+          App.renderStationSheet();
 
         }
       );
@@ -1995,8 +3548,12 @@ App.renderMapStations = function () {
 
 App.applyStationFilters = function () {
 
-  if (!window.GasGoData) {
+  if (
+    !window.GasGoData
+  ) {
+
     return;
+
   }
 
 
@@ -2007,13 +3564,43 @@ App.applyStationFilters = function () {
 
   if (
     typeof GasGoData.searchStations ===
-    "function"
+      "function"
   ) {
 
     stations =
       GasGoData.searchStations(
         stations,
         App.state.searchQuery
+      );
+
+  } else if (
+    App.state.searchQuery
+  ) {
+
+    const query =
+      String(
+        App.state.searchQuery
+      ).toLowerCase();
+
+
+    stations =
+      stations.filter(
+        station => {
+
+          const haystack = [
+            station.name,
+            station.brand,
+            station.municipality
+          ]
+            .join(" ")
+            .toLowerCase();
+
+
+          return haystack.includes(
+            query
+          );
+
+        }
       );
 
   }
@@ -2055,8 +3642,10 @@ App.applyStationFilters = function () {
 
   if (
     App.state.sortMode ===
-    "closest" &&
-    App.state.userLocation
+      "closest" &&
+    App.state.userLocation &&
+    typeof GasGoData.sortClosest ===
+      "function"
   ) {
 
     stations =
@@ -2087,10 +3676,13 @@ App.applyStationFilters = function () {
 
 
     const sortedFuel =
-      GasGoData.sortCheapest(
-        fuel,
-        App.state.selectedFuel
-      );
+      typeof GasGoData.sortCheapest ===
+        "function"
+        ? GasGoData.sortCheapest(
+            fuel,
+            App.state.selectedFuel
+          )
+        : fuel;
 
 
     stations = [
@@ -2117,15 +3709,22 @@ App.applyStationFilters = function () {
 
 
     const sortedFuel =
-      GasGoData.sortBestValue(
-        fuel,
-        App.state.userLocation,
-        App.state.selectedFuel
-      );
+      typeof GasGoData.sortBestValue ===
+        "function"
+        ? GasGoData.sortBestValue(
+            fuel,
+            App.state.userLocation,
+            App.state.selectedFuel
+          )
+        : fuel;
 
 
     const sortedEV =
-      App.state.userLocation
+      (
+        App.state.userLocation &&
+        typeof GasGoData.sortClosest ===
+          "function"
+      )
         ? GasGoData.sortClosest(
             ev,
             App.state.userLocation
@@ -2138,14 +3737,16 @@ App.applyStationFilters = function () {
       "ev"
     ) {
 
-      stations = sortedEV;
+      stations =
+        sortedEV;
 
     } else if (
       App.state.selectedKind ===
       "fuel"
     ) {
 
-      stations = sortedFuel;
+      stations =
+        sortedFuel;
 
     } else {
 
@@ -2195,7 +3796,9 @@ App.setEnergyFilter = function (
   });
 
 
-  if (kind === "ev") {
+  if (
+    kind === "ev"
+  ) {
 
     App.state.selectedBrand =
       "all";
@@ -2305,6 +3908,7 @@ App.setSortMode = function (
       "error"
     );
 
+
     App.requestLocation();
 
     return;
@@ -2344,6 +3948,7 @@ App.searchStations = function (
   App.state.searchQuery =
     String(value || "");
 
+
   App.applyStationFilters();
 
 };
@@ -2352,15 +3957,85 @@ App.searchStations = function (
 App.clearStationSearch = function () {
 
   const input =
-    App.$("stationSearch");
+    App.$(
+      "stationSearch"
+    );
+
 
   if (input) {
     input.value = "";
   }
 
-  App.state.searchQuery = "";
+
+  App.state.searchQuery =
+    "";
+
 
   App.applyStationFilters();
+
+};
+
+
+/* =========================================================
+   DISTANCE HELPERS
+   ========================================================= */
+
+App.getStationDistance = function (
+  station
+) {
+
+  if (
+    !station ||
+    !App.state.userLocation ||
+    typeof GasGoData.distanceMiles !==
+      "function"
+  ) {
+
+    return null;
+
+  }
+
+
+  return GasGoData.distanceMiles(
+    App.state.userLocation.lat,
+    App.state.userLocation.lon,
+    station.lat,
+    station.lon
+  );
+
+};
+
+
+App.formatDistance = function (
+  distance
+) {
+
+  if (
+    !Number.isFinite(
+      Number(distance)
+    )
+  ) {
+
+    return "—";
+
+  }
+
+
+  if (
+    typeof GasGoData.formatDistance ===
+      "function"
+  ) {
+
+    return GasGoData.formatDistance(
+      distance
+    );
+
+  }
+
+
+  return Number(
+    distance
+  ).toFixed(1) + " mi";
 
 };
 
@@ -2372,7 +4047,10 @@ App.clearStationSearch = function () {
 App.renderStationList = function () {
 
   const container =
-    App.$("stationList");
+    App.$(
+      "stationList"
+    );
+
 
   if (!container) {
     return;
@@ -2410,26 +4088,25 @@ App.renderStationList = function () {
   container.innerHTML =
     stations.map(station => {
 
+      let distanceText =
+        "";
 
-      let distanceText = "";
+
+      const distance =
+        App.getStationDistance(
+          station
+        );
 
 
       if (
-        App.state.userLocation
+        Number.isFinite(
+          distance
+        )
       ) {
-
-        const distance =
-          GasGoData.distanceMiles(
-            App.state.userLocation.lat,
-            App.state.userLocation.lon,
-            station.lat,
-            station.lon
-          );
-
 
         distanceText =
           " • " +
-          GasGoData.formatDistance(
+          App.formatDistance(
             distance
           );
 
@@ -2437,7 +4114,8 @@ App.renderStationList = function () {
 
 
       if (
-        station.type === "ev"
+        station.type ===
+        "ev"
       ) {
 
         const ev =
@@ -2463,10 +4141,12 @@ App.renderStationList = function () {
               </div>
 
               <div class="station-list-meta">
+
                 ${App.escape(
                   station.brand ||
                   "EV Charging"
                 )}
+
                 ${
                   station.municipality
                     ? " • " +
@@ -2475,7 +4155,9 @@ App.renderStationList = function () {
                       )
                     : ""
                 }
+
                 ${distanceText}
+
               </div>
 
             </div>
@@ -2495,8 +4177,13 @@ App.renderStationList = function () {
 
       const prices =
         station.prices ||
-        GasGoData.getStationPrices(
-          station
+        (
+          typeof GasGoData.getStationPrices ===
+            "function"
+            ? GasGoData.getStationPrices(
+                station
+              )
+            : {}
         );
 
 
@@ -2519,9 +4206,11 @@ App.renderStationList = function () {
             </div>
 
             <div class="station-list-meta">
+
               ${App.escape(
-                station.brand
+                station.brand || ""
               )}
+
               ${
                 station.municipality
                   ? " • " +
@@ -2530,17 +4219,21 @@ App.renderStationList = function () {
                     )
                   : ""
               }
+
               ${distanceText}
+
             </div>
 
           </div>
 
           <div class="station-list-price">
+
             ${App.money(
               prices[
                 App.state.selectedFuel
               ]
             )}
+
           </div>
 
         </div>
@@ -2552,7 +4245,13 @@ App.renderStationList = function () {
 
 
 /* =========================================================
-   SELECT LOCATION
+   SELECT STATION
+
+   Only ONE definition exists in V5.5.
+
+   IMPORTANT:
+   This intentionally avoids rebuilding the entire map
+   marker layer. map-v55.js controls marker selection.
    ========================================================= */
 
 App.selectStationById = function (
@@ -2584,65 +4283,6 @@ App.selectStation = function (
   moveMap = true
 ) {
 
-  App.state.selectedStation =
-    station;
-
-
-  if (
-    moveMap &&
-    App.state.map
-  ) {
-
-    App.state.map.flyTo(
-      [
-        station.lat,
-        station.lon
-      ],
-      Math.max(
-        App.state.map.getZoom(),
-        14
-      ),
-      {
-        duration: 0.5
-      }
-    );
-
-  }
-
-
-  App.renderStationSheet();
-
-  App.renderMapStations();
-
-
-  if (moveMap) {
-
-    const marker =
-      App.state.markers.get(
-        String(station.id)
-      );
-
-
-    if (marker) {
-
-      setTimeout(() => {
-
-        marker.openPopup();
-
-      }, 500);
-
-    }
-
-  }
-
-};
-
-
-App.selectStation = function (
-  station,
-  moveMap = true
-) {
-
   if (!station) {
     return;
   }
@@ -2652,10 +4292,8 @@ App.selectStation = function (
     station;
 
 
-  /*
-    Move the map first when the station was selected
-    from the list, Smart Stop, safer option, etc.
-  */
+  App.renderStationSheet();
+
 
   if (
     moveMap &&
@@ -2680,27 +4318,10 @@ App.selectStation = function (
 
 
   /*
-    Update the information sheet below the map.
-  */
+    Do not call renderMapStations() here.
 
-  App.renderStationSheet();
-
-
-  /*
-    Re-render markers so the selected station gets
-    GasGo's selected marker appearance.
-
-    IMPORTANT:
-    renderMapStations() destroys the old Leaflet marker
-    and creates a new one, so the popup must be opened
-    AFTER this function runs.
-  */
-
-  App.renderMapStations();
-
-
-  /*
-    Get the NEW marker that was just created.
+    map-v55.js V5.6.2 already handles marker highlighting
+    without destroying the popup marker.
   */
 
   const marker =
@@ -2709,48 +4330,199 @@ App.selectStation = function (
     );
 
 
-  if (!marker) {
+  if (marker) {
+
+    setTimeout(
+      () => {
+
+        const currentMarker =
+          App.state.markers.get(
+            String(station.id)
+          );
+
+
+        if (!currentMarker) {
+          return;
+        }
+
+
+        try {
+
+          currentMarker.setPopupContent(
+            App.stationPopupHTML(
+              station
+            )
+          );
+
+        } catch {
+          /* popup may not exist yet */
+        }
+
+
+        try {
+
+          currentMarker.openPopup();
+
+        } catch {
+          /* safe fallback */
+        }
+
+      },
+      moveMap
+        ? 550
+        : 30
+    );
+
+  }
+
+};
+
+
+/* =========================================================
+   STATION SHEET
+   ========================================================= */
+
+App.renderStationSheet = function () {
+
+  const station =
+    App.state.selectedStation;
+
+
+  const sheet =
+    App.$(
+      "stationSheet"
+    );
+
+
+  if (!sheet) {
     return;
   }
 
 
-  /*
-    If selected directly from the map, open immediately.
+  if (!station) {
 
-    If selected from the station list or another GasGo
-    feature, wait for flyTo to finish before opening.
-  */
+    sheet.style.display =
+      "none";
 
-  const delay =
-    moveMap
-      ? 550
-      : 30;
+    return;
+
+  }
 
 
-  setTimeout(
-    function () {
+  sheet.style.display =
+    "";
 
-      const currentMarker =
-        App.state.markers.get(
-          String(station.id)
+
+  App.setText(
+    "selectedStationName",
+    station.name || "Energy stop"
+  );
+
+
+  App.setText(
+    "selectedStationBrand",
+    station.brand ||
+    (
+      station.type === "ev"
+        ? "EV Charging"
+        : ""
+    )
+  );
+
+
+  const distance =
+    App.getStationDistance(
+      station
+    );
+
+
+  App.setText(
+    "selectedStationDistance",
+    Number.isFinite(distance)
+      ? App.formatDistance(
+          distance
+        )
+      : "Enable location"
+  );
+
+
+  const pricesContainer =
+    App.$(
+      "selectedStationPrices"
+    ) ||
+    App.$(
+      "stationPriceGrid"
+    );
+
+
+  if (pricesContainer) {
+
+    if (
+      station.type ===
+      "ev"
+    ) {
+
+      App.renderSelectedEVInfo(
+        pricesContainer
+      );
+
+    } else {
+
+      const prices =
+        station.prices ||
+        (
+          typeof GasGoData.getStationPrices ===
+            "function"
+            ? GasGoData.getStationPrices(
+                station
+              )
+            : {}
         );
 
 
-      if (
-        !currentMarker ||
-        !App.state.map
-      ) {
-        return;
-      }
+      pricesContainer.innerHTML = `
+
+        <div class="station-price">
+          <span>Regular</span>
+          <strong>
+            ${App.money(
+              prices.regular
+            )}
+          </strong>
+          <small>PER L</small>
+        </div>
+
+        <div class="station-price">
+          <span>Premium</span>
+          <strong>
+            ${App.money(
+              prices.premium
+            )}
+          </strong>
+          <small>PER L</small>
+        </div>
+
+        <div class="station-price">
+          <span>Diesel</span>
+          <strong>
+            ${App.money(
+              prices.diesel
+            )}
+          </strong>
+          <small>PER L</small>
+        </div>
+
+      `;
+
+    }
+
+  }
 
 
-      currentMarker.openPopup();
-
-    },
-    delay
-  );
+  App.renderCanIMakeIt();
 
 };
+
 
 /* =========================================================
    EV INFORMATION
@@ -2766,9 +4538,13 @@ App.renderSelectedEVInfo = function (
 
   if (
     !station ||
-    station.type !== "ev"
+    station.type !==
+      "ev" ||
+    !container
   ) {
+
     return;
+
   }
 
 
@@ -2777,7 +4553,9 @@ App.renderSelectedEVInfo = function (
 
 
   const sockets =
-    Array.isArray(ev.sockets)
+    Array.isArray(
+      ev.sockets
+    )
       ? ev.sockets.join(", ")
       : ev.sockets ||
         "Not listed";
@@ -2847,13 +4625,17 @@ App.renderSelectedEVInfo = function (
 
 
 /* =========================================================
-   CAN I MAKE IT
+   CAN I MAKE IT?
+
+   smart-v6.js can replace this implementation.
    ========================================================= */
 
 App.renderCanIMakeIt = function () {
 
   const element =
-    App.$("rangeResult");
+    App.$(
+      "rangeResult"
+    );
 
 
   if (!element) {
@@ -2880,6 +4662,7 @@ App.renderCanIMakeIt = function () {
     element.className =
       "range-result";
 
+
     element.innerHTML = `
       <div class="range-result-title">
         📍 Location needed
@@ -2892,6 +4675,16 @@ App.renderCanIMakeIt = function () {
         GasGo does not guarantee remaining range.
       </div>
     `;
+
+    return;
+
+  }
+
+
+  if (
+    typeof GasGoData.canIMakeIt !==
+      "function"
+  ) {
 
     return;
 
@@ -2919,21 +4712,24 @@ App.renderCanIMakeIt = function () {
 
 
   if (
-    result.status === "safe"
+    result.status ===
+    "safe"
   ) {
 
     title =
       "🟢 Likely within range";
 
   } else if (
-    result.status === "warning"
+    result.status ===
+    "warning"
   ) {
 
     title =
       "🟡 Low safety margin";
 
   } else if (
-    result.status === "danger"
+    result.status ===
+    "danger"
   ) {
 
     title =
@@ -2949,8 +4745,7 @@ App.renderCanIMakeIt = function () {
     </div>
 
     ${App.escape(
-      result.message ||
-      ""
+      result.message || ""
     )}
 
     ${
@@ -2961,7 +4756,7 @@ App.renderCanIMakeIt = function () {
           <br>
           Approx. distance:
           <strong>
-            ${GasGoData.formatDistance(
+            ${App.formatDistance(
               result.distance
             )}
           </strong>
@@ -2987,8 +4782,7 @@ App.renderCanIMakeIt = function () {
 
     <div class="muted mt-8">
       Prototype estimate only. Distance is approximate
-      straight-line distance and is not a guaranteed
-      driving range.
+      and estimated vehicle range is not guaranteed.
     </div>
 
   `;
@@ -3011,7 +4805,23 @@ App.findSaferOption = function () {
       "error"
     );
 
+
     App.requestLocation();
+
+    return;
+
+  }
+
+
+  if (
+    typeof GasGoData.findSaferStation !==
+      "function"
+  ) {
+
+    App.toast(
+      "Safer-stop analysis is unavailable.",
+      "error"
+    );
 
     return;
 
@@ -3082,14 +4892,44 @@ App.openDirections = function () {
       );
 
 
-  const url =
-    apple
-      ? GasGoData.getAppleMapsURL(
-          station
-        )
-      : GasGoData.getGoogleMapsURL(
-          station
-        );
+  let url = "";
+
+
+  if (
+    apple &&
+    typeof GasGoData.getAppleMapsURL ===
+      "function"
+  ) {
+
+    url =
+      GasGoData.getAppleMapsURL(
+        station
+      );
+
+  } else if (
+    typeof GasGoData.getGoogleMapsURL ===
+      "function"
+  ) {
+
+    url =
+      GasGoData.getGoogleMapsURL(
+        station
+      );
+
+  }
+
+
+  if (!url) {
+
+    url =
+      "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(
+        station.lat +
+        "," +
+        station.lon
+      );
+
+  }
 
 
   window.open(
@@ -3204,9 +5044,12 @@ App.renderUserMarker = function () {
 
   if (
     !App.state.map ||
-    !App.state.userLocation
+    !App.state.userLocation ||
+    typeof L === "undefined"
   ) {
+
     return;
+
   }
 
 
@@ -3214,9 +5057,15 @@ App.renderUserMarker = function () {
     App.state.userMarker
   ) {
 
-    App.state.map.removeLayer(
-      App.state.userMarker
-    );
+    try {
+
+      App.state.map.removeLayer(
+        App.state.userMarker
+      );
+
+    } catch {
+      /* safe */
+    }
 
   }
 
@@ -3224,8 +5073,10 @@ App.renderUserMarker = function () {
   const icon =
     L.divIcon({
       className: "",
+
       html:
         '<div class="user-location-marker"></div>',
+
       iconSize: [18, 18],
       iconAnchor: [9, 9]
     });
@@ -3273,16 +5124,26 @@ App.resetMap = function () {
   if (
     !App.state.map
   ) {
+
     return;
+
   }
+
+
+  const center =
+    GasGoData.PR_CENTER || {
+      lat: 18.2208,
+      lon: -66.5901,
+      zoom: 9
+    };
 
 
   App.state.map.flyTo(
     [
-      GasGoData.PR_CENTER.lat,
-      GasGoData.PR_CENTER.lon
+      center.lat,
+      center.lon
     ],
-    GasGoData.PR_CENTER.zoom,
+    center.zoom,
     {
       duration: 0.5
     }
@@ -3298,7 +5159,9 @@ App.resetMap = function () {
 App.updateSmartStop = function () {
 
   const card =
-    App.$("smartStopCard");
+    App.$(
+      "smartStopCard"
+    );
 
 
   if (!card) {
@@ -3329,16 +5192,20 @@ App.updateSmartStop = function () {
     App.getVehicleEnergyMode();
 
 
-  let candidates =
-    App.state.stations;
+  let candidates = [
+    ...App.state.stations
+  ];
 
 
-  if (mode === "ev") {
+  if (
+    mode === "ev"
+  ) {
 
     candidates =
       candidates.filter(
         station =>
-          station.type === "ev"
+          station.type ===
+          "ev"
       );
 
   } else if (
@@ -3348,7 +5215,8 @@ App.updateSmartStop = function () {
     candidates =
       candidates.filter(
         station =>
-          station.type === "fuel"
+          station.type ===
+          "fuel"
       );
 
   }
@@ -3358,7 +5226,9 @@ App.updateSmartStop = function () {
 
 
   if (
-    App.state.userLocation
+    App.state.userLocation &&
+    typeof GasGoData.sortClosest ===
+      "function"
   ) {
 
     const sorted =
@@ -3371,32 +5241,35 @@ App.updateSmartStop = function () {
     station =
       sorted[0] || null;
 
+  } else if (
+    mode === "fuel" &&
+    typeof GasGoData.sortCheapest ===
+      "function"
+  ) {
+
+    const sorted =
+      GasGoData.sortCheapest(
+        candidates,
+        App.state.selectedFuel
+      );
+
+
+    station =
+      sorted[0] || null;
+
   } else {
 
-    if (
-      mode === "fuel"
-    ) {
-
-      const sorted =
-        GasGoData.sortCheapest(
-          candidates,
-          App.state.selectedFuel
-        );
-
-      station =
-        sorted[0] || null;
-
-    } else {
-
-      station =
-        candidates[0] || null;
-
-    }
+    station =
+      candidates[0] || null;
 
   }
 
 
   if (!station) {
+
+    App.state.smartStop =
+      null;
+
 
     card.innerHTML = `
       <div class="smart-stop-title">
@@ -3422,21 +5295,20 @@ App.updateSmartStop = function () {
     "Enable location";
 
 
+  const distance =
+    App.getStationDistance(
+      station
+    );
+
+
   if (
-    App.state.userLocation
+    Number.isFinite(
+      distance
+    )
   ) {
 
-    const distance =
-      GasGoData.distanceMiles(
-        App.state.userLocation.lat,
-        App.state.userLocation.lon,
-        station.lat,
-        station.lon
-      );
-
-
     distanceText =
-      GasGoData.formatDistance(
+      App.formatDistance(
         distance
       );
 
@@ -3444,7 +5316,8 @@ App.updateSmartStop = function () {
 
 
   if (
-    station.type === "ev"
+    station.type ===
+    "ev"
   ) {
 
     const ev =
@@ -3548,8 +5421,13 @@ App.updateSmartStop = function () {
 
   const prices =
     station.prices ||
-    GasGoData.getStationPrices(
-      station
+    (
+      typeof GasGoData.getStationPrices ===
+        "function"
+        ? GasGoData.getStationPrices(
+            station
+          )
+        : {}
     );
 
 
@@ -3571,7 +5449,7 @@ App.updateSmartStop = function () {
 
         <div class="smart-stop-subtitle">
           ${App.escape(
-            station.brand
+            station.brand || ""
           )}
         </div>
 
@@ -3598,43 +5476,28 @@ App.updateSmartStop = function () {
     <div class="smart-stop-grid">
 
       <div class="smart-stat">
-
-        <span>
-          Distance
-        </span>
-
+        <span>Distance</span>
         <strong>
           ${distanceText}
         </strong>
-
       </div>
 
-
       <div class="smart-stat">
-
-        <span>
-          Est. range
-        </span>
-
+        <span>Est. range</span>
         <strong>
           ${Math.round(
             App.getVehicleRange()
           )} mi
         </strong>
-
       </div>
 
-
       <div class="smart-stat">
-
-        <span>
-          Fuel
-        </span>
-
+        <span>Fuel</span>
         <strong>
-          ${App.state.selectedFuel}
+          ${App.escape(
+            App.state.selectedFuel
+          )}
         </strong>
-
       </div>
 
     </div>
@@ -3777,23 +5640,35 @@ App.renderPlanMyStop = function () {
     App.state.vehicle;
 
 
+  if (!vehicle) {
+    return;
+  }
+
+
   const mode =
     App.getVehicleEnergyMode();
 
 
-  /* EV */
+  /* =======================================================
+     ELECTRIC
+     ======================================================= */
 
-  if (mode === "ev") {
+  if (
+    mode === "ev"
+  ) {
 
     let chargers =
       App.state.stations.filter(
         station =>
-          station.type === "ev"
+          station.type ===
+          "ev"
       );
 
 
     if (
-      App.state.userLocation
+      App.state.userLocation &&
+      typeof GasGoData.sortClosest ===
+        "function"
     ) {
 
       chargers =
@@ -3937,17 +5812,22 @@ App.renderPlanMyStop = function () {
   }
 
 
-  /* FUEL */
+  /* =======================================================
+     GASOLINE / HYBRID / PHEV
+     ======================================================= */
 
   let fuelStations =
     App.state.stations.filter(
       station =>
-        station.type === "fuel"
+        station.type ===
+        "fuel"
     );
 
 
   if (
-    App.state.userLocation
+    App.state.userLocation &&
+    typeof GasGoData.sortBestValue ===
+      "function"
   ) {
 
     fuelStations =
@@ -3957,7 +5837,10 @@ App.renderPlanMyStop = function () {
         App.state.selectedFuel
       );
 
-  } else {
+  } else if (
+    typeof GasGoData.sortCheapest ===
+      "function"
+  ) {
 
     fuelStations =
       GasGoData.sortCheapest(
@@ -3991,8 +5874,13 @@ App.renderPlanMyStop = function () {
 
   const prices =
     station.prices ||
-    GasGoData.getStationPrices(
-      station
+    (
+      typeof GasGoData.getStationPrices ===
+        "function"
+        ? GasGoData.getStationPrices(
+            station
+          )
+        : {}
     );
 
 
@@ -4002,6 +5890,22 @@ App.renderPlanMyStop = function () {
         App.state.selectedFuel
       ]
     );
+
+
+  if (
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+
+    container.innerHTML = `
+      <div class="muted">
+        A prototype fuel price is unavailable for this stop.
+      </div>
+    `;
+
+    return;
+
+  }
 
 
   const level =
@@ -4014,9 +5918,25 @@ App.renderPlanMyStop = function () {
 
   const tank =
     Number(
-      vehicle.tankCapacity ||
-      46
+      vehicle.tankCapacity
     );
+
+
+  if (
+    !Number.isFinite(tank) ||
+    tank <= 0
+  ) {
+
+    container.innerHTML = `
+      <div class="muted">
+        Add your vehicle's tank capacity to calculate
+        a fuel plan.
+      </div>
+    `;
+
+    return;
+
+  }
 
 
   const remainingCapacity =
@@ -4046,6 +5966,7 @@ App.renderPlanMyStop = function () {
       ) /
       price;
 
+
     liters =
       Math.min(
         liters,
@@ -4053,6 +5974,13 @@ App.renderPlanMyStop = function () {
       );
 
   }
+
+
+  liters =
+    Math.max(
+      0,
+      liters
+    );
 
 
   const cost =
@@ -4084,10 +6012,6 @@ App.renderPlanMyStop = function () {
     100;
 
 
-  App.state.planStation =
-    station;
-
-
   container.innerHTML = `
 
     <div class="smart-stop-header">
@@ -4106,7 +6030,7 @@ App.renderPlanMyStop = function () {
 
         <div class="smart-stop-subtitle">
           ${App.escape(
-            station.brand
+            station.brand || ""
           )}
         </div>
 
@@ -4129,48 +6053,31 @@ App.renderPlanMyStop = function () {
     <div class="smart-stop-grid mt-12">
 
       <div class="smart-stat">
-
-        <span>
-          Add
-        </span>
-
+        <span>Add</span>
         <strong>
           ${App.number(
             liters,
             1
           )} L
         </strong>
-
       </div>
 
-
       <div class="smart-stat">
-
-        <span>
-          Est. cost
-        </span>
-
+        <span>Est. cost</span>
         <strong>
           ${App.money(
             cost
           )}
         </strong>
-
       </div>
 
-
       <div class="smart-stat">
-
-        <span>
-          New level
-        </span>
-
+        <span>New level</span>
         <strong>
           ${Math.round(
             newLevel
           )}%
         </strong>
-
       </div>
 
     </div>
@@ -4218,7 +6125,9 @@ App.viewPlanStop = function () {
   if (
     !App.state.planStation
   ) {
+
     return;
+
   }
 
 
@@ -4244,7 +6153,9 @@ App.goToPlanStop = function () {
   if (
     !App.state.planStation
   ) {
+
     return;
+
   }
 
 
@@ -4272,80 +6183,61 @@ App.renderVehicle = function () {
   }
 
 
-  const title =
-    App.$("vehicleTitle");
+  App.setText(
+    "vehicleTitle",
+    vehicle.year +
+    " " +
+    vehicle.make +
+    " " +
+    vehicle.model
+  );
 
 
-  if (title) {
+  App.setText(
+    "vehicleType",
+    vehicle.powertrain
+  );
 
-    title.textContent =
-      vehicle.year +
-      " " +
-      vehicle.make +
-      " " +
-      vehicle.model;
 
-  }
+  App.setText(
+    "vehicleLevelDisplay",
+    Math.round(
+      vehicle.level
+    ) + "%"
+  );
+
+
+  App.setText(
+    "vehicleRangeDisplay",
+    Math.round(
+      App.getVehicleRange()
+    ) +
+    " mi"
+  );
+
+
+  App.setText(
+    "vehicleFullRangeDisplay",
+    Math.round(
+      vehicle.fullRange
+    ) +
+    " mi"
+  );
+
+
+  const configurationDisplay =
+    App.$(
+      "vehicleConfigurationDisplay"
+    );
 
 
   if (
-    App.$("vehicleType")
+    configurationDisplay
   ) {
 
-    App.$(
-      "vehicleType"
-    ).textContent =
-      vehicle.powertrain;
-
-  }
-
-
-  if (
-    App.$(
-      "vehicleLevelDisplay"
-    )
-  ) {
-
-    App.$(
-      "vehicleLevelDisplay"
-    ).textContent =
-      Math.round(
-        vehicle.level
-      ) + "%";
-
-  }
-
-
-  if (
-    App.$(
-      "vehicleRangeDisplay"
-    )
-  ) {
-
-    App.$(
-      "vehicleRangeDisplay"
-    ).textContent =
-      Math.round(
-        App.getVehicleRange()
-      ) +
-      " mi";
-
-  }
-
-
-  if (
-    App.$(
-      "vehicleFullRangeDisplay"
-    )
-  ) {
-
-    App.$(
-      "vehicleFullRangeDisplay"
-    ).textContent =
-      Math.round(
-        vehicle.fullRange
-      ) +
-      " mi";
+    configurationDisplay.textContent =
+      vehicle.configuration ||
+      "Manual / not specified";
 
   }
 
@@ -4368,29 +6260,51 @@ App.renderVehicle = function () {
   ) {
 
     if (capacityLabel) {
+
       capacityLabel.textContent =
-        "Energy source";
+        "Battery capacity";
+
     }
 
+
     if (tankDisplay) {
+
+      const battery =
+        Number(
+          vehicle.batteryCapacity
+        );
+
+
       tankDisplay.textContent =
-        "Battery";
+        Number.isFinite(battery)
+          ? App.number(
+              battery,
+              1
+            ) +
+            " kWh"
+          : "Battery";
+
     }
 
   } else {
 
     if (capacityLabel) {
+
       capacityLabel.textContent =
         "Tank capacity";
+
     }
 
+
     if (tankDisplay) {
+
       tankDisplay.textContent =
         App.number(
           vehicle.tankCapacity,
-          0
+          1
         ) +
         " L";
+
     }
 
   }
@@ -4405,7 +6319,9 @@ App.renderVehicle = function () {
 App.openVehicleModal = function () {
 
   const modal =
-    App.$("vehicleModal");
+    App.$(
+      "vehicleModal"
+    );
 
 
   if (!modal) {
@@ -4417,52 +6333,180 @@ App.openVehicleModal = function () {
     App.state.vehicle;
 
 
+  if (!vehicle) {
+    return;
+  }
+
+
+  const year =
+    App.$(
+      "vehicleYear"
+    );
+
+
+  const make =
+    App.$(
+      "vehicleMake"
+    );
+
+
+  const model =
+    App.$(
+      "vehicleModel"
+    );
+
+
   App.populateYearSelect(
-    App.$("vehicleYear")
+    year,
+    vehicle.year
   );
+
+
+  if (year) {
+
+    year.value =
+      String(
+        vehicle.year
+      );
+
+  }
 
 
   App.populateMakeSelect(
-    App.$("vehicleMake")
+    make,
+    vehicle.year,
+    vehicle.make
   );
 
 
-  App.$("vehicleYear").value =
-    vehicle.year;
+  if (
+    make &&
+    Array.from(
+      make.options
+    ).some(
+      option =>
+        option.value ===
+        vehicle.make
+    )
+  ) {
+
+    make.value =
+      vehicle.make;
+
+  }
 
 
-  App.$("vehicleMake").value =
-    vehicle.make;
-
-
-  App.updateVehicleModels(
+  App.populateModelSelect(
+    vehicle.year,
+    vehicle.make,
+    model,
     vehicle.model
   );
 
 
-  App.$(
-    "vehiclePowertrain"
-  ).value =
-    vehicle.powertrain;
+  if (
+    model &&
+    Array.from(
+      model.options
+    ).some(
+      option =>
+        option.value ===
+        vehicle.model
+    )
+  ) {
+
+    model.value =
+      vehicle.model;
+
+  }
 
 
-  App.$(
-    "vehicleLevel"
-  ).value =
-    vehicle.level;
+  App.updateVehicleSpec(
+    vehicle.configuration ||
+    "",
+    true
+  );
 
 
-  App.$(
-    "vehicleFullRange"
-  ).value =
-    vehicle.fullRange;
+  const powertrain =
+    App.$(
+      "vehiclePowertrain"
+    );
 
 
-  App.$(
-    "vehicleTankCapacity"
-  ).value =
-    vehicle.tankCapacity ||
-    46;
+  if (powertrain) {
+
+    const exists =
+      Array.from(
+        powertrain.options
+      ).some(
+        option =>
+          option.value ===
+          vehicle.powertrain
+      );
+
+
+    if (exists) {
+
+      powertrain.value =
+        vehicle.powertrain;
+
+    }
+
+  }
+
+
+  const level =
+    App.$(
+      "vehicleLevel"
+    );
+
+
+  if (level) {
+
+    level.value =
+      vehicle.level;
+
+  }
+
+
+  const fullRange =
+    App.$(
+      "vehicleFullRange"
+    );
+
+
+  if (fullRange) {
+
+    fullRange.value =
+      vehicle.fullRange;
+
+  }
+
+
+  const tank =
+    App.$(
+      "vehicleTankCapacity"
+    );
+
+
+  if (
+    tank &&
+    vehicle.powertrain !==
+      "Electric" &&
+    Number.isFinite(
+      Number(
+        vehicle.tankCapacity
+      )
+    )
+  ) {
+
+    App.setTankSliderValue(
+      tank,
+      vehicle.tankCapacity
+    );
+
+  }
 
 
   App.updateVehiclePowertrainUI();
@@ -4479,41 +6523,433 @@ App.openVehicleModal = function () {
 
 App.closeVehicleModal = function () {
 
-  App.$("vehicleModal")
-    ?.classList.remove(
-      "open"
-    );
+  App.$(
+    "vehicleModal"
+  )?.classList.remove(
+    "open"
+  );
 
 };
 
+
+/* =========================================================
+   VEHICLE MODAL YEAR
+   ========================================================= */
+
+App.updateVehicleYear = function () {
+
+  const year =
+    Number(
+      App.$(
+        "vehicleYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "vehicleMake"
+    );
+
+
+  const previousMake =
+    make?.value || "";
+
+
+  App.populateMakeSelect(
+    make,
+    year,
+    previousMake
+  );
+
+
+  App.updateVehicleModels();
+
+};
+
+
+/* =========================================================
+   VEHICLE MODAL MODELS
+   ========================================================= */
 
 App.updateVehicleModels = function (
   selectedModel = null
 ) {
 
+  const year =
+    Number(
+      App.$(
+        "vehicleYear"
+      )?.value
+    );
+
+
   const make =
-    App.$("vehicleMake");
+    App.$(
+      "vehicleMake"
+    );
+
 
   const model =
-    App.$("vehicleModel");
+    App.$(
+      "vehicleModel"
+    );
 
 
   if (
     !make ||
     !model
   ) {
+
     return;
+
   }
 
 
+  const previousModel =
+    selectedModel ||
+    model.value;
+
+
   App.populateModelSelect(
+    year,
     make.value,
     model,
-    selectedModel
+    previousModel
+  );
+
+
+  App.updateVehicleSpec();
+
+};
+
+
+/* =========================================================
+   VEHICLE MODAL SPEC
+   ========================================================= */
+
+App.updateVehicleSpec = function (
+  selectedConfiguration = null,
+  preserveManualValues = false
+) {
+
+  const year =
+    Number(
+      App.$(
+        "vehicleYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "vehicleMake"
+    )?.value;
+
+
+  const model =
+    App.$(
+      "vehicleModel"
+    )?.value;
+
+
+  const field =
+    App.$(
+      "vehicleConfigurationField"
+    );
+
+
+  const select =
+    App.$(
+      "vehicleConfiguration"
+    );
+
+
+  if (
+    !year ||
+    !make ||
+    !model
+  ) {
+
+    if (field) {
+      field.style.display =
+        "none";
+    }
+
+    return;
+
+  }
+
+
+  const configurations =
+    App.getVehicleConfigurations(
+      year,
+      make,
+      model
+    );
+
+
+  if (
+    !configurations.length
+  ) {
+
+    if (field) {
+
+      field.style.display =
+        "none";
+
+    }
+
+
+    if (select) {
+
+      select.innerHTML =
+        "";
+
+    }
+
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Specification unavailable — adjust tank capacity manually.",
+      "manual"
+    );
+
+
+    return;
+
+  }
+
+
+  if (field) {
+
+    field.style.display =
+      configurations.length > 1
+        ? ""
+        : "none";
+
+  }
+
+
+  App.populateConfigurationSelect(
+    select,
+    configurations,
+    selectedConfiguration
+  );
+
+
+  if (
+    configurations.length > 1 &&
+    !select?.value
+  ) {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Select the correct configuration to detect tank capacity.",
+      "select"
+    );
+
+    return;
+
+  }
+
+
+  App.applyVehicleSpecification(
+    preserveManualValues
   );
 
 };
 
+
+/* =========================================================
+   APPLY VEHICLE MODAL SPEC
+   ========================================================= */
+
+App.applyVehicleSpecification =
+function (
+  preserveManualValues = false
+) {
+
+  const year =
+    Number(
+      App.$(
+        "vehicleYear"
+      )?.value
+    );
+
+
+  const make =
+    App.$(
+      "vehicleMake"
+    )?.value;
+
+
+  const model =
+    App.$(
+      "vehicleModel"
+    )?.value;
+
+
+  const configuration =
+    App.$(
+      "vehicleConfiguration"
+    )?.value || "";
+
+
+  const result =
+    App.lookupVehicleSpecification({
+      year,
+      make,
+      model,
+      configuration
+    });
+
+
+  if (
+    result.requiresConfiguration
+  ) {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Select the correct configuration to detect tank capacity.",
+      "select"
+    );
+
+    return;
+
+  }
+
+
+  if (!result.found) {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Specification unavailable — adjust tank capacity manually.",
+      "manual"
+    );
+
+    return;
+
+  }
+
+
+  const powertrain =
+    App.normalizePowertrain(
+      result.powertrain
+    );
+
+
+  const powertrainSelect =
+    App.$(
+      "vehiclePowertrain"
+    );
+
+
+  if (
+    powertrainSelect
+  ) {
+
+    const exists =
+      Array.from(
+        powertrainSelect.options
+      ).some(
+        option =>
+          option.value ===
+          powertrain
+      );
+
+
+    if (exists) {
+
+      powertrainSelect.value =
+        powertrain;
+
+    }
+
+  }
+
+
+  const tank =
+    Number(
+      result.tankCapacity ??
+      result.tankLiters
+    );
+
+
+  if (
+    powertrain !== "Electric" &&
+    Number.isFinite(tank) &&
+    tank > 0
+  ) {
+
+    /*
+      When opening an already saved vehicle we preserve
+      the saved value. When the user changes the vehicle,
+      the verified database value is applied automatically.
+    */
+
+    if (
+      !preserveManualValues
+    ) {
+
+      App.setTankSliderValue(
+        App.$(
+          "vehicleTankCapacity"
+        ),
+        tank
+      );
+
+    }
+
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "✓ Vehicle specification detected • " +
+      App.number(
+        tank,
+        1
+      ) +
+      " L",
+      "verified"
+    );
+
+  } else if (
+    powertrain ===
+    "Electric"
+  ) {
+
+    const battery =
+      Number(
+        result.batteryCapacity
+      );
+
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      Number.isFinite(battery)
+        ? "✓ Electric vehicle detected • " +
+          App.number(
+            battery,
+            1
+          ) +
+          " kWh"
+        : "✓ Electric vehicle detected.",
+      "verified"
+    );
+
+  }
+
+
+  App.updateVehiclePowertrainUI();
+
+  App.updateVehicleSliderLabels();
+
+};
+
+
+/* =========================================================
+   VEHICLE POWERTRAIN UI
+   ========================================================= */
 
 App.updateVehiclePowertrainUI =
 function () {
@@ -4537,29 +6973,43 @@ function () {
 
 
   if (
-    powertrain === "Electric"
+    powertrain ===
+    "Electric"
   ) {
 
     if (tankField) {
+
       tankField.style.display =
         "none";
+
     }
 
+
     if (description) {
+
       description.textContent =
         "Current battery percentage";
+
     }
 
   } else {
 
     if (tankField) {
+
       tankField.style.display =
         "";
+
     }
 
+
     if (description) {
+
       description.textContent =
-        "Current fuel percentage";
+        powertrain ===
+          "Plug-in Hybrid"
+          ? "Current fuel / energy estimate"
+          : "Current fuel percentage";
+
     }
 
   }
@@ -4567,11 +7017,18 @@ function () {
 };
 
 
+/* =========================================================
+   VEHICLE SLIDER LABELS
+   ========================================================= */
+
 App.updateVehicleSliderLabels =
 function () {
 
   const level =
-    App.$("vehicleLevel");
+    App.$(
+      "vehicleLevel"
+    );
+
 
   const levelValue =
     App.$(
@@ -4594,6 +7051,7 @@ function () {
     App.$(
       "vehicleFullRange"
     );
+
 
   const rangeValue =
     App.$(
@@ -4618,9 +7076,13 @@ function () {
       "vehicleTankCapacity"
     );
 
+
   const tankValue =
     App.$(
       "vehicleTankCapacityValue"
+    ) ||
+    App.$(
+      "vehicleTankValue"
     );
 
 
@@ -4631,6 +7093,44 @@ function () {
 
     tankValue.textContent =
       tank.value;
+
+  }
+
+};
+
+
+/* =========================================================
+   MANUAL VEHICLE TANK
+   ========================================================= */
+
+App.onVehicleTankManualInput =
+function () {
+
+  App.updateVehicleSliderLabels();
+
+
+  const tank =
+    Number(
+      App.$(
+        "vehicleTankCapacity"
+      )?.value
+    );
+
+
+  if (
+    Number.isFinite(tank)
+  ) {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Manual capacity • " +
+      App.number(
+        tank,
+        1
+      ) +
+      " L",
+      "manual"
+    );
 
   }
 
@@ -4650,20 +7150,30 @@ App.saveVehicle = function () {
       )?.value
     );
 
+
   const make =
     App.$(
       "vehicleMake"
     )?.value;
+
 
   const model =
     App.$(
       "vehicleModel"
     )?.value;
 
+
+  const configuration =
+    App.$(
+      "vehicleConfiguration"
+    )?.value || "";
+
+
   const powertrain =
     App.$(
       "vehiclePowertrain"
     )?.value;
+
 
   const level =
     Number(
@@ -4672,12 +7182,14 @@ App.saveVehicle = function () {
       )?.value
     );
 
+
   const fullRange =
     Number(
       App.$(
         "vehicleFullRange"
       )?.value
     );
+
 
   const tank =
     Number(
@@ -4687,6 +7199,63 @@ App.saveVehicle = function () {
     );
 
 
+  if (
+    !year ||
+    !make ||
+    !model ||
+    !powertrain
+  ) {
+
+    App.toast(
+      "Complete your vehicle information.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const configurations =
+    App.getVehicleConfigurations(
+      year,
+      make,
+      model
+    );
+
+
+  if (
+    configurations.length > 1 &&
+    !configuration
+  ) {
+
+    App.toast(
+      "Select your vehicle configuration.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const specification =
+    App.lookupVehicleSpecification({
+      year,
+      make,
+      model,
+      configuration
+    });
+
+
+  const batteryCapacity =
+    specification.found
+      ? Number(
+          specification.batteryCapacity
+        )
+      : null;
+
+
   App.state.vehicle = {
 
     year,
@@ -4694,6 +7263,8 @@ App.saveVehicle = function () {
     make,
 
     model,
+
+    configuration,
 
     powertrain,
 
@@ -4712,17 +7283,29 @@ App.saveVehicle = function () {
       ),
 
     tankCapacity:
-      powertrain === "Electric"
-        ? (
-            App.state.vehicle
-              ?.tankCapacity ||
-            46
-          )
-        : App.clamp(
-            tank,
-            20,
-            120
-          )
+      powertrain ===
+        "Electric"
+        ? null
+        : (
+            Number.isFinite(tank) &&
+            tank > 0
+              ? Number(
+                  tank.toFixed(1)
+                )
+              : 46
+          ),
+
+    batteryCapacity:
+      Number.isFinite(
+        batteryCapacity
+      )
+        ? batteryCapacity
+        : null,
+
+    capacitySource:
+      specification.found
+        ? "vehicle-database"
+        : "manual"
 
   };
 
@@ -4749,7 +7332,9 @@ App.saveVehicle = function () {
 
 
   App.toast(
-    "Vehicle saved.",
+    specification.found
+      ? "Vehicle saved • specifications detected."
+      : "Vehicle saved.",
     "success"
   );
 
@@ -4874,7 +7459,8 @@ App.openFuelLogModal = function () {
 
   if (
     App.state.selectedStation
-      ?.type === "ev"
+      ?.type ===
+      "ev"
   ) {
 
     App.toast(
@@ -4888,7 +7474,9 @@ App.openFuelLogModal = function () {
 
 
   const modal =
-    App.$("fuelLogModal");
+    App.$(
+      "fuelLogModal"
+    );
 
 
   if (!modal) {
@@ -4897,7 +7485,9 @@ App.openFuelLogModal = function () {
 
 
   const date =
-    App.$("logDate");
+    App.$(
+      "logDate"
+    );
 
 
   if (date) {
@@ -4922,13 +7512,15 @@ App.openFuelLogModal = function () {
     App.state.selectedStation
   ) {
 
-    const station =
-      App.$("logStation");
+    const stationInput =
+      App.$(
+        "logStation"
+      );
 
 
-    if (station) {
+    if (stationInput) {
 
-      station.value =
+      stationInput.value =
         App.state.selectedStation
           .name;
 
@@ -4938,23 +7530,39 @@ App.openFuelLogModal = function () {
     const prices =
       App.state.selectedStation
         .prices ||
-      GasGoData.getStationPrices(
-        App.state.selectedStation
+      (
+        typeof GasGoData.getStationPrices ===
+          "function"
+          ? GasGoData.getStationPrices(
+              App.state.selectedStation
+            )
+          : {}
+      );
+
+
+    const selectedPrice =
+      Number(
+        prices[
+          App.state.selectedFuel
+        ]
       );
 
 
     const price =
-      App.$("logPrice");
+      App.$(
+        "logPrice"
+      );
 
 
-    if (price) {
+    if (
+      price &&
+      Number.isFinite(
+        selectedPrice
+      )
+    ) {
 
       price.value =
-        Number(
-          prices[
-            App.state.selectedFuel
-          ]
-        ).toFixed(2);
+        selectedPrice.toFixed(2);
 
     }
 
@@ -4971,12 +7579,17 @@ App.openFuelLogModal = function () {
 };
 
 
+/* =========================================================
+   CLOSE FUEL LOG
+   ========================================================= */
+
 App.closeFuelLogModal = function () {
 
-  App.$("fuelLogModal")
-    ?.classList.remove(
-      "open"
-    );
+  App.$(
+    "fuelLogModal"
+  )?.classList.remove(
+    "open"
+  );
 
 };
 
@@ -5011,18 +7624,10 @@ function () {
       : 0;
 
 
-  if (
-    App.$(
-      "logCalculatedTotal"
-    )
-  ) {
-
-    App.$(
-      "logCalculatedTotal"
-    ).textContent =
-      App.money(total);
-
-  }
+  App.setText(
+    "logCalculatedTotal",
+    App.money(total)
+  );
 
 
   const preview =
@@ -5063,7 +7668,10 @@ function () {
 App.saveFuelLog = function () {
 
   const date =
-    App.$("logDate")?.value;
+    App.$(
+      "logDate"
+    )?.value;
+
 
   const station =
     String(
@@ -5073,9 +7681,13 @@ App.saveFuelLog = function () {
       ""
     ).trim();
 
+
   const fuel =
-    App.$("logFuel")?.value ||
+    App.$(
+      "logFuel"
+    )?.value ||
     "regular";
+
 
   const liters =
     Number(
@@ -5083,6 +7695,7 @@ App.saveFuelLog = function () {
         "logLiters"
       )?.value
     );
+
 
   const price =
     Number(
@@ -5201,7 +7814,7 @@ App.saveFuelLog = function () {
 
 
 /* =========================================================
-   DELETE LOG
+   DELETE FUEL LOG
    ========================================================= */
 
 App.deleteFuelLog = function (
@@ -5266,77 +7879,45 @@ App.renderDashboard = function () {
       : 0;
 
 
-  if (
-    App.$("dashSpent")
-  ) {
-
-    App.$(
-      "dashSpent"
-    ).textContent =
-      App.money(
-        totalSpent
-      );
-
-  }
-
-
-  if (
-    App.$("dashLiters")
-  ) {
-
-    App.$(
-      "dashLiters"
-    ).textContent =
-      App.number(
-        totalLiters,
-        1
-      ) +
-      " L";
-
-  }
-
-
-  if (
-    App.$("dashSavings")
-  ) {
-
-    App.$(
-      "dashSavings"
-    ).textContent =
-      "$0.00";
-
-  }
-
-
-  if (
-    App.$("dashFillUps")
-  ) {
-
-    App.$(
-      "dashFillUps"
-    ).textContent =
-      logs.length;
-
-  }
-
-
-  if (
-    App.$(
-      "dashAveragePrice"
+  App.setText(
+    "dashSpent",
+    App.money(
+      totalSpent
     )
-  ) {
+  );
 
-    App.$(
-      "dashAveragePrice"
-    ).textContent =
-      averagePrice > 0
-        ? App.money(
-            averagePrice
-          ) +
-          "/L"
-        : "—";
 
-  }
+  App.setText(
+    "dashLiters",
+    App.number(
+      totalLiters,
+      1
+    ) +
+    " L"
+  );
+
+
+  App.setText(
+    "dashSavings",
+    "$0.00"
+  );
+
+
+  App.setText(
+    "dashFillUps",
+    logs.length
+  );
+
+
+  App.setText(
+    "dashAveragePrice",
+    averagePrice > 0
+      ? App.money(
+          averagePrice
+        ) +
+        "/L"
+      : "—"
+  );
 
 
   App.renderFuelLogs();
@@ -5353,7 +7934,9 @@ App.renderDashboard = function () {
 App.renderFuelLogs = function () {
 
   const container =
-    App.$("fuelLogList");
+    App.$(
+      "fuelLogList"
+    );
 
 
   if (!container) {
@@ -5406,18 +7989,24 @@ App.renderFuelLogs = function () {
             </div>
 
             <div class="log-meta">
+
               ${App.escape(
                 log.date
               )}
+
               •
+
               ${App.number(
                 log.liters,
                 1
               )} L
+
               •
+
               ${App.money(
                 log.price
               )}/L
+
             </div>
 
           </div>
@@ -5454,7 +8043,9 @@ App.renderFuelLogs = function () {
 App.renderSpendingChart = function () {
 
   const container =
-    App.$("spendingChart");
+    App.$(
+      "spendingChart"
+    );
 
 
   if (!container) {
@@ -5463,6 +8054,7 @@ App.renderSpendingChart = function () {
 
 
   const months = [];
+
 
   const now =
     new Date();
@@ -5514,6 +8106,17 @@ App.renderSpendingChart = function () {
           log.date +
           "T12:00:00"
         );
+
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+
+        return;
+
+      }
 
 
       const month =
@@ -5605,7 +8208,9 @@ App.renderSpendingChart = function () {
 App.renderRewards = function () {
 
   const container =
-    App.$("rewardsList");
+    App.$(
+      "rewardsList"
+    );
 
 
   if (!container) {
@@ -5628,18 +8233,10 @@ App.renderRewards = function () {
   });
 
 
-  if (
-    App.$(
-      "totalRewardPoints"
-    )
-  ) {
-
-    App.$(
-      "totalRewardPoints"
-    ).textContent =
-      totalPoints.toLocaleString();
-
-  }
+  App.setText(
+    "totalRewardPoints",
+    totalPoints.toLocaleString()
+  );
 
 
   container.innerHTML =
@@ -5674,10 +8271,13 @@ App.renderRewards = function () {
             </div>
 
             <div class="reward-points">
+
               ${Number(
                 reward.points || 0
               ).toLocaleString()}
+
               pts
+
             </div>
 
           </div>
@@ -5708,7 +8308,9 @@ function () {
     !window.GasGoData ||
     !GasGoData.BRAND_PRICES
   ) {
+
     return;
+
   }
 
 
@@ -5822,23 +8424,37 @@ function () {
    ========================================================= */
 
 App.openStations = function () {
-  App.showScreen("stations");
+  App.showScreen(
+    "stations"
+  );
 };
+
 
 App.openDashboard = function () {
-  App.showScreen("dashboard");
+  App.showScreen(
+    "dashboard"
+  );
 };
+
 
 App.openRewards = function () {
-  App.showScreen("rewards");
+  App.showScreen(
+    "rewards"
+  );
 };
+
 
 App.openCar = function () {
-  App.showScreen("car");
+  App.showScreen(
+    "car"
+  );
 };
 
+
 App.openPrices = function () {
-  App.showScreen("prices");
+  App.showScreen(
+    "prices"
+  );
 };
 
 
@@ -5848,8 +8464,14 @@ App.openPrices = function () {
 
 App.setupListeners = function () {
 
+  /* -------------------------
+     STATION SEARCH
+     ------------------------- */
+
   const search =
-    App.$("stationSearch");
+    App.$(
+      "stationSearch"
+    );
 
 
   if (search) {
@@ -5868,13 +8490,180 @@ App.setupListeners = function () {
   }
 
 
-  const make =
-    App.$("vehicleMake");
+  /* -------------------------
+     ONBOARDING YEAR
+     ------------------------- */
+
+  const onboardingYear =
+    App.$(
+      "onboardingYear"
+    );
 
 
-  if (make) {
+  if (onboardingYear) {
 
-    make.addEventListener(
+    onboardingYear.addEventListener(
+      "change",
+      App.updateOnboardingYear
+    );
+
+  }
+
+
+  /* -------------------------
+     ONBOARDING MAKE
+     ------------------------- */
+
+  const onboardingMake =
+    App.$(
+      "onboardingMake"
+    );
+
+
+  if (onboardingMake) {
+
+    onboardingMake.addEventListener(
+      "change",
+      App.updateOnboardingModels
+    );
+
+  }
+
+
+  /* -------------------------
+     ONBOARDING MODEL
+     ------------------------- */
+
+  const onboardingModel =
+    App.$(
+      "onboardingModel"
+    );
+
+
+  if (onboardingModel) {
+
+    onboardingModel.addEventListener(
+      "change",
+      App.updateOnboardingVehicleSpec
+    );
+
+  }
+
+
+  /* -------------------------
+     ONBOARDING CONFIGURATION
+     ------------------------- */
+
+  const onboardingConfiguration =
+    App.$(
+      "onboardingConfiguration"
+    );
+
+
+  if (onboardingConfiguration) {
+
+    onboardingConfiguration.addEventListener(
+      "change",
+      App.applyOnboardingVehicleSpecification
+    );
+
+  }
+
+
+  /* -------------------------
+     ONBOARDING POWERTRAIN
+     ------------------------- */
+
+  const onboardingPowertrain =
+    App.$(
+      "onboardingPowertrain"
+    );
+
+
+  if (onboardingPowertrain) {
+
+    onboardingPowertrain.addEventListener(
+      "change",
+      App.updateOnboardingPowertrain
+    );
+
+  }
+
+
+  /* -------------------------
+     ONBOARDING SLIDERS
+     ------------------------- */
+
+  [
+    "onboardingLevel",
+    "onboardingRange"
+  ].forEach(id => {
+
+    const element =
+      App.$(id);
+
+
+    if (element) {
+
+      element.addEventListener(
+        "input",
+        App.updateOnboardingSliderLabels
+      );
+
+    }
+
+  });
+
+
+  const onboardingTank =
+    App.$(
+      "onboardingTank"
+    );
+
+
+  if (onboardingTank) {
+
+    onboardingTank.addEventListener(
+      "input",
+      App.onOnboardingTankManualInput
+    );
+
+  }
+
+
+  /* -------------------------
+     VEHICLE YEAR
+     ------------------------- */
+
+  const vehicleYear =
+    App.$(
+      "vehicleYear"
+    );
+
+
+  if (vehicleYear) {
+
+    vehicleYear.addEventListener(
+      "change",
+      App.updateVehicleYear
+    );
+
+  }
+
+
+  /* -------------------------
+     VEHICLE MAKE
+     ------------------------- */
+
+  const vehicleMake =
+    App.$(
+      "vehicleMake"
+    );
+
+
+  if (vehicleMake) {
+
+    vehicleMake.addEventListener(
       "change",
       () => {
 
@@ -5886,10 +8675,83 @@ App.setupListeners = function () {
   }
 
 
+  /* -------------------------
+     VEHICLE MODEL
+     ------------------------- */
+
+  const vehicleModel =
+    App.$(
+      "vehicleModel"
+    );
+
+
+  if (vehicleModel) {
+
+    vehicleModel.addEventListener(
+      "change",
+      () => {
+
+        App.updateVehicleSpec();
+
+      }
+    );
+
+  }
+
+
+  /* -------------------------
+     VEHICLE CONFIGURATION
+     ------------------------- */
+
+  const vehicleConfiguration =
+    App.$(
+      "vehicleConfiguration"
+    );
+
+
+  if (vehicleConfiguration) {
+
+    vehicleConfiguration.addEventListener(
+      "change",
+      () => {
+
+        App.applyVehicleSpecification(
+          false
+        );
+
+      }
+    );
+
+  }
+
+
+  /* -------------------------
+     VEHICLE POWERTRAIN
+     ------------------------- */
+
+  const vehiclePowertrain =
+    App.$(
+      "vehiclePowertrain"
+    );
+
+
+  if (vehiclePowertrain) {
+
+    vehiclePowertrain.addEventListener(
+      "change",
+      App.updateVehiclePowertrainUI
+    );
+
+  }
+
+
+  /* -------------------------
+     VEHICLE SLIDERS
+     ------------------------- */
+
   [
     "vehicleLevel",
-    "vehicleFullRange",
-    "vehicleTankCapacity"
+    "vehicleFullRange"
   ].forEach(id => {
 
     const element =
@@ -5907,6 +8769,26 @@ App.setupListeners = function () {
 
   });
 
+
+  const vehicleTank =
+    App.$(
+      "vehicleTankCapacity"
+    );
+
+
+  if (vehicleTank) {
+
+    vehicleTank.addEventListener(
+      "input",
+      App.onVehicleTankManualInput
+    );
+
+  }
+
+
+  /* -------------------------
+     FUEL LOG
+     ------------------------- */
 
   [
     "logLiters",
@@ -5929,12 +8811,17 @@ App.setupListeners = function () {
   });
 
 
+  /* -------------------------
+     ESCAPE
+     ------------------------- */
+
   document.addEventListener(
     "keydown",
     event => {
 
       if (
-        event.key === "Escape"
+        event.key ===
+        "Escape"
       ) {
 
         App.closeVehicleModal();
@@ -5945,6 +8832,64 @@ App.setupListeners = function () {
 
     }
   );
+
+};
+
+
+/* =========================================================
+   VEHICLE DATABASE DIAGNOSTICS
+   ========================================================= */
+
+App.checkVehicleDatabase = function () {
+
+  const DB =
+    App.getVehicleDB();
+
+
+  if (!DB) {
+
+    console.warn(
+      "GasGo vehicles.js was not detected. Manual vehicle mode will be used."
+    );
+
+    return;
+
+  }
+
+
+  console.log(
+    "GasGo vehicle database:",
+    DB.VERSION ||
+    "loaded"
+  );
+
+
+  if (
+    typeof DB.validateDatabase ===
+      "function"
+  ) {
+
+    try {
+
+      const validation =
+        DB.validateDatabase();
+
+
+      console.log(
+        "GasGo vehicle DB validation:",
+        validation
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "Vehicle database validation failed:",
+        error
+      );
+
+    }
+
+  }
 
 };
 
@@ -5975,6 +8920,13 @@ App.init = function () {
   }
 
 
+  /*
+    vehicles.js is recommended but not fatal.
+  */
+
+  App.checkVehicleDatabase();
+
+
   App.loadLocalData();
 
   App.setupListeners();
@@ -5991,12 +8943,14 @@ App.init = function () {
 
   App.syncEnergyFilterToVehicle();
 
-  App.showScreen("home");
+  App.showScreen(
+    "home"
+  );
 
 
   /*
     Stations load in the background.
-    The user does not have to wait for the map.
+    Home can render before Overpass finishes.
   */
 
   App.loadStations();
