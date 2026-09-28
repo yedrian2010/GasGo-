@@ -39,7 +39,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=5.3"
+    href="style.css?v=5.5.0"
   >
 
 
@@ -83,6 +83,36 @@
     }
 
 
+    /*
+      Vehicle database status.
+
+      These use the same GasGo design language and
+      intentionally avoid changing the existing layout.
+    */
+
+    .vehicle-spec-status {
+      margin-top: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #a7a7a7;
+    }
+
+
+    .vehicle-spec-status.detected {
+      color: #00c853;
+    }
+
+
+    .vehicle-spec-status.manual {
+      color: #a7a7a7;
+    }
+
+
+    .vehicle-spec-status.warning {
+      color: #ffd166;
+    }
+
+
     @media (max-width: 430px) {
 
       .gasgo-brand-logo--header {
@@ -106,7 +136,6 @@
 
   <!-- =====================================================
        FIRST-TIME VEHICLE SETUP
-       Hidden by default. app.js decides when to show it.
        ===================================================== -->
 
   <div
@@ -163,16 +192,23 @@
       <div class="form-grid mt-15">
 
 
+        <!-- YEAR -->
+
         <div class="field">
 
           <label for="onboardingYear">
             YEAR
           </label>
 
-          <select id="onboardingYear"></select>
+          <select
+            id="onboardingYear"
+            onchange="GasGoApp.updateOnboardingYear()"
+          ></select>
 
         </div>
 
+
+        <!-- MAKE -->
 
         <div class="field">
 
@@ -188,16 +224,57 @@
         </div>
 
 
+        <!-- MODEL -->
+
         <div class="field full">
 
           <label for="onboardingModel">
             MODEL
           </label>
 
-          <select id="onboardingModel"></select>
+          <select
+            id="onboardingModel"
+            onchange="GasGoApp.updateOnboardingVehicleSpec()"
+          ></select>
 
         </div>
 
+
+        <!-- CONFIGURATION -->
+
+        <div
+          id="onboardingConfigurationField"
+          class="field full"
+          style="display:none"
+        >
+
+          <label for="onboardingConfiguration">
+            CONFIGURATION / ENGINE
+          </label>
+
+          <select
+            id="onboardingConfiguration"
+            onchange="GasGoApp.updateOnboardingVehicleSpec()"
+          >
+
+            <option value="">
+              Select configuration
+            </option>
+
+          </select>
+
+          <div
+            id="onboardingConfigurationHelp"
+            class="muted mt-8"
+          >
+            Some vehicles have different tank capacities
+            depending on engine or drivetrain.
+          </div>
+
+        </div>
+
+
+        <!-- POWERTRAIN -->
 
         <div class="field full">
 
@@ -370,10 +447,22 @@
               type="range"
               min="20"
               max="120"
-              step="1"
+              step="0.1"
               value="46"
-              oninput="GasGoApp.updateOnboardingSliderLabels()"
+              oninput="
+                GasGoApp.updateOnboardingSliderLabels();
+                GasGoApp.markOnboardingTankManual?.();
+              "
             >
+
+
+            <div
+              id="onboardingTankStatus"
+              class="vehicle-spec-status manual"
+            >
+              Select your vehicle to check for an automatic
+              tank specification.
+            </div>
 
           </div>
 
@@ -384,6 +473,16 @@
 
 
       <div class="notice info-notice mt-15">
+
+        GasGo can automatically use a stored tank
+        specification when an exact vehicle configuration
+        is available. If a specification is unavailable,
+        you can enter the capacity manually.
+
+      </div>
+
+
+      <div class="notice mt-10">
 
         GasGo estimates range from the information you
         provide. Actual range can change with traffic,
@@ -2042,16 +2141,23 @@
 
       <div class="form-grid">
 
+        <!-- YEAR -->
+
         <div class="field">
 
           <label for="vehicleYear">
             YEAR
           </label>
 
-          <select id="vehicleYear"></select>
+          <select
+            id="vehicleYear"
+            onchange="GasGoApp.updateVehicleYear()"
+          ></select>
 
         </div>
 
+
+        <!-- MAKE -->
 
         <div class="field">
 
@@ -2067,16 +2173,54 @@
         </div>
 
 
+        <!-- MODEL -->
+
         <div class="field full">
 
           <label for="vehicleModel">
             MODEL
           </label>
 
-          <select id="vehicleModel"></select>
+          <select
+            id="vehicleModel"
+            onchange="GasGoApp.updateVehicleSpec()"
+          ></select>
 
         </div>
 
+
+        <!-- CONFIGURATION -->
+
+        <div
+          id="vehicleConfigurationField"
+          class="field full"
+          style="display:none"
+        >
+
+          <label for="vehicleConfiguration">
+            CONFIGURATION / ENGINE
+          </label>
+
+          <select
+            id="vehicleConfiguration"
+            onchange="GasGoApp.updateVehicleSpec()"
+          >
+
+            <option value="">
+              Select configuration
+            </option>
+
+          </select>
+
+          <div class="muted mt-8">
+            Tank capacity can vary by engine, drivetrain
+            or configuration.
+          </div>
+
+        </div>
+
+
+        <!-- POWERTRAIN -->
 
         <div class="field full">
 
@@ -2251,10 +2395,22 @@
               type="range"
               min="20"
               max="120"
-              step="1"
+              step="0.1"
               value="46"
-              oninput="GasGoApp.updateVehicleSliderLabels()"
+              oninput="
+                GasGoApp.updateVehicleSliderLabels();
+                GasGoApp.markVehicleTankManual?.();
+              "
             >
+
+
+            <div
+              id="vehicleTankStatus"
+              class="vehicle-spec-status manual"
+            >
+              Select your vehicle to check for an automatic
+              tank specification.
+            </div>
 
           </div>
 
@@ -2264,6 +2420,16 @@
 
 
       <div class="notice mt-15">
+
+        When GasGo has an exact specification for your
+        selected year, model and configuration, the fuel
+        tank capacity is filled automatically. You can
+        still adjust it manually if needed.
+
+      </div>
+
+
+      <div class="notice mt-10">
 
         GasGo uses this information to create an estimated
         remaining range. These values should not be treated
@@ -2560,6 +2726,8 @@
 
   <!-- =====================================================
        JAVASCRIPT
+       IMPORTANT:
+       vehicles.js MUST load before app.js.
        ===================================================== -->
 
 
@@ -2579,16 +2747,25 @@
 
 
   <!--
-    2. MAIN GASGO APPLICATION
-    Navigation, vehicle, dashboard, rewards,
-    station selection, fuel log, etc.
+    2. VEHICLE DATABASE
+    Year + make + model + configuration + tank specs
   -->
 
-  <script src="app.js?v=5.4.2"></script>
+  <script src="vehicles.js?v=3.0.0"></script>
 
 
   <!--
-    3. GASGO MAP V5.6.2
+    3. MAIN GASGO APPLICATION
+    Navigation, vehicle database integration,
+    dashboard, rewards, station selection,
+    fuel log, etc.
+  -->
+
+  <script src="app.js?v=5.5.0"></script>
+
+
+  <!--
+    4. GASGO MAP V5.6.2
     OpenStreetMap + dark treatment
     + price-colored markers
     + Regular / Premium / Diesel popups
@@ -2599,7 +2776,7 @@
 
 
   <!--
-    4. SMART RANGE V6
+    5. SMART RANGE V6
     Can I Make It? + Smart Stop improvements
   -->
 
