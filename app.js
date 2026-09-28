@@ -2638,229 +2638,119 @@ App.selectStation = function (
 };
 
 
-/* =========================================================
-   SELECTED LOCATION SHEET
-   ========================================================= */
+App.selectStation = function (
+  station,
+  moveMap = true
+) {
 
-App.renderStationSheet = function () {
-
-  const station =
-    App.state.selectedStation;
-
-  const sheet =
-    App.$("stationSheet");
-
-
-  if (
-    !station ||
-    !sheet
-  ) {
+  if (!station) {
     return;
   }
 
 
-  sheet.classList.add(
-    "visible"
+  App.state.selectedStation =
+    station;
+
+
+  /*
+    Move the map first when the station was selected
+    from the list, Smart Stop, safer option, etc.
+  */
+
+  if (
+    moveMap &&
+    App.state.map
+  ) {
+
+    App.state.map.flyTo(
+      [
+        Number(station.lat),
+        Number(station.lon)
+      ],
+      Math.max(
+        App.state.map.getZoom(),
+        14
+      ),
+      {
+        duration: 0.5
+      }
+    );
+
+  }
+
+
+  /*
+    Update the information sheet below the map.
+  */
+
+  App.renderStationSheet();
+
+
+  /*
+    Re-render markers so the selected station gets
+    GasGo's selected marker appearance.
+
+    IMPORTANT:
+    renderMapStations() destroys the old Leaflet marker
+    and creates a new one, so the popup must be opened
+    AFTER this function runs.
+  */
+
+  App.renderMapStations();
+
+
+  /*
+    Get the NEW marker that was just created.
+  */
+
+  const marker =
+    App.state.markers.get(
+      String(station.id)
+    );
+
+
+  if (!marker) {
+    return;
+  }
+
+
+  /*
+    If selected directly from the map, open immediately.
+
+    If selected from the station list or another GasGo
+    feature, wait for flyTo to finish before opening.
+  */
+
+  const delay =
+    moveMap
+      ? 550
+      : 30;
+
+
+  setTimeout(
+    function () {
+
+      const currentMarker =
+        App.state.markers.get(
+          String(station.id)
+        );
+
+
+      if (
+        !currentMarker ||
+        !App.state.map
+      ) {
+        return;
+      }
+
+
+      currentMarker.openPopup();
+
+    },
+    delay
   );
 
-
-  if (
-    App.$(
-      "selectedStationName"
-    )
-  ) {
-
-    App.$(
-      "selectedStationName"
-    ).textContent =
-      station.name;
-
-  }
-
-
-  if (
-    App.$(
-      "selectedStationBrand"
-    )
-  ) {
-
-    App.$(
-      "selectedStationBrand"
-    ).textContent =
-      [
-        station.type === "ev"
-          ? "⚡ " +
-            (
-              station.brand ||
-              "EV Charging"
-            )
-          : station.brand,
-
-        station.municipality
-      ]
-        .filter(Boolean)
-        .join(" • ");
-
-  }
-
-
-  const distanceElement =
-    App.$(
-      "selectedStationDistance"
-    );
-
-
-  if (distanceElement) {
-
-    if (
-      App.state.userLocation
-    ) {
-
-      const distance =
-        GasGoData.distanceMiles(
-          App.state.userLocation.lat,
-          App.state.userLocation.lon,
-          station.lat,
-          station.lon
-        );
-
-
-      distanceElement.textContent =
-        GasGoData.formatDistance(
-          distance
-        ) +
-        " approx.";
-
-    } else {
-
-      distanceElement.textContent =
-        "Location off";
-
-    }
-
-  }
-
-
-  const fuelPrices =
-    App.$(
-      "selectedFuelPrices"
-    );
-
-  const evInfo =
-    App.$(
-      "selectedEVInfo"
-    );
-
-  const purchaseButton =
-    App.$(
-      "selectedLogPurchaseButton"
-    );
-
-
-  if (
-    station.type === "ev"
-  ) {
-
-    if (fuelPrices) {
-      fuelPrices.style.display =
-        "none";
-    }
-
-    if (evInfo) {
-
-      evInfo.style.display =
-        "";
-
-      App.renderSelectedEVInfo(
-        evInfo
-      );
-
-    }
-
-    if (purchaseButton) {
-      purchaseButton.style.display =
-        "none";
-    }
-
-  } else {
-
-    if (fuelPrices) {
-      fuelPrices.style.display =
-        "";
-    }
-
-    if (evInfo) {
-      evInfo.style.display =
-        "none";
-    }
-
-    if (purchaseButton) {
-      purchaseButton.style.display =
-        "";
-    }
-
-
-    const prices =
-      station.prices ||
-      GasGoData.getStationPrices(
-        station
-      );
-
-
-    if (
-      App.$(
-        "selectedRegular"
-      )
-    ) {
-
-      App.$(
-        "selectedRegular"
-      ).textContent =
-        App.money(
-          prices.regular
-        );
-
-    }
-
-
-    if (
-      App.$(
-        "selectedPremium"
-      )
-    ) {
-
-      App.$(
-        "selectedPremium"
-      ).textContent =
-        App.money(
-          prices.premium
-        );
-
-    }
-
-
-    if (
-      App.$(
-        "selectedDiesel"
-      )
-    ) {
-
-      App.$(
-        "selectedDiesel"
-      ).textContent =
-        App.money(
-          prices.diesel
-        );
-
-    }
-
-  }
-
-
-  App.renderCanIMakeIt();
-
 };
-
 
 /* =========================================================
    EV INFORMATION
