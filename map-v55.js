@@ -2,14 +2,14 @@
 
 /* =========================================================
    GASGO MAP ENHANCEMENT
-   Version 5.6.1
+   Version 5.6.2
 
    Requires:
    - Leaflet
    - stations.js
    - app.js V5.4+
 
-   GasGo Map V5.6.1
+   GasGo Map V5.6.2
    - No API key required
    - OpenStreetMap base map
    - Dark visual treatment
@@ -18,29 +18,30 @@
    - EV markers
    - User location
    - GasGo legend
+   - Fixed marker popup persistence
    ========================================================= */
 
 (function () {
 
   if (!window.GasGoApp) {
-    console.error("GasGo Map V5.6.1: app.js must load first.");
+    console.error("GasGo Map V5.6.2: app.js must load first.");
     return;
   }
 
   if (!window.GasGoData) {
-    console.error("GasGo Map V5.6.1: stations.js must load first.");
+    console.error("GasGo Map V5.6.2: stations.js must load first.");
     return;
   }
 
   if (typeof L === "undefined") {
-    console.error("GasGo Map V5.6.1: Leaflet is missing.");
+    console.error("GasGo Map V5.6.2: Leaflet is missing.");
     return;
   }
 
   const App = window.GasGoApp;
   const Data = window.GasGoData;
 
-  App.MAP_VERSION = "5.6.1";
+  App.MAP_VERSION = "5.6.2";
 
 
   /* =======================================================
@@ -233,7 +234,7 @@
       <div class="gasgo-fuel-popup">
 
         <div class="gasgo-popup-name">
-          ${name}
+          ⛽ ${name}
         </div>
 
         <div class="gasgo-popup-brand">
@@ -779,7 +780,7 @@
 
 
         console.log(
-          "GasGo Map V5.6.1 initialized 🌙"
+          "GasGo Map V5.6.2 initialized 🌙"
         );
 
       } catch (error) {
@@ -952,7 +953,7 @@
                     : 0.92,
 
                 bubblingMouseEvents:
-                  true
+                  false
 
               }
 
@@ -1027,12 +1028,6 @@
 
           /* =============================================
              POPUP
-
-             Fuel:
-             Regular + Premium + Diesel
-
-             EV:
-             Existing GasGo EV information
              ============================================= */
 
           if (
@@ -1055,7 +1050,19 @@
                   205,
 
                 className:
-                  "gasgo-dark-popup"
+                  "gasgo-dark-popup",
+
+                autoPan:
+                  true,
+
+                closeButton:
+                  true,
+
+                autoClose:
+                  true,
+
+                closeOnClick:
+                  true
 
               }
 
@@ -1078,8 +1085,17 @@
                 maxWidth:
                   300,
 
+                minWidth:
+                  205,
+
                 className:
-                  "gasgo-dark-popup"
+                  "gasgo-dark-popup",
+
+                autoPan:
+                  true,
+
+                closeButton:
+                  true
 
               }
 
@@ -1088,22 +1104,190 @@
           }
 
 
+          /* =============================================
+             MARKER CLICK — V5.6.2 FIX
+
+             Do NOT call App.selectStation() here.
+
+             selectStation() redraws every marker.
+             That destroyed the marker being clicked and
+             caused the popup to disappear.
+
+             We select the station directly, update the
+             sheet below, visually select this marker,
+             and explicitly open this same popup.
+             ============================================= */
+
           marker.on(
             "click",
             function () {
 
+              App.state.selectedStation =
+                station;
+
+
               if (
                 typeof App
-                  .selectStation ===
+                  .renderStationSheet ===
                   "function"
               ) {
 
-                App.selectStation(
-                  station,
-                  false
-                );
+                App.renderStationSheet();
 
               }
+
+
+              /*
+                Reset visual style of other markers without
+                rebuilding the Leaflet layer.
+              */
+
+              App.state.markers.forEach(
+                function (
+                  otherMarker,
+                  otherId
+                ) {
+
+                  if (
+                    !otherMarker ||
+                    typeof otherMarker
+                      .setStyle !==
+                      "function"
+                  ) {
+
+                    return;
+
+                  }
+
+
+                  const otherStation =
+                    stations.find(
+                      item =>
+                        String(
+                          item.id
+                        ) ===
+                        String(
+                          otherId
+                        )
+                    );
+
+
+                  if (!otherStation) {
+                    return;
+                  }
+
+
+                  const otherColor =
+                    getMarkerColor(
+                      otherStation,
+                      statistics
+                    );
+
+
+                  otherMarker.setStyle({
+
+                    radius:
+                      otherStation.type ===
+                        "ev"
+                        ? 8
+                        : 7,
+
+                    color:
+                      COLORS.outline,
+
+                    weight:
+                      2,
+
+                    fillColor:
+                      otherColor,
+
+                    fillOpacity:
+                      0.92
+
+                  });
+
+                }
+              );
+
+
+              /*
+                Highlight selected marker.
+              */
+
+              marker.setStyle({
+
+                radius:
+                  11,
+
+                color:
+                  COLORS.selected,
+
+                weight:
+                  4,
+
+                fillColor:
+                  color,
+
+                fillOpacity:
+                  1
+
+              });
+
+
+              /*
+                Bring selected marker to the front.
+              */
+
+              if (
+                typeof marker
+                  .bringToFront ===
+                  "function"
+              ) {
+
+                marker.bringToFront();
+
+              }
+
+
+              /*
+                Open the popup after the click finishes.
+                The marker is NOT destroyed anymore.
+              */
+
+              window.setTimeout(
+                function () {
+
+                  if (
+                    station.type ===
+                    "fuel"
+                  ) {
+
+                    marker.setPopupContent(
+                      fuelPopupHTML(
+                        station
+                      )
+                    );
+
+                  } else if (
+                    typeof App
+                      .stationPopupHTML ===
+                      "function"
+                  ) {
+
+                    marker.setPopupContent(
+                      App.stationPopupHTML(
+                        station
+                      )
+                    );
+
+                  }
+
+
+                  marker.openPopup();
+
+                },
+                0
+              );
 
             }
           );
@@ -2006,7 +2190,7 @@
     style.textContent = `
 
       /* ================================================
-         GASGO MAP V5.6.1
+         GASGO MAP V5.6.2
          ================================================ */
 
       #map {
@@ -2585,7 +2769,7 @@
 
 
   console.log(
-    "GasGo Map V5.6.1 loaded ⛽⚡🗺️"
+    "GasGo Map V5.6.2 loaded ⛽⚡🗺️"
   );
 
 })();
