@@ -2422,15 +2422,24 @@
 
   <!-- =====================================================
        JAVASCRIPT
+       IMPORTANT: Keep this exact loading order.
        ===================================================== -->
 
   <script
     src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
   ></script>
 
+  <!-- DATA + OPENSTREETMAP LOCATIONS -->
   <script src="stations.js?v=5.3"></script>
 
-  <script src="app.js?v=5.3"></script>
+  <!-- MAIN GASGO APP -->
+  <script src="app.js?v=5.4"></script>
+
+  <!-- DARK MAP + PRICE MARKERS -->
+  <script src="map-v55.js?v=5.5"></script>
+
+  <!-- SMART RANGE + CAN I MAKE IT -->
+  <script src="smart-v6.js?v=6.0"></script>
 
 
 </body>
