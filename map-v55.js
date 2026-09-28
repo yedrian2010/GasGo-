@@ -2,42 +2,48 @@
 
 /* =========================================================
    GASGO MAP ENHANCEMENT
-   Version 5.5.0
+   Version 5.6.0
 
    Requires:
    - Leaflet
    - stations.js
    - app.js V5.4+
 
-   This file intentionally overrides ONLY map-related
-   GasGoApp behavior.
+   GasGo Map V5.6
+   - No API key required
+   - OpenStreetMap base map
+   - Dark visual treatment
+   - Price-colored fuel markers
+   - EV markers
+   - User location
+   - GasGo legend
    ========================================================= */
 
 (function () {
 
   if (!window.GasGoApp) {
-    console.error("GasGo Map V5.5: app.js must load first.");
+    console.error("GasGo Map V5.6: app.js must load first.");
     return;
   }
 
   if (!window.GasGoData) {
-    console.error("GasGo Map V5.5: stations.js must load first.");
+    console.error("GasGo Map V5.6: stations.js must load first.");
     return;
   }
 
   if (typeof L === "undefined") {
-    console.error("GasGo Map V5.5: Leaflet is missing.");
+    console.error("GasGo Map V5.6: Leaflet is missing.");
     return;
   }
 
   const App = window.GasGoApp;
   const Data = window.GasGoData;
 
-  App.MAP_VERSION = "5.5.0";
+  App.MAP_VERSION = "5.6.0";
 
 
   /* =======================================================
-     MAP COLORS
+     COLORS
      ======================================================= */
 
   const COLORS = {
@@ -60,15 +66,19 @@
 
 
   /* =======================================================
-     DARK MAP TILES
+     MAP TILES
+
+     OpenStreetMap does NOT require a GasGo API key.
+
+     The visual dark effect is applied later with CSS.
      ======================================================= */
 
-  const DARK_TILE_URL =
-    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const MAP_TILE_URL =
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 
-  const DARK_TILE_ATTRIBUTION =
-    '&copy; OpenStreetMap contributors &copy; CARTO';
+  const MAP_TILE_ATTRIBUTION =
+    '&copy; OpenStreetMap contributors';
 
 
   /* =======================================================
@@ -86,23 +96,30 @@
 
   function getFuelPrice(station) {
 
-    if (!station || station.type !== "fuel") {
+    if (
+      !station ||
+      station.type !== "fuel"
+    ) {
       return null;
     }
 
 
-    let prices = station.prices;
+    let prices =
+      station.prices;
 
 
     if (
       !prices &&
-      typeof Data.getStationPrices === "function"
+      typeof Data.getStationPrices ===
+        "function"
     ) {
 
       try {
 
         prices =
-          Data.getStationPrices(station);
+          Data.getStationPrices(
+            station
+          );
 
       } catch (error) {
 
@@ -123,7 +140,9 @@
 
     const price =
       Number(
-        prices[App.state.selectedFuel]
+        prices[
+          App.state.selectedFuel
+        ]
       );
 
 
@@ -136,32 +155,42 @@
 
   /* =======================================================
      PRICE STATISTICS
-
-     We calculate relative price levels from the fuel
-     stations currently visible through the filters.
-
-     This means changing Regular / Premium / Diesel
-     automatically changes the marker classification.
      ======================================================= */
 
   function getPriceStatistics() {
 
+    const stations =
+      Array.isArray(
+        App.state.filteredStations
+      )
+        ? App.state.filteredStations
+        : [];
+
+
     const prices =
-      App.state.filteredStations
+      stations
         .filter(
           station =>
             station.type === "fuel"
         )
-        .map(getFuelPrice)
-        .filter(validNumber);
+        .map(
+          getFuelPrice
+        )
+        .filter(
+          validNumber
+        );
 
 
     if (!prices.length) {
 
       return {
+
         average: null,
+
         cheapLimit: null,
+
         expensiveLimit: null
+
       };
 
     }
@@ -176,18 +205,8 @@
       prices.length;
 
 
-    /*
-      Two cents per liter around the current average.
-
-      Example:
-      Average = $1.16/L
-
-      Green  <= $1.14
-      Yellow = $1.14–$1.18
-      Red    >= $1.18
-    */
-
-    const margin = 0.02;
+    const margin =
+      0.02;
 
 
     return {
@@ -210,18 +229,26 @@
     statistics
   ) {
 
-    if (station.type === "ev") {
+    if (
+      station.type === "ev"
+    ) {
+
       return "ev";
+
     }
 
 
     const price =
-      getFuelPrice(station);
+      getFuelPrice(
+        station
+      );
 
 
     if (
       !validNumber(price) ||
-      !validNumber(statistics.average)
+      !validNumber(
+        statistics.average
+      )
     ) {
 
       return "unknown";
@@ -230,7 +257,8 @@
 
 
     if (
-      price <= statistics.cheapLimit
+      price <=
+      statistics.cheapLimit
     ) {
 
       return "cheap";
@@ -239,7 +267,8 @@
 
 
     if (
-      price >= statistics.expensiveLimit
+      price >=
+      statistics.expensiveLimit
     ) {
 
       return "expensive";
@@ -295,83 +324,115 @@
 
 
   /* =======================================================
-     PRICE LEGEND
+     LEGEND
      ======================================================= */
 
   function addLegend() {
 
     if (
       !App.state.map ||
-      App.state.map._gasgoLegendAdded
+      App.state.map
+        ._gasgoLegendAdded
     ) {
+
       return;
+
     }
 
 
     const legend =
       L.control({
-        position: "bottomright"
+        position:
+          "bottomright"
       });
 
 
-    legend.onAdd = function () {
+    legend.onAdd =
+      function () {
 
-      const div =
-        L.DomUtil.create(
-          "div",
-          "gasgo-map-legend"
-        );
-
-
-      div.innerHTML = `
-
-        <div class="gasgo-legend-title">
-          GasGo
-        </div>
-
-        <div class="gasgo-legend-row">
-          <span
-            class="gasgo-legend-dot"
-            style="background:${COLORS.cheap}"
-          ></span>
-          Lower price
-        </div>
-
-        <div class="gasgo-legend-row">
-          <span
-            class="gasgo-legend-dot"
-            style="background:${COLORS.average}"
-          ></span>
-          Average
-        </div>
-
-        <div class="gasgo-legend-row">
-          <span
-            class="gasgo-legend-dot"
-            style="background:${COLORS.expensive}"
-          ></span>
-          Higher price
-        </div>
-
-        <div class="gasgo-legend-row">
-          <span
-            class="gasgo-legend-dot"
-            style="background:${COLORS.ev}"
-          ></span>
-          EV charger
-        </div>
-
-      `;
+        const div =
+          L.DomUtil.create(
+            "div",
+            "gasgo-map-legend"
+          );
 
 
-      L.DomEvent.disableClickPropagation(
-        div
-      );
+        div.innerHTML = `
+
+          <div
+            class="gasgo-legend-title"
+          >
+            GasGo
+          </div>
 
 
-      return div;
+          <div
+            class="gasgo-legend-row"
+          >
 
-    };
+            <span
+              class="gasgo-legend-dot"
+              style="background:${COLORS.cheap}"
+            ></span>
+
+            Lower price
+
+          </div>
+
+
+          <div
+            class="gasgo-legend-row"
+          >
+
+            <span
+              class="gasgo-legend-dot"
+              style="background:${COLORS.average}"
+            ></span>
+
+            Average
+
+          </div>
+
+
+          <div
+            class="gasgo-legend-row"
+          >
+
+            <span
+              class="gasgo-legend-dot"
+              style="background:${COLORS.expensive}"
+            ></span>
+
+            Higher price
+
+          </div>
+
+
+          <div
+            class="gasgo-legend-row"
+          >
+
+            <span
+              class="gasgo-legend-dot"
+              style="background:${COLORS.ev}"
+            ></span>
+
+            EV charger
+
+          </div>
+
+        `;
+
+
+        L.DomEvent
+          .disableClickPropagation(
+            div
+          );
+
+
+        return div;
+
+      };
 
 
     legend.addTo(
@@ -379,479 +440,533 @@
     );
 
 
-    App.state.map._gasgoLegendAdded =
+    App.state.map
+      ._gasgoLegendAdded =
       true;
 
   }
 
 
   /* =======================================================
-     INITIALIZE DARK MAP
-
-     Overrides App.initializeMap from V5.4.
+     INITIALIZE MAP
      ======================================================= */
 
-  App.initializeMap = function () {
+  App.initializeMap =
+    function () {
 
-    if (App.state.mapInitialized) {
+      if (
+        App.state.mapInitialized
+      ) {
 
-      if (App.state.map) {
+        if (
+          App.state.map
+        ) {
 
-        setTimeout(() => {
+          setTimeout(
+            function () {
 
-          App.state.map.invalidateSize(
-            true
-          );
+              App.state.map
+                .invalidateSize(
+                  true
+                );
 
-        }, 80);
-
-      }
-
-      return;
-
-    }
-
-
-    const mapElement =
-      document.getElementById(
-        "map"
-      );
-
-
-    if (!mapElement) {
-      return;
-    }
-
-
-    const center =
-      Data.PR_CENTER || {
-        lat: 18.2208,
-        lon: -66.5901,
-        zoom: 9
-      };
-
-
-    try {
-
-      App.state.map =
-        L.map(
-          "map",
-          {
-
-            zoomControl: true,
-
-            preferCanvas: true,
-
-            attributionControl: true
-
-          }
-        ).setView(
-
-          [
-            center.lat,
-            center.lon
-          ],
-
-          center.zoom
-
-        );
-
-
-      App.state.markerLayer =
-        L.layerGroup()
-          .addTo(
-            App.state.map
-          );
-
-
-      const tiles =
-        L.tileLayer(
-          DARK_TILE_URL,
-          {
-
-            maxZoom: 20,
-
-            subdomains:
-              "abcd",
-
-            attribution:
-              DARK_TILE_ATTRIBUTION
-
-          }
-        );
-
-
-      tiles.addTo(
-        App.state.map
-      );
-
-
-      tiles.once(
-        "load",
-        hideMapLoader
-      );
-
-
-      tiles.on(
-        "tileerror",
-        function () {
-
-          /*
-            Do not leave the loading overlay stuck
-            if one or more map tiles fail.
-          */
-
-          hideMapLoader();
-
-        }
-      );
-
-
-      /*
-        Safari/iPhone safety:
-        Never allow the loader to stay indefinitely.
-      */
-
-      setTimeout(
-        hideMapLoader,
-        1800
-      );
-
-
-      App.state.mapInitialized =
-        true;
-
-
-      addLegend();
-
-
-      setTimeout(() => {
-
-        if (App.state.map) {
-
-          App.state.map.invalidateSize(
-            true
+            },
+            80
           );
 
         }
 
-      }, 120);
-
-
-      if (
-        App.state.stationsLoaded
-      ) {
-
-        App.renderMapStations();
-
-      } else if (
-        !App.state.stationsLoading
-      ) {
-
-        App.loadStations();
+        return;
 
       }
 
 
-      console.log(
-        "GasGo dark map initialized 🌙"
-      );
-
-    } catch (error) {
-
-      console.error(
-        "GasGo map initialization error:",
-        error
-      );
-
-
-      hideMapLoader();
-
-
-      if (
-        typeof App.toast ===
-        "function"
-      ) {
-
-        App.toast(
-          "The map couldn't load correctly.",
-          "error"
+      const mapElement =
+        document.getElementById(
+          "map"
         );
 
+
+      if (!mapElement) {
+        return;
       }
 
-    }
 
-  };
+      const center =
+        Data.PR_CENTER || {
+
+          lat: 18.2208,
+
+          lon: -66.5901,
+
+          zoom: 9
+
+        };
+
+
+      try {
+
+        App.state.map =
+          L.map(
+            "map",
+            {
+
+              zoomControl:
+                true,
+
+              preferCanvas:
+                true,
+
+              attributionControl:
+                true
+
+            }
+          )
+            .setView(
+
+              [
+                center.lat,
+                center.lon
+              ],
+
+              center.zoom
+
+            );
+
+
+        App.state.markerLayer =
+          L.layerGroup()
+            .addTo(
+              App.state.map
+            );
+
+
+        const tiles =
+          L.tileLayer(
+            MAP_TILE_URL,
+            {
+
+              maxZoom: 19,
+
+              minZoom: 3,
+
+              attribution:
+                MAP_TILE_ATTRIBUTION,
+
+              className:
+                "gasgo-dark-map-tiles"
+
+            }
+          );
+
+
+        tiles.addTo(
+          App.state.map
+        );
+
+
+        tiles.once(
+          "load",
+          hideMapLoader
+        );
+
+
+        tiles.on(
+          "tileerror",
+          function (event) {
+
+            console.warn(
+              "GasGo map tile error:",
+              event
+            );
+
+            hideMapLoader();
+
+          }
+        );
+
+
+        setTimeout(
+          hideMapLoader,
+          1800
+        );
+
+
+        App.state
+          .mapInitialized =
+          true;
+
+
+        addLegend();
+
+
+        setTimeout(
+          function () {
+
+            if (
+              App.state.map
+            ) {
+
+              App.state.map
+                .invalidateSize(
+                  true
+                );
+
+            }
+
+          },
+          120
+        );
+
+
+        if (
+          App.state
+            .stationsLoaded
+        ) {
+
+          App.renderMapStations();
+
+        } else if (
+          !App.state
+            .stationsLoading
+        ) {
+
+          App.loadStations();
+
+        }
+
+
+        console.log(
+          "GasGo Map V5.6 initialized 🌙"
+        );
+
+      } catch (error) {
+
+        console.error(
+          "GasGo map initialization error:",
+          error
+        );
+
+
+        hideMapLoader();
+
+
+        if (
+          typeof App.toast ===
+          "function"
+        ) {
+
+          App.toast(
+            "The map couldn't load correctly.",
+            "error"
+          );
+
+        }
+
+      }
+
+    };
 
 
   /* =======================================================
-     MAP MARKERS
-
-     Fuel:
-     green  = lower price
-     yellow = average
-     red    = higher price
-
-     EV:
-     blue
-
-     Selected:
-     larger + white outline
+     MARKERS
      ======================================================= */
 
-  App.renderMapStations = function () {
-
-    /*
-      The station list must continue working even before
-      the Leaflet map has been initialized.
-    */
-
-    if (
-      !App.state.map ||
-      !App.state.markerLayer
-    ) {
+  App.renderMapStations =
+    function () {
 
       if (
-        typeof App.renderStationList ===
-        "function"
+        !App.state.map ||
+        !App.state.markerLayer
+      ) {
+
+        if (
+          typeof App
+            .renderStationList ===
+            "function"
+        ) {
+
+          App.renderStationList();
+
+        }
+
+        return;
+
+      }
+
+
+      App.state.markerLayer
+        .clearLayers();
+
+
+      if (
+        App.state.markers &&
+        typeof App.state.markers
+          .clear === "function"
+      ) {
+
+        App.state.markers
+          .clear();
+
+      } else {
+
+        App.state.markers =
+          new Map();
+
+      }
+
+
+      const statistics =
+        getPriceStatistics();
+
+
+      const stations =
+        Array.isArray(
+          App.state
+            .filteredStations
+        )
+          ? App.state
+              .filteredStations
+          : [];
+
+
+      stations.forEach(
+        function (station) {
+
+          if (
+            !validNumber(
+              station.lat
+            ) ||
+            !validNumber(
+              station.lon
+            )
+          ) {
+
+            return;
+
+          }
+
+
+          const selected =
+            String(
+              App.state
+                .selectedStation
+                ?.id
+            ) ===
+            String(
+              station.id
+            );
+
+
+          const color =
+            getMarkerColor(
+              station,
+              statistics
+            );
+
+
+          const marker =
+            L.circleMarker(
+
+              [
+                Number(
+                  station.lat
+                ),
+
+                Number(
+                  station.lon
+                )
+              ],
+
+              {
+
+                radius:
+                  selected
+                    ? 11
+                    : station.type ===
+                        "ev"
+                      ? 8
+                      : 7,
+
+                color:
+                  selected
+                    ? COLORS.selected
+                    : COLORS.outline,
+
+                weight:
+                  selected
+                    ? 4
+                    : 2,
+
+                opacity:
+                  1,
+
+                fillColor:
+                  color,
+
+                fillOpacity:
+                  selected
+                    ? 1
+                    : 0.92,
+
+                bubblingMouseEvents:
+                  true
+
+              }
+
+            );
+
+
+          const price =
+            getFuelPrice(
+              station
+            );
+
+
+          let tooltipText;
+
+
+          if (
+            station.type ===
+            "ev"
+          ) {
+
+            tooltipText =
+              "⚡ " +
+              (
+                station.name ||
+                "EV Charger"
+              );
+
+          } else {
+
+            tooltipText =
+              "⛽ " +
+              (
+                station.name ||
+                "Fuel Station"
+              );
+
+
+            if (
+              validNumber(
+                price
+              )
+            ) {
+
+              tooltipText +=
+                " • $" +
+                Number(
+                  price
+                ).toFixed(2) +
+                "/L";
+
+            }
+
+          }
+
+
+          marker.bindTooltip(
+            tooltipText,
+            {
+
+              direction:
+                "top",
+
+              offset:
+                [0, -8],
+
+              opacity:
+                0.96
+
+            }
+          );
+
+
+          if (
+            typeof App
+              .stationPopupHTML ===
+              "function"
+          ) {
+
+            marker.bindPopup(
+
+              App.stationPopupHTML(
+                station
+              ),
+
+              {
+
+                maxWidth:
+                  300,
+
+                className:
+                  "gasgo-dark-popup"
+
+              }
+
+            );
+
+          }
+
+
+          marker.on(
+            "click",
+            function () {
+
+              if (
+                typeof App
+                  .selectStation ===
+                  "function"
+              ) {
+
+                App.selectStation(
+                  station,
+                  false
+                );
+
+              }
+
+            }
+          );
+
+
+          marker.addTo(
+            App.state.markerLayer
+          );
+
+
+          App.state.markers.set(
+            String(
+              station.id
+            ),
+            marker
+          );
+
+        }
+      );
+
+
+      if (
+        typeof App
+          .renderStationList ===
+          "function"
       ) {
 
         App.renderStationList();
 
       }
 
-      return;
 
-    }
+      updateLegendPriceInfo(
+        statistics
+      );
 
-
-    App.state.markerLayer
-      .clearLayers();
-
-
-    App.state.markers.clear();
-
-
-    const statistics =
-      getPriceStatistics();
-
-
-    /*
-      Performance protection.
-
-      Puerto Rico can contain hundreds of mapped
-      locations. Leaflet Canvas handles circle markers
-      much better than hundreds of permanent HTML icons.
-    */
-
-    App.state.filteredStations
-      .forEach(station => {
-
-
-        if (
-          !validNumber(station.lat) ||
-          !validNumber(station.lon)
-        ) {
-          return;
-        }
-
-
-        const selected =
-          String(
-            App.state.selectedStation?.id
-          ) ===
-          String(station.id);
-
-
-        const color =
-          getMarkerColor(
-            station,
-            statistics
-          );
-
-
-        const marker =
-          L.circleMarker(
-
-            [
-              Number(station.lat),
-              Number(station.lon)
-            ],
-
-            {
-
-              radius:
-                selected
-                  ? 11
-                  : station.type === "ev"
-                    ? 8
-                    : 7,
-
-              color:
-                selected
-                  ? COLORS.selected
-                  : COLORS.outline,
-
-              weight:
-                selected
-                  ? 4
-                  : 2,
-
-              opacity: 1,
-
-              fillColor:
-                color,
-
-              fillOpacity:
-                selected
-                  ? 1
-                  : 0.92,
-
-              bubblingMouseEvents:
-                true
-
-            }
-
-          );
-
-
-        /*
-          Tooltip appears only when interacting with
-          the marker. We DO NOT create hundreds of
-          permanent emoji tooltips anymore.
-        */
-
-        const price =
-          getFuelPrice(station);
-
-
-        let tooltipText;
-
-
-        if (
-          station.type === "ev"
-        ) {
-
-          tooltipText =
-            "⚡ " +
-            (
-              station.name ||
-              "EV Charger"
-            );
-
-        } else {
-
-          tooltipText =
-            "⛽ " +
-            (
-              station.name ||
-              "Fuel Station"
-            );
-
-
-          if (
-            validNumber(price)
-          ) {
-
-            tooltipText +=
-              " • $" +
-              Number(price).toFixed(2) +
-              "/L";
-
-          }
-
-        }
-
-
-        marker.bindTooltip(
-          tooltipText,
-          {
-
-            direction: "top",
-
-            offset: [0, -8],
-
-            opacity: 0.96
-
-          }
-        );
-
-
-        if (
-          typeof App.stationPopupHTML ===
-          "function"
-        ) {
-
-          marker.bindPopup(
-            App.stationPopupHTML(
-              station
-            ),
-            {
-
-              maxWidth: 300,
-
-              className:
-                "gasgo-dark-popup"
-
-            }
-          );
-
-        }
-
-
-        marker.on(
-          "click",
-          function () {
-
-            if (
-              typeof App.selectStation ===
-              "function"
-            ) {
-
-              App.selectStation(
-                station,
-                false
-              );
-
-            }
-
-          }
-        );
-
-
-        marker.addTo(
-          App.state.markerLayer
-        );
-
-
-        App.state.markers.set(
-          String(station.id),
-          marker
-        );
-
-      });
-
-
-    if (
-      typeof App.renderStationList ===
-      "function"
-    ) {
-
-      App.renderStationList();
-
-    }
-
-
-    updateLegendPriceInfo(
-      statistics
-    );
-
-  };
+    };
 
 
   /* =======================================================
-     DYNAMIC LEGEND PRICE INFORMATION
+     LEGEND PRICE INFO
      ======================================================= */
 
   function updateLegendPriceInfo(
@@ -876,7 +991,9 @@
 
 
     if (oldInfo) {
+
       oldInfo.remove();
+
     }
 
 
@@ -885,7 +1002,9 @@
         statistics.average
       )
     ) {
+
       return;
+
     }
 
 
@@ -901,15 +1020,20 @@
 
     const fuelName =
       String(
-        App.state.selectedFuel ||
+        App.state
+          .selectedFuel ||
         "regular"
       );
 
 
     info.innerHTML = `
 
-      ${fuelName.charAt(0).toUpperCase() +
-        fuelName.slice(1)}
+      ${
+        fuelName
+          .charAt(0)
+          .toUpperCase() +
+        fuelName.slice(1)
+      }
 
       avg.
 
@@ -928,16 +1052,7 @@
 
 
   /* =======================================================
-     BETTER SMART STOP SCORING
-
-     For fuel:
-       - price matters
-       - distance matters when location is available
-
-     For EV:
-       - distance is prioritized
-       - no fake price/availability data
-
+     SMART STOP SCORING
      ======================================================= */
 
   function scoreFuelStation(
@@ -946,21 +1061,23 @@
   ) {
 
     const price =
-      getFuelPrice(station);
+      getFuelPrice(
+        station
+      );
 
 
-    if (!validNumber(price)) {
+    if (
+      !validNumber(price)
+    ) {
+
       return Infinity;
+
     }
 
 
-    /*
-      No location:
-      price alone is used.
-    */
-
     if (
-      !App.state.userLocation
+      !App.state
+        .userLocation
     ) {
 
       return price;
@@ -971,9 +1088,11 @@
     const distance =
       Data.distanceMiles(
 
-        App.state.userLocation.lat,
+        App.state
+          .userLocation.lat,
 
-        App.state.userLocation.lon,
+        App.state
+          .userLocation.lon,
 
         station.lat,
 
@@ -982,28 +1101,27 @@
       );
 
 
-    /*
-      Relative price difference.
-
-      Cheaper stations reduce score.
-      More distant stations increase score.
-
-      This intentionally avoids pretending that
-      the score is an exact financial calculation.
-    */
-
     const priceDifference =
-      validNumber(averagePrice)
-        ? price - averagePrice
+      validNumber(
+        averagePrice
+      )
+        ? price -
+          averagePrice
         : 0;
 
 
     const priceScore =
-      priceDifference * 100;
+      priceDifference *
+      100;
 
 
     const distanceScore =
-      distance * 0.75;
+      Number.isFinite(
+        Number(distance)
+      )
+        ? Number(distance) *
+          0.75
+        : 999;
 
 
     return (
@@ -1021,19 +1139,28 @@
     const fuelStations =
       stations.filter(
         station =>
-          station.type === "fuel"
+          station.type ===
+          "fuel"
       );
 
 
-    if (!fuelStations.length) {
+    if (
+      !fuelStations.length
+    ) {
+
       return null;
+
     }
 
 
     const prices =
       fuelStations
-        .map(getFuelPrice)
-        .filter(validNumber);
+        .map(
+          getFuelPrice
+        )
+        .filter(
+          validNumber
+        );
 
 
     const average =
@@ -1051,15 +1178,20 @@
       ...fuelStations
     ]
       .sort(
-        (a, b) =>
-          scoreFuelStation(
-            a,
-            average
-          ) -
-          scoreFuelStation(
-            b,
-            average
-          )
+        function (a, b) {
+
+          return (
+            scoreFuelStation(
+              a,
+              average
+            ) -
+            scoreFuelStation(
+              b,
+              average
+            )
+          );
+
+        }
       )[0] || null;
 
   }
@@ -1072,17 +1204,23 @@
     const chargers =
       stations.filter(
         station =>
-          station.type === "ev"
+          station.type ===
+          "ev"
       );
 
 
-    if (!chargers.length) {
+    if (
+      !chargers.length
+    ) {
+
       return null;
+
     }
 
 
     if (
-      !App.state.userLocation
+      !App.state
+        .userLocation
     ) {
 
       return chargers[0];
@@ -1094,14 +1232,16 @@
       ...chargers
     ]
       .sort(
-        (a, b) => {
+        function (a, b) {
 
           const distanceA =
             Data.distanceMiles(
 
-              App.state.userLocation.lat,
+              App.state
+                .userLocation.lat,
 
-              App.state.userLocation.lon,
+              App.state
+                .userLocation.lon,
 
               a.lat,
 
@@ -1113,9 +1253,11 @@
           const distanceB =
             Data.distanceMiles(
 
-              App.state.userLocation.lat,
+              App.state
+                .userLocation.lat,
 
-              App.state.userLocation.lon,
+              App.state
+                .userLocation.lon,
 
               b.lat,
 
@@ -1136,244 +1278,429 @@
 
 
   /* =======================================================
-     SMART STOP V5.5
+     SMART STOP
      ======================================================= */
 
-  App.updateSmartStop = function () {
+  App.updateSmartStop =
+    function () {
 
-    const card =
-      document.getElementById(
-        "smartStopCard"
-      );
-
-
-    if (!card) {
-      return;
-    }
-
-
-    if (
-      !App.state.stations.length
-    ) {
-
-      card.innerHTML = `
-
-        <div class="smart-stop-title">
-          Finding your Smart Stop…
-        </div>
-
-        <div class="smart-stop-subtitle">
-          Comparing mapped energy options.
-        </div>
-
-      `;
-
-      return;
-
-    }
-
-
-    const mode =
-      typeof App.getVehicleEnergyMode ===
-      "function"
-        ? App.getVehicleEnergyMode()
-        : "fuel";
-
-
-    let station = null;
-
-
-    if (mode === "ev") {
-
-      station =
-        getBestEVSmartStop(
-          App.state.stations
-        );
-
-    } else if (
-      mode === "both"
-    ) {
-
-      /*
-        PHEV:
-        The closest relevant energy stop is preferred
-        when location exists.
-
-        We don't invent an equivalence between EV
-        charging price and gasoline price.
-      */
-
-      const fuel =
-        getBestFuelSmartStop(
-          App.state.stations
+      const card =
+        document.getElementById(
+          "smartStopCard"
         );
 
 
-      const ev =
-        getBestEVSmartStop(
-          App.state.stations
-        );
+      if (!card) {
+        return;
+      }
 
 
       if (
-        App.state.userLocation &&
-        fuel &&
-        ev
+        !App.state.stations
+          .length
       ) {
 
-        const fuelDistance =
-          Data.distanceMiles(
+        card.innerHTML = `
 
-            App.state.userLocation.lat,
+          <div
+            class="smart-stop-title"
+          >
+            Finding your Smart Stop…
+          </div>
 
-            App.state.userLocation.lon,
+          <div
+            class="smart-stop-subtitle"
+          >
+            Comparing mapped energy options.
+          </div>
 
-            fuel.lat,
+        `;
 
-            fuel.lon
+        return;
 
-          );
+      }
 
 
-        const evDistance =
-          Data.distanceMiles(
+      const mode =
+        typeof App
+          .getVehicleEnergyMode ===
+          "function"
+          ? App
+              .getVehicleEnergyMode()
+          : "fuel";
 
-            App.state.userLocation.lat,
 
-            App.state.userLocation.lon,
+      let station =
+        null;
 
-            ev.lat,
 
-            ev.lon
-
-          );
-
+      if (
+        mode === "ev"
+      ) {
 
         station =
-          evDistance < fuelDistance
-            ? ev
-            : fuel;
+          getBestEVSmartStop(
+            App.state.stations
+          );
+
+      } else if (
+        mode === "both"
+      ) {
+
+        const fuel =
+          getBestFuelSmartStop(
+            App.state.stations
+          );
+
+
+        const ev =
+          getBestEVSmartStop(
+            App.state.stations
+          );
+
+
+        if (
+          App.state
+            .userLocation &&
+          fuel &&
+          ev
+        ) {
+
+          const fuelDistance =
+            Data.distanceMiles(
+
+              App.state
+                .userLocation.lat,
+
+              App.state
+                .userLocation.lon,
+
+              fuel.lat,
+
+              fuel.lon
+
+            );
+
+
+          const evDistance =
+            Data.distanceMiles(
+
+              App.state
+                .userLocation.lat,
+
+              App.state
+                .userLocation.lon,
+
+              ev.lat,
+
+              ev.lon
+
+            );
+
+
+          station =
+            evDistance <
+            fuelDistance
+              ? ev
+              : fuel;
+
+        } else {
+
+          station =
+            fuel ||
+            ev;
+
+        }
 
       } else {
 
         station =
-          fuel ||
-          ev;
+          getBestFuelSmartStop(
+            App.state.stations
+          );
 
       }
 
-    } else {
 
-      station =
-        getBestFuelSmartStop(
-          App.state.stations
+      if (!station) {
+
+        card.innerHTML = `
+
+          <div
+            class="smart-stop-title"
+          >
+            Smart Stop unavailable
+          </div>
+
+          <div
+            class="smart-stop-subtitle"
+          >
+            No compatible mapped stop was found.
+          </div>
+
+        `;
+
+        return;
+
+      }
+
+
+      App.state.smartStop = {
+        station
+      };
+
+
+      let distanceText =
+        "Enable location";
+
+
+      if (
+        App.state
+          .userLocation
+      ) {
+
+        const distance =
+          Data.distanceMiles(
+
+            App.state
+              .userLocation.lat,
+
+            App.state
+              .userLocation.lon,
+
+            station.lat,
+
+            station.lon
+
+          );
+
+
+        distanceText =
+          Data.formatDistance(
+            distance
+          );
+
+      }
+
+
+      if (
+        station.type ===
+        "ev"
+      ) {
+
+        const ev =
+          station.ev || {};
+
+
+        card.innerHTML = `
+
+          <div
+            class="smart-stop-header"
+          >
+
+            <div>
+
+              <div
+                class="eyebrow"
+              >
+                GASGO SMART STOP
+              </div>
+
+              <div
+                class="smart-stop-title"
+              >
+                ⚡ ${App.escape(
+                  station.name
+                )}
+              </div>
+
+              <div
+                class="smart-stop-subtitle"
+              >
+                ${App.escape(
+                  station.brand ||
+                  "EV Charging"
+                )}
+              </div>
+
+            </div>
+
+
+            <div
+              class="smart-stop-price"
+            >
+              ⚡
+
+              <small>
+                EV
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="smart-stop-grid"
+          >
+
+            <div
+              class="smart-stat"
+            >
+
+              <span>
+                Distance
+              </span>
+
+              <strong>
+                ${distanceText}
+              </strong>
+
+            </div>
+
+
+            <div
+              class="smart-stat"
+            >
+
+              <span>
+                Power
+              </span>
+
+              <strong>
+                ${App.escape(
+                  ev.power ||
+                  "—"
+                )}
+              </strong>
+
+            </div>
+
+
+            <div
+              class="smart-stat"
+            >
+
+              <span>
+                Est. range
+              </span>
+
+              <strong>
+                ${Math.round(
+                  App.getVehicleRange()
+                )} mi
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="muted mt-8"
+          >
+            Recommended from mapped charger information.
+            Live availability is not assumed.
+          </div>
+
+
+          <div
+            class="button-row mt-12"
+          >
+
+            <button
+              class="secondary"
+              onclick="GasGoApp.openSmartStop()"
+            >
+              VIEW
+            </button>
+
+            <button
+              class="primary"
+              onclick="GasGoApp.goToSmartStop()"
+            >
+              GO
+            </button>
+
+          </div>
+
+        `;
+
+
+        return;
+
+      }
+
+
+      const price =
+        getFuelPrice(
+          station
         );
 
-    }
-
-
-    if (!station) {
 
       card.innerHTML = `
 
-        <div class="smart-stop-title">
-          Smart Stop unavailable
-        </div>
-
-        <div class="smart-stop-subtitle">
-          No compatible mapped stop was found.
-        </div>
-
-      `;
-
-      return;
-
-    }
-
-
-    App.state.smartStop = {
-      station
-    };
-
-
-    let distanceText =
-      "Enable location";
-
-
-    if (
-      App.state.userLocation
-    ) {
-
-      const distance =
-        Data.distanceMiles(
-
-          App.state.userLocation.lat,
-
-          App.state.userLocation.lon,
-
-          station.lat,
-
-          station.lon
-
-        );
-
-
-      distanceText =
-        Data.formatDistance(
-          distance
-        );
-
-    }
-
-
-    /* EV SMART STOP */
-
-    if (
-      station.type === "ev"
-    ) {
-
-      const ev =
-        station.ev || {};
-
-
-      card.innerHTML = `
-
-        <div class="smart-stop-header">
+        <div
+          class="smart-stop-header"
+        >
 
           <div>
 
-            <div class="eyebrow">
+            <div
+              class="eyebrow"
+            >
               GASGO SMART STOP
             </div>
 
-            <div class="smart-stop-title">
-              ⚡ ${App.escape(
+            <div
+              class="smart-stop-title"
+            >
+              ${App.escape(
                 station.name
               )}
             </div>
 
-            <div class="smart-stop-subtitle">
+            <div
+              class="smart-stop-subtitle"
+            >
               ${App.escape(
                 station.brand ||
-                "EV Charging"
+                "Fuel Station"
               )}
             </div>
 
           </div>
 
-          <div class="smart-stop-price">
-            ⚡
+
+          <div
+            class="smart-stop-price"
+          >
+
+            ${
+              validNumber(price)
+                ? "$" +
+                  Number(
+                    price
+                  ).toFixed(2)
+                : "—"
+            }
+
             <small>
-              EV
+              /L
             </small>
+
           </div>
 
         </div>
 
 
-        <div class="smart-stop-grid">
+        <div
+          class="smart-stop-grid"
+        >
 
-          <div class="smart-stat">
+          <div
+            class="smart-stat"
+          >
 
             <span>
               Distance
@@ -1386,23 +1713,9 @@
           </div>
 
 
-          <div class="smart-stat">
-
-            <span>
-              Power
-            </span>
-
-            <strong>
-              ${App.escape(
-                ev.power ||
-                "—"
-              )}
-            </strong>
-
-          </div>
-
-
-          <div class="smart-stat">
+          <div
+            class="smart-stat"
+          >
 
             <span>
               Est. range
@@ -1416,16 +1729,38 @@
 
           </div>
 
+
+          <div
+            class="smart-stat"
+          >
+
+            <span>
+              Fuel
+            </span>
+
+            <strong>
+              ${App.escape(
+                App.state
+                  .selectedFuel
+              )}
+            </strong>
+
+          </div>
+
         </div>
 
 
-        <div class="muted mt-8">
-          Recommended from mapped charger information.
-          Live availability is not assumed.
+        <div
+          class="muted mt-8"
+        >
+          Smart Stop balances prototype fuel price and
+          approximate distance when location is available.
         </div>
 
 
-        <div class="button-row mt-12">
+        <div
+          class="button-row mt-12"
+        >
 
           <button
             class="secondary"
@@ -1445,153 +1780,38 @@
 
       `;
 
-
-      return;
-
-    }
-
-
-    /* FUEL SMART STOP */
-
-    const price =
-      getFuelPrice(
-        station
-      );
-
-
-    card.innerHTML = `
-
-      <div class="smart-stop-header">
-
-        <div>
-
-          <div class="eyebrow">
-            GASGO SMART STOP
-          </div>
-
-          <div class="smart-stop-title">
-            ${App.escape(
-              station.name
-            )}
-          </div>
-
-          <div class="smart-stop-subtitle">
-            ${App.escape(
-              station.brand ||
-              "Fuel Station"
-            )}
-          </div>
-
-        </div>
-
-
-        <div class="smart-stop-price">
-
-          ${
-            validNumber(price)
-              ? "$" +
-                Number(price)
-                  .toFixed(2)
-              : "—"
-          }
-
-          <small>
-            /L
-          </small>
-
-        </div>
-
-      </div>
-
-
-      <div class="smart-stop-grid">
-
-        <div class="smart-stat">
-
-          <span>
-            Distance
-          </span>
-
-          <strong>
-            ${distanceText}
-          </strong>
-
-        </div>
-
-
-        <div class="smart-stat">
-
-          <span>
-            Est. range
-          </span>
-
-          <strong>
-            ${Math.round(
-              App.getVehicleRange()
-            )} mi
-          </strong>
-
-        </div>
-
-
-        <div class="smart-stat">
-
-          <span>
-            Fuel
-          </span>
-
-          <strong>
-            ${App.escape(
-              App.state.selectedFuel
-            )}
-          </strong>
-
-        </div>
-
-      </div>
-
-
-      <div class="muted mt-8">
-        Smart Stop balances prototype fuel price and
-        approximate distance when location is available.
-      </div>
-
-
-      <div class="button-row mt-12">
-
-        <button
-          class="secondary"
-          onclick="GasGoApp.openSmartStop()"
-        >
-          VIEW
-        </button>
-
-        <button
-          class="primary"
-          onclick="GasGoApp.goToSmartStop()"
-        >
-          GO
-        </button>
-
-      </div>
-
-    `;
-
-  };
+    };
 
 
   /* =======================================================
-     ADD MAP CSS WITHOUT TOUCHING STYLE.CSS
+     MAP STYLES
      ======================================================= */
 
   function installMapStyles() {
 
-    if (
+    const oldStyle =
       document.getElementById(
         "gasgo-map-v55-styles"
-      )
-    ) {
-      return;
+      );
+
+
+    if (oldStyle) {
+
+      oldStyle.remove();
+
+    }
+
+
+    const existing =
+      document.getElementById(
+        "gasgo-map-v56-styles"
+      );
+
+
+    if (existing) {
+
+      existing.remove();
+
     }
 
 
@@ -1602,66 +1822,136 @@
 
 
     style.id =
-      "gasgo-map-v55-styles";
+      "gasgo-map-v56-styles";
 
 
     style.textContent = `
 
       /* ================================================
-         GASGO DARK MAP V5.5
+         GASGO MAP V5.6
          ================================================ */
 
       #map {
+
         background:
-          #0b0e0d !important;
+          #101312 !important;
+
       }
 
 
       .leaflet-container {
+
         background:
-          #0b0e0d !important;
+          #101312 !important;
 
         font-family:
           inherit;
+
+      }
+
+
+      /*
+        OPENSTREETMAP DARK VISUAL TREATMENT
+
+        This keeps us on normal OpenStreetMap tiles while
+        making the map fit GasGo's dark interface.
+
+        Brightness is intentionally kept high enough for
+        streets and labels to remain readable.
+      */
+
+      .gasgo-dark-map-tiles {
+
+        filter:
+          invert(1)
+          hue-rotate(180deg)
+          brightness(.72)
+          contrast(.90)
+          saturate(.70);
+
+      }
+
+
+      /* ZOOM CONTROLS */
+
+      .leaflet-control-zoom {
+
+        border:
+          1px solid
+          rgba(255,255,255,.10)
+          !important;
+
+        border-radius:
+          12px !important;
+
+        overflow:
+          hidden;
+
+        box-shadow:
+          0 8px 24px
+          rgba(0,0,0,.35)
+          !important;
+
       }
 
 
       .leaflet-control-zoom a {
+
         background:
-          #111614 !important;
+          rgba(15,20,18,.96)
+          !important;
 
         color:
-          #ffffff !important;
+          #ffffff
+          !important;
 
         border-color:
-          rgba(255,255,255,.08) !important;
+          rgba(255,255,255,.08)
+          !important;
+
       }
 
 
       .leaflet-control-zoom a:hover {
+
         background:
-          #18201d !important;
+          #18201d
+          !important;
 
         color:
-          #00C853 !important;
+          #00C853
+          !important;
+
       }
 
 
+      /* ATTRIBUTION */
+
       .leaflet-control-attribution {
+
         background:
-          rgba(8,11,10,.82) !important;
+          rgba(8,11,10,.82)
+          !important;
 
         color:
-          #9da7a2 !important;
+          #9da7a2
+          !important;
 
         backdrop-filter:
           blur(8px);
+
+        border-radius:
+          8px 0 0 0;
+
       }
 
 
       .leaflet-control-attribution a {
+
         color:
-          #c9d1cd !important;
+          #d5ddd9
+          !important;
+
       }
 
 
@@ -1703,7 +1993,8 @@
       .leaflet-popup-close-button {
 
         color:
-          #ffffff !important;
+          #ffffff
+          !important;
 
       }
 
@@ -1743,7 +2034,7 @@
       }
 
 
-      /* GASGO LEGEND */
+      /* LEGEND */
 
       .gasgo-map-legend {
 
@@ -1941,11 +2232,11 @@
 
 
   /*
-    If the map was somehow initialized before this file
-    executed, rebuild it so the new dark tile layer is used.
+    If another map instance already exists when V5.6
+    loads, remove it cleanly.
 
-    Normally this does not happen because GasGo initializes
-    the map only when Stations is opened.
+    The next time the Stops screen opens GasGo will
+    initialize the corrected map.
   */
 
   if (
@@ -1967,11 +2258,14 @@
     }
 
 
-    App.state.map = null;
+    App.state.map =
+      null;
 
-    App.state.markerLayer = null;
+    App.state.markerLayer =
+      null;
 
-    App.state.userMarker = null;
+    App.state.userMarker =
+      null;
 
     App.state.markers =
       new Map();
@@ -1983,7 +2277,7 @@
 
 
   console.log(
-    "GasGo Map V5.5 loaded 🌙🟢🟡🔴🔵"
+    "GasGo Map V5.6 loaded 🌙🗺️🟢🟡🔴🔵"
   );
 
 })();
