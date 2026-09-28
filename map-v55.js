@@ -2,18 +2,19 @@
 
 /* =========================================================
    GASGO MAP ENHANCEMENT
-   Version 5.6.0
+   Version 5.6.1
 
    Requires:
    - Leaflet
    - stations.js
    - app.js V5.4+
 
-   GasGo Map V5.6
+   GasGo Map V5.6.1
    - No API key required
    - OpenStreetMap base map
    - Dark visual treatment
    - Price-colored fuel markers
+   - Fuel popup with Regular / Premium / Diesel
    - EV markers
    - User location
    - GasGo legend
@@ -22,24 +23,24 @@
 (function () {
 
   if (!window.GasGoApp) {
-    console.error("GasGo Map V5.6: app.js must load first.");
+    console.error("GasGo Map V5.6.1: app.js must load first.");
     return;
   }
 
   if (!window.GasGoData) {
-    console.error("GasGo Map V5.6: stations.js must load first.");
+    console.error("GasGo Map V5.6.1: stations.js must load first.");
     return;
   }
 
   if (typeof L === "undefined") {
-    console.error("GasGo Map V5.6: Leaflet is missing.");
+    console.error("GasGo Map V5.6.1: Leaflet is missing.");
     return;
   }
 
   const App = window.GasGoApp;
   const Data = window.GasGoData;
 
-  App.MAP_VERSION = "5.6.0";
+  App.MAP_VERSION = "5.6.1";
 
 
   /* =======================================================
@@ -67,10 +68,6 @@
 
   /* =======================================================
      MAP TILES
-
-     OpenStreetMap does NOT require a GasGo API key.
-
-     The visual dark effect is applied later with CSS.
      ======================================================= */
 
   const MAP_TILE_URL =
@@ -94,7 +91,7 @@
   }
 
 
-  function getFuelPrice(station) {
+  function getAllFuelPrices(station) {
 
     if (
       !station ||
@@ -110,8 +107,7 @@
 
     if (
       !prices &&
-      typeof Data.getStationPrices ===
-        "function"
+      typeof Data.getStationPrices === "function"
     ) {
 
       try {
@@ -124,13 +120,28 @@
       } catch (error) {
 
         console.warn(
-          "GasGo: couldn't read station price.",
+          "GasGo: couldn't read station prices.",
           error
         );
+
+        return null;
 
       }
 
     }
+
+
+    return prices || null;
+
+  }
+
+
+  function getFuelPrice(station) {
+
+    const prices =
+      getAllFuelPrices(
+        station
+      );
 
 
     if (!prices) {
@@ -149,6 +160,137 @@
     return Number.isFinite(price)
       ? price
       : null;
+
+  }
+
+
+  function formatFuelPrice(value) {
+
+    const price =
+      Number(value);
+
+
+    if (!Number.isFinite(price)) {
+      return "—";
+    }
+
+
+    return (
+      "$" +
+      price.toFixed(2) +
+      "/L"
+    );
+
+  }
+
+
+  /* =======================================================
+     FUEL POPUP
+     ======================================================= */
+
+  function fuelPopupHTML(station) {
+
+    const prices =
+      getAllFuelPrices(
+        station
+      ) || {};
+
+
+    const name =
+      App.escape(
+        station.name ||
+        "Fuel Station"
+      );
+
+
+    const brand =
+      App.escape(
+        station.brand ||
+        "Fuel Station"
+      );
+
+
+    const regular =
+      formatFuelPrice(
+        prices.regular
+      );
+
+
+    const premium =
+      formatFuelPrice(
+        prices.premium
+      );
+
+
+    const diesel =
+      formatFuelPrice(
+        prices.diesel
+      );
+
+
+    return `
+
+      <div class="gasgo-fuel-popup">
+
+        <div class="gasgo-popup-name">
+          ${name}
+        </div>
+
+        <div class="gasgo-popup-brand">
+          ${brand}
+        </div>
+
+
+        <div class="gasgo-popup-prices">
+
+          <div class="gasgo-popup-price-row">
+
+            <span>
+              Regular
+            </span>
+
+            <strong>
+              ${regular}
+            </strong>
+
+          </div>
+
+
+          <div class="gasgo-popup-price-row">
+
+            <span>
+              Premium
+            </span>
+
+            <strong>
+              ${premium}
+            </strong>
+
+          </div>
+
+
+          <div class="gasgo-popup-price-row">
+
+            <span>
+              Diesel
+            </span>
+
+            <strong>
+              ${diesel}
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <div class="gasgo-popup-note">
+          Prototype estimated prices
+        </div>
+
+      </div>
+
+    `;
 
   }
 
@@ -637,7 +779,7 @@
 
 
         console.log(
-          "GasGo Map V5.6 initialized 🌙"
+          "GasGo Map V5.6.1 initialized 🌙"
         );
 
       } catch (error) {
@@ -883,7 +1025,43 @@
           );
 
 
+          /* =============================================
+             POPUP
+
+             Fuel:
+             Regular + Premium + Diesel
+
+             EV:
+             Existing GasGo EV information
+             ============================================= */
+
           if (
+            station.type ===
+            "fuel"
+          ) {
+
+            marker.bindPopup(
+
+              fuelPopupHTML(
+                station
+              ),
+
+              {
+
+                maxWidth:
+                  300,
+
+                minWidth:
+                  205,
+
+                className:
+                  "gasgo-dark-popup"
+
+              }
+
+            );
+
+          } else if (
             typeof App
               .stationPopupHTML ===
               "function"
@@ -1828,7 +2006,7 @@
     style.textContent = `
 
       /* ================================================
-         GASGO MAP V5.6
+         GASGO MAP V5.6.1
          ================================================ */
 
       #map {
@@ -1849,16 +2027,6 @@
 
       }
 
-
-      /*
-        OPENSTREETMAP DARK VISUAL TREATMENT
-
-        This keeps us on normal OpenStreetMap tiles while
-        making the map fit GasGo's dark interface.
-
-        Brightness is intentionally kept high enough for
-        streets and labels to remain readable.
-      */
 
       .gasgo-dark-map-tiles {
 
@@ -1981,6 +2149,15 @@
 
 
       .gasgo-dark-popup
+      .leaflet-popup-content {
+
+        margin:
+          15px 16px;
+
+      }
+
+
+      .gasgo-dark-popup
       .leaflet-popup-tip {
 
         background:
@@ -1995,6 +2172,137 @@
         color:
           #ffffff
           !important;
+
+      }
+
+
+      /* GASGO FUEL POPUP */
+
+      .gasgo-fuel-popup {
+
+        min-width:
+          185px;
+
+      }
+
+
+      .gasgo-popup-name {
+
+        padding-right:
+          18px;
+
+        color:
+          #ffffff;
+
+        font-size:
+          15px;
+
+        font-weight:
+          900;
+
+        line-height:
+          1.25;
+
+      }
+
+
+      .gasgo-popup-brand {
+
+        margin-top:
+          3px;
+
+        margin-bottom:
+          11px;
+
+        color:
+          #8f9a95;
+
+        font-size:
+          11px;
+
+        font-weight:
+          600;
+
+      }
+
+
+      .gasgo-popup-prices {
+
+        border-top:
+          1px solid
+          rgba(255,255,255,.08);
+
+      }
+
+
+      .gasgo-popup-price-row {
+
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        justify-content:
+          space-between;
+
+        gap:
+          22px;
+
+        padding:
+          8px 0;
+
+        border-bottom:
+          1px solid
+          rgba(255,255,255,.08);
+
+      }
+
+
+      .gasgo-popup-price-row span {
+
+        color:
+          #a7b0ac;
+
+        font-size:
+          12px;
+
+        font-weight:
+          600;
+
+      }
+
+
+      .gasgo-popup-price-row strong {
+
+        color:
+          #ffffff;
+
+        font-size:
+          14px;
+
+        font-weight:
+          900;
+
+        white-space:
+          nowrap;
+
+      }
+
+
+      .gasgo-popup-note {
+
+        margin-top:
+          9px;
+
+        color:
+          #77817c;
+
+        font-size:
+          9px;
+
+        line-height:
+          1.3;
 
       }
 
@@ -2212,6 +2520,14 @@
 
         }
 
+
+        .gasgo-fuel-popup {
+
+          min-width:
+            175px;
+
+        }
+
       }
 
     `;
@@ -2230,14 +2546,6 @@
 
   installMapStyles();
 
-
-  /*
-    If another map instance already exists when V5.6
-    loads, remove it cleanly.
-
-    The next time the Stops screen opens GasGo will
-    initialize the corrected map.
-  */
 
   if (
     App.state.mapInitialized &&
@@ -2277,7 +2585,7 @@
 
 
   console.log(
-    "GasGo Map V5.6 loaded 🌙🗺️🟢🟡🔴🔵"
+    "GasGo Map V5.6.1 loaded ⛽⚡🗺️"
   );
 
 })();
