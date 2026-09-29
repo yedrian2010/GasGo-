@@ -300,25 +300,11 @@
             onchange="GasGoApp.updateOnboardingPowertrain()"
           >
 
-            <option value="Gasoline">
-              Gasoline
-            </option>
-
-            <option value="Hybrid">
-              Hybrid
-            </option>
-
-            <option value="Plug-in Hybrid">
-              Plug-in Hybrid
-            </option>
-
-            <option value="Electric">
-              Electric
-            </option>
-
-            <option value="Diesel">
-              Diesel
-            </option>
+            <option value="Gasoline">Gasoline</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Plug-in Hybrid">Plug-in Hybrid</option>
+            <option value="Electric">Electric</option>
+            <option value="Diesel">Diesel</option>
 
           </select>
 
@@ -481,7 +467,6 @@
 
         </div>
 
-
       </div>
 
 
@@ -600,8 +585,6 @@
       </h1>
 
 
-      <!-- RANGE HERO -->
-
       <article class="card hero">
 
         <div class="hero-title">
@@ -662,8 +645,6 @@
       </article>
 
 
-      <!-- SMART STOP -->
-
       <div class="section-title">
 
         <span>
@@ -696,8 +677,6 @@
 
       </article>
 
-
-      <!-- PLAN MY STOP -->
 
       <div class="section-title">
 
@@ -778,8 +757,6 @@
       </article>
 
 
-      <!-- PRICE SNAPSHOT -->
-
       <div class="section-title">
 
         <span>
@@ -851,8 +828,6 @@
 
       </div>
 
-
-      <!-- QUICK ACTIONS -->
 
       <div class="section-title">
         Quick actions
@@ -933,7 +908,7 @@
 
 
     <!-- ===================================================
-         STATIONS + EV CHARGING
+         STATIONS
          =================================================== -->
 
     <section
@@ -963,8 +938,6 @@
       </header>
 
 
-      <!-- SEARCH -->
-
       <div class="search-wrap">
 
         <span class="search-icon">
@@ -992,8 +965,6 @@
 
       </div>
 
-
-      <!-- ENERGY TYPE -->
 
       <div class="chips">
 
@@ -1025,8 +996,6 @@
 
       </div>
 
-
-      <!-- FUEL TYPE -->
 
       <div
         id="fuelTypeFilters"
@@ -1062,8 +1031,6 @@
       </div>
 
 
-      <!-- SORT -->
-
       <div class="sort-card">
 
         <button
@@ -1071,13 +1038,8 @@
           data-sort="best"
           onclick="GasGoApp.setSortMode('best', this)"
         >
-
-          <span>
-            ✨
-          </span>
-
+          <span>✨</span>
           Best Value
-
         </button>
 
 
@@ -1086,13 +1048,8 @@
           data-sort="cheap"
           onclick="GasGoApp.setSortMode('cheap', this)"
         >
-
-          <span>
-            💵
-          </span>
-
+          <span>💵</span>
           Cheapest
-
         </button>
 
 
@@ -1101,91 +1058,48 @@
           data-sort="closest"
           onclick="GasGoApp.setSortMode('closest', this)"
         >
-
-          <span>
-            📍
-          </span>
-
+          <span>📍</span>
           Closest
-
         </button>
 
       </div>
 
-
-      <!-- BRAND FILTER -->
 
       <div
         id="brandFilters"
         class="map-filter"
       >
 
-        <button
-          class="chip active"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('all', this)"
-        >
+        <button class="chip active" data-brand-filter onclick="GasGoApp.setBrandFilter('all', this)">
           All
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Puma', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Puma', this)">
           Puma
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Shell', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Shell', this)">
           Shell
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Total', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Total', this)">
           Total
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Gulf', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Gulf', this)">
           Gulf
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Texaco', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Texaco', this)">
           Texaco
         </button>
 
-
-        <button
-          class="chip"
-          data-brand-filter
-          onclick="GasGoApp.setBrandFilter('Mobil', this)"
-        >
+        <button class="chip" data-brand-filter onclick="GasGoApp.setBrandFilter('Mobil', this)">
           Mobil
         </button>
 
       </div>
 
-
-      <!-- MAP -->
 
       <div class="map-wrap">
 
@@ -1200,8 +1114,6 @@
 
       </div>
 
-
-      <!-- MAP ACTIONS -->
 
       <div class="map-actions">
 
@@ -1230,8 +1142,6 @@
         Loading mapped fuel & EV locations…
       </div>
 
-
-      <!-- SELECTED LOCATION -->
 
       <article
         id="stationSheet"
@@ -1275,8 +1185,6 @@
         </div>
 
 
-        <!-- FUEL PRICES -->
-
         <div
           id="selectedFuelPrices"
           class="station-price-grid"
@@ -1284,58 +1192,44 @@
 
           <div class="station-price">
 
-            <span>
-              Regular
-            </span>
+            <span>Regular</span>
 
             <strong id="selectedRegular">
               $0.00
             </strong>
 
-            <small>
-              DEMO / L
-            </small>
+            <small>DEMO / L</small>
 
           </div>
 
 
           <div class="station-price">
 
-            <span>
-              Premium
-            </span>
+            <span>Premium</span>
 
             <strong id="selectedPremium">
               $0.00
             </strong>
 
-            <small>
-              DEMO / L
-            </small>
+            <small>DEMO / L</small>
 
           </div>
 
 
           <div class="station-price">
 
-            <span>
-              Diesel
-            </span>
+            <span>Diesel</span>
 
             <strong id="selectedDiesel">
               $0.00
             </strong>
 
-            <small>
-              DEMO / L
-            </small>
+            <small>DEMO / L</small>
 
           </div>
 
         </div>
 
-
-        <!-- EV INFORMATION -->
 
         <div
           id="selectedEVInfo"
@@ -1345,58 +1239,32 @@
 
           <div class="station-price">
 
-            <span>
-              Connectors
-            </span>
-
-            <strong>
-              —
-            </strong>
-
-            <small>
-              OSM DATA
-            </small>
+            <span>Connectors</span>
+            <strong>—</strong>
+            <small>OSM DATA</small>
 
           </div>
 
 
           <div class="station-price">
 
-            <span>
-              Power
-            </span>
-
-            <strong>
-              —
-            </strong>
-
-            <small>
-              WHEN LISTED
-            </small>
+            <span>Power</span>
+            <strong>—</strong>
+            <small>WHEN LISTED</small>
 
           </div>
 
 
           <div class="station-price">
 
-            <span>
-              Ports
-            </span>
-
-            <strong>
-              —
-            </strong>
-
-            <small>
-              WHEN LISTED
-            </small>
+            <span>Ports</span>
+            <strong>—</strong>
+            <small>WHEN LISTED</small>
 
           </div>
 
         </div>
 
-
-        <!-- RANGE -->
 
         <div
           id="rangeResult"
@@ -1436,8 +1304,6 @@
 
       </article>
 
-
-      <!-- LOCATION LIST -->
 
       <div class="section-title">
 
@@ -1511,7 +1377,6 @@
 
         </div>
 
-
         <span class="badge">
           $ / L
         </span>
@@ -1525,11 +1390,9 @@
           Compare before you drive
         </div>
 
-
         <div class="savings-number">
           Save smarter.
         </div>
-
 
         <div class="muted">
 
@@ -1601,55 +1464,39 @@
 
         <div class="dashboard-stat">
 
-          <div class="dashboard-icon">
-            💳
-          </div>
+          <div class="dashboard-icon">💳</div>
 
-          <span>
-            Total spent
-          </span>
+          <span>Total spent</span>
 
           <strong id="dashSpent">
             $0.00
           </strong>
 
-          <small>
-            Saved fill-ups
-          </small>
+          <small>Saved fill-ups</small>
 
         </div>
 
 
         <div class="dashboard-stat">
 
-          <div class="dashboard-icon">
-            ⛽
-          </div>
+          <div class="dashboard-icon">⛽</div>
 
-          <span>
-            Fuel logged
-          </span>
+          <span>Fuel logged</span>
 
           <strong id="dashLiters">
             0.0 L
           </strong>
 
-          <small>
-            Across all purchases
-          </small>
+          <small>Across all purchases</small>
 
         </div>
 
 
         <div class="dashboard-stat">
 
-          <div class="dashboard-icon">
-            💚
-          </div>
+          <div class="dashboard-icon">💚</div>
 
-          <span>
-            Est. savings
-          </span>
+          <span>Est. savings</span>
 
           <strong
             id="dashSavings"
@@ -1658,30 +1505,22 @@
             $0.00
           </strong>
 
-          <small>
-            Prototype estimate
-          </small>
+          <small>Prototype estimate</small>
 
         </div>
 
 
         <div class="dashboard-stat">
 
-          <div class="dashboard-icon">
-            🧾
-          </div>
+          <div class="dashboard-icon">🧾</div>
 
-          <span>
-            Fill-ups
-          </span>
+          <span>Fill-ups</span>
 
           <strong id="dashFillUps">
             0
           </strong>
 
-          <small>
-            Purchases recorded
-          </small>
+          <small>Purchases recorded</small>
 
         </div>
 
@@ -1737,7 +1576,6 @@
             </div>
 
           </div>
-
 
           <span class="badge">
             HISTORY
@@ -1802,7 +1640,6 @@
           </h2>
 
         </div>
-
 
         <span class="badge">
           DEMO
@@ -2109,10 +1946,6 @@
       </article>
 
 
-      <!-- =================================================
-           APP SETTINGS
-           ================================================= -->
-
       <div class="section-title">
         App settings
       </div>
@@ -2217,8 +2050,6 @@
 
       <div class="form-grid">
 
-        <!-- YEAR -->
-
         <div class="field">
 
           <label for="vehicleYear">
@@ -2232,8 +2063,6 @@
 
         </div>
 
-
-        <!-- MAKE -->
 
         <div class="field">
 
@@ -2249,8 +2078,6 @@
         </div>
 
 
-        <!-- MODEL -->
-
         <div class="field full">
 
           <label for="vehicleModel">
@@ -2264,8 +2091,6 @@
 
         </div>
 
-
-        <!-- CONFIGURATION -->
 
         <div
           id="vehicleConfigurationField"
@@ -2288,6 +2113,7 @@
 
           </select>
 
+
           <div class="muted mt-8">
             Tank capacity can vary by engine, drivetrain
             or configuration.
@@ -2295,8 +2121,6 @@
 
         </div>
 
-
-        <!-- POWERTRAIN -->
 
         <div class="field full">
 
@@ -2309,32 +2133,16 @@
             onchange="GasGoApp.updateVehiclePowertrainUI()"
           >
 
-            <option value="Gasoline">
-              Gasoline
-            </option>
-
-            <option value="Hybrid">
-              Hybrid
-            </option>
-
-            <option value="Plug-in Hybrid">
-              Plug-in Hybrid
-            </option>
-
-            <option value="Electric">
-              Electric
-            </option>
-
-            <option value="Diesel">
-              Diesel
-            </option>
+            <option value="Gasoline">Gasoline</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Plug-in Hybrid">Plug-in Hybrid</option>
+            <option value="Electric">Electric</option>
+            <option value="Diesel">Diesel</option>
 
           </select>
 
         </div>
 
-
-        <!-- CURRENT LEVEL -->
 
         <div class="field full">
 
@@ -2383,8 +2191,6 @@
         </div>
 
 
-        <!-- FULL RANGE -->
-
         <div class="field full">
 
           <div class="slider-card">
@@ -2428,8 +2234,6 @@
 
         </div>
 
-
-        <!-- TANK CAPACITY -->
 
         <div
           id="vehicleTankField"
@@ -2802,6 +2606,7 @@
 
   <!-- =====================================================
        JAVASCRIPT
+
        IMPORTANT:
        vehicles.js MUST load before app.js.
        ===================================================== -->
@@ -2824,6 +2629,7 @@
 
   <!--
     2. VEHICLE DATABASE
+    V4.0.0
     Year + make + model + configuration + tank specs
   -->
 
@@ -2832,23 +2638,20 @@
 
   <!--
     3. MAIN GASGO APPLICATION
-    Navigation, vehicle database integration,
-    dashboard, rewards, station selection,
-    fuel log, reset, etc.
   -->
 
   <script src="app.js?v=5.5.1"></script>
 
 
   <!--
-    4. GASGO MAP V5.6.2
+    4. GASGO MAP
   -->
 
   <script src="map-v55.js?v=5.6.2"></script>
 
 
   <!--
-    5. SMART RANGE V6
+    5. SMART RANGE
   -->
 
   <script src="smart-v6.js?v=6.0.1"></script>
