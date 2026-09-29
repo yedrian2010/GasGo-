@@ -83,13 +83,6 @@
     }
 
 
-    /*
-      Vehicle database status.
-
-      These use the same GasGo design language and
-      intentionally avoid changing the existing layout.
-    */
-
     .vehicle-spec-status {
       margin-top: 9px;
       font-size: 12px;
@@ -98,7 +91,8 @@
     }
 
 
-    .vehicle-spec-status.detected {
+    .vehicle-spec-status.detected,
+    .vehicle-spec-status.verified {
       color: #00c853;
     }
 
@@ -108,8 +102,27 @@
     }
 
 
-    .vehicle-spec-status.warning {
+    .vehicle-spec-status.warning,
+    .vehicle-spec-status.select {
       color: #ffd166;
+    }
+
+
+    .gasgo-reset-card {
+      margin-top: 16px;
+    }
+
+
+    .gasgo-reset-button {
+      width: 100%;
+    }
+
+
+    .gasgo-reset-note {
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #a7a7a7;
     }
 
 
@@ -2095,6 +2108,69 @@
 
       </article>
 
+
+      <!-- =================================================
+           APP SETTINGS
+           ================================================= -->
+
+      <div class="section-title">
+        App settings
+      </div>
+
+
+      <article class="card gasgo-reset-card">
+
+        <div class="row-start">
+
+          <div class="vehicle-icon">
+            🔄
+          </div>
+
+
+          <div class="flex-1">
+
+            <strong>
+              Reset GasGo
+            </strong>
+
+            <div class="muted">
+              Start again from the welcome setup
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="divider"></div>
+
+
+        <p class="muted mt-8">
+
+          Reset the information saved by GasGo on this
+          device and return to the initial vehicle setup.
+
+        </p>
+
+
+        <button
+          class="secondary full-button gasgo-reset-button"
+          type="button"
+          onclick="GasGoApp.resetApp()"
+        >
+          🔄 RESET GASGO
+        </button>
+
+
+        <div class="gasgo-reset-note">
+
+          Your GasGo website, GitHub files and map data
+          will not be deleted.
+
+        </div>
+
+      </article>
+
     </section>
 
 
@@ -2758,18 +2834,14 @@
     3. MAIN GASGO APPLICATION
     Navigation, vehicle database integration,
     dashboard, rewards, station selection,
-    fuel log, etc.
+    fuel log, reset, etc.
   -->
 
-  <script src="app.js?v=5.5.0"></script>
+  <script src="app.js?v=5.5.1"></script>
 
 
   <!--
     4. GASGO MAP V5.6.2
-    OpenStreetMap + dark treatment
-    + price-colored markers
-    + Regular / Premium / Diesel popups
-    + EV chargers
   -->
 
   <script src="map-v55.js?v=5.6.2"></script>
@@ -2777,7 +2849,6 @@
 
   <!--
     5. SMART RANGE V6
-    Can I Make It? + Smart Stop improvements
   -->
 
   <script src="smart-v6.js?v=6.0.1"></script>
