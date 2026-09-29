@@ -2,7 +2,7 @@
 
 /* =========================================================
    GASGO APP
-   Version 5.5.0
+   Version 5.5.1
 
    Requires:
    - stations.js
@@ -16,7 +16,7 @@
 window.GasGoApp = window.GasGoApp || {};
 const App = window.GasGoApp;
 
-App.VERSION = "5.5.0";
+App.VERSION = "5.5.1";
 
 
 /* =========================================================
@@ -78,11 +78,6 @@ App.state = {
 
 /* =========================================================
    FALLBACK VEHICLE CATALOG
-
-   GasGoVehicles is the primary database.
-
-   This catalog remains here so GasGo still works if the
-   vehicle database fails to load for any reason.
    ========================================================= */
 
 App.VEHICLES = {
@@ -338,6 +333,7 @@ App.DEFAULT_VEHICLE = {
   tankCapacity: 46,
 
   batteryCapacity: null,
+  batteryKWh: null,
 
   capacitySource: "vehicle-database"
 };
@@ -352,54 +348,27 @@ App.DEFAULT_REWARDS = {
   Puma: {
     points: 750,
     tiers: [
-      {
-        points: 250,
-        title: "$2 off next purchase"
-      },
-      {
-        points: 500,
-        title: "$5 fuel credit"
-      },
-      {
-        points: 1000,
-        title: "$10 reward"
-      }
+      { points: 250, title: "$2 off next purchase" },
+      { points: 500, title: "$5 fuel credit" },
+      { points: 1000, title: "$10 reward" }
     ]
   },
 
   Shell: {
     points: 420,
     tiers: [
-      {
-        points: 200,
-        title: "$2 reward"
-      },
-      {
-        points: 500,
-        title: "$5 reward"
-      },
-      {
-        points: 1000,
-        title: "$10 reward"
-      }
+      { points: 200, title: "$2 reward" },
+      { points: 500, title: "$5 reward" },
+      { points: 1000, title: "$10 reward" }
     ]
   },
 
   Total: {
     points: 0,
     tiers: [
-      {
-        points: 250,
-        title: "Car wash discount"
-      },
-      {
-        points: 500,
-        title: "$5 reward"
-      },
-      {
-        points: 1000,
-        title: "$10 reward"
-      }
+      { points: 250, title: "Car wash discount" },
+      { points: 500, title: "$5 reward" },
+      { points: 1000, title: "$10 reward" }
     ]
   }
 
@@ -422,11 +391,7 @@ App.$all = function (selector) {
 };
 
 
-App.clamp = function (
-  value,
-  min,
-  max
-) {
+App.clamp = function (value, min, max) {
 
   value = Number(value);
 
@@ -444,15 +409,13 @@ App.clamp = function (
 
 App.money = function (value) {
 
-  const number =
-    Number(value);
+  const number = Number(value);
 
   if (!Number.isFinite(number)) {
     return "—";
   }
 
-  return "$" +
-    number.toFixed(2);
+  return "$" + number.toFixed(2);
 
 };
 
@@ -462,8 +425,7 @@ App.number = function (
   decimals = 1
 ) {
 
-  const number =
-    Number(value);
+  const number = Number(value);
 
   if (!Number.isFinite(number)) {
     return "0";
@@ -482,6 +444,33 @@ App.escape = function (value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
+};
+
+
+/*
+  Returns the first valid positive numeric value.
+
+  This lets app.js understand both the new vehicles.js
+  V3 property names and older GasGo property names.
+*/
+
+App.firstFinitePositive = function (...values) {
+
+  for (const value of values) {
+
+    const number = Number(value);
+
+    if (
+      Number.isFinite(number) &&
+      number > 0
+    ) {
+      return number;
+    }
+
+  }
+
+  return null;
 
 };
 
@@ -549,8 +538,7 @@ App.setText = function (
   text
 ) {
 
-  const element =
-    App.$(id);
+  const element = App.$(id);
 
   if (element) {
     element.textContent = text;
@@ -564,8 +552,7 @@ App.setDisplay = function (
   value
 ) {
 
-  const element =
-    App.$(id);
+  const element = App.$(id);
 
   if (element) {
     element.style.display = value;
@@ -616,8 +603,7 @@ App.toast = function (
 
   setTimeout(() => {
 
-    toast.style.opacity =
-      "0";
+    toast.style.opacity = "0";
 
     toast.style.transform =
       "translateY(8px)";
@@ -626,9 +612,7 @@ App.toast = function (
 
 
   setTimeout(() => {
-
     toast.remove();
-
   }, 3100);
 
 };
@@ -670,9 +654,7 @@ App.normalizePowertrain = function (
     text === "electric" ||
     text.includes("battery electric")
   ) {
-
     return "Electric";
-
   }
 
 
@@ -681,33 +663,14 @@ App.normalizePowertrain = function (
     text.includes("plug in") ||
     text.includes("phev")
   ) {
-
     return "Plug-in Hybrid";
-
   }
 
 
   if (
     text.includes("hybrid")
   ) {
-
     return "Hybrid";
-
-  }
-
-
-  if (
-    text.includes("diesel")
-  ) {
-
-    /*
-      The current GasGo UI groups ICE vehicles
-      under the Gasoline selector. Fuel type can
-      still be selected separately in station filters.
-    */
-
-    return "Gasoline";
-
   }
 
 
@@ -770,9 +733,7 @@ App.getVehicleYears = function () {
     year >= 1996;
     year--
   ) {
-
     years.push(year);
-
   }
 
   return years;
@@ -803,9 +764,7 @@ App.getVehicleMakes = function (
         Array.isArray(makes) &&
         makes.length
       ) {
-
         return makes;
-
       }
 
     } catch (error) {
@@ -854,9 +813,7 @@ App.getVehicleModels = function (
         Array.isArray(models) &&
         models.length
       ) {
-
         return models;
-
       }
 
     } catch (error) {
@@ -895,9 +852,7 @@ function (
     typeof DB.getConfigurations !==
       "function"
   ) {
-
     return [];
-
   }
 
 
@@ -976,6 +931,7 @@ function (record) {
 
 /* =========================================================
    VEHICLE LOOKUP
+   V5.5.1 compatibility layer
    ========================================================= */
 
 App.lookupVehicleSpecification =
@@ -998,7 +954,13 @@ function ({
 
     return {
       found: false,
-      requiresConfiguration: false
+      exact: false,
+      requiresConfiguration: false,
+      vehicle: null,
+      tankLiters: null,
+      tankCapacity: null,
+      batteryKWh: null,
+      batteryCapacity: null
     };
 
   }
@@ -1006,18 +968,88 @@ function ({
 
   try {
 
-    return DB.lookup({
-      year:
-        Number(year),
+    const raw =
+      DB.lookup({
+        year: Number(year),
+        make,
+        model,
+        configuration
+      }) || {};
 
-      make,
 
-      model,
+    const vehicle =
+      raw.vehicle || null;
 
-      configuration
-    }) || {
-      found: false,
-      requiresConfiguration: false
+
+    /*
+      vehicles.js V3 uses tankLiters.
+
+      Older GasGo code used tankCapacity.
+
+      We normalize both so the rest of the app can
+      safely use either name.
+    */
+
+    const tankLiters =
+      App.firstFinitePositive(
+        raw.tankLiters,
+        raw.tankCapacity,
+        raw.tankCapacityLiters,
+        vehicle?.tankLiters,
+        vehicle?.tankCapacity,
+        vehicle?.tankCapacityLiters
+      );
+
+
+    /*
+      Same compatibility layer for EV batteries.
+    */
+
+    const batteryKWh =
+      App.firstFinitePositive(
+        raw.batteryKWh,
+        raw.batteryCapacity,
+        vehicle?.batteryKWh,
+        vehicle?.batteryCapacity
+      );
+
+
+    return {
+
+      ...raw,
+
+      vehicle,
+
+      found:
+        raw.found === true ||
+        Boolean(vehicle),
+
+      exact:
+        raw.exact === true,
+
+      requiresConfiguration:
+        raw.requiresConfiguration ===
+        true,
+
+      powertrain:
+        raw.powertrain ||
+        vehicle?.powertrain ||
+        null,
+
+      tankLiters,
+
+      tankCapacity:
+        tankLiters,
+
+      batteryKWh,
+
+      batteryCapacity:
+        batteryKWh,
+
+      verified:
+        raw.verified === true ||
+        vehicle?.verified === true
+
     };
 
   } catch (error) {
@@ -1030,7 +1062,13 @@ function ({
 
     return {
       found: false,
-      requiresConfiguration: false
+      exact: false,
+      requiresConfiguration: false,
+      vehicle: null,
+      tankLiters: null,
+      tankCapacity: null,
+      batteryKWh: null,
+      batteryCapacity: null
     };
 
   }
@@ -1066,14 +1104,11 @@ App.populateYearSelect = function (
         "option"
       );
 
-
     option.value =
       String(year);
 
-
     option.textContent =
       String(year);
-
 
     select.appendChild(
       option
@@ -1126,10 +1161,8 @@ App.populateMakeSelect = function (
         "option"
       );
 
-
     option.value = make;
     option.textContent = make;
-
 
     select.appendChild(
       option
@@ -1144,10 +1177,8 @@ App.populateMakeSelect = function (
       selectedMake
     )
   ) {
-
     select.value =
       selectedMake;
-
   }
 
 };
@@ -1186,14 +1217,8 @@ App.populateModelSelect = function (
         "option"
       );
 
-
-    option.value =
-      model;
-
-
-    option.textContent =
-      model;
-
+    option.value = model;
+    option.textContent = model;
 
     select.appendChild(
       option
@@ -1242,18 +1267,9 @@ function (
     ) ||
     !configurations.length
   ) {
-
     return;
-
   }
 
-
-  /*
-    If multiple versions exist we NEVER guess.
-
-    The driver must choose the correct engine /
-    drivetrain / trim.
-  */
 
   if (
     configurations.length > 1
@@ -1264,12 +1280,10 @@ function (
         "option"
       );
 
-
     placeholder.value = "";
 
     placeholder.textContent =
       "Select configuration";
-
 
     select.appendChild(
       placeholder
@@ -1292,14 +1306,8 @@ function (
           "option"
         );
 
-
-      option.value =
-        label;
-
-
-      option.textContent =
-        label;
-
+      option.value = label;
+      option.textContent = label;
 
       select.appendChild(
         option
@@ -1309,9 +1317,7 @@ function (
   );
 
 
-  if (
-    selectedConfiguration
-  ) {
+  if (selectedConfiguration) {
 
     const exists =
       Array.from(
@@ -1348,7 +1354,7 @@ function (
 
 
 /* =========================================================
-   TANK SLIDER HELPERS
+   TANK SLIDER
    ========================================================= */
 
 App.setTankSliderValue = function (
@@ -1369,16 +1375,9 @@ App.setTankSliderValue = function (
     !Number.isFinite(capacity) ||
     capacity <= 0
   ) {
-
     return;
-
   }
 
-
-  /*
-    Expand the range if a verified vehicle exceeds the
-    old 120 L prototype limit.
-  */
 
   if (
     capacity >
@@ -1444,6 +1443,38 @@ App.setVehicleSpecStatus = function (
   status.dataset.status =
     type;
 
+
+  status.classList.remove(
+    "detected",
+    "verified",
+    "manual",
+    "warning",
+    "select"
+  );
+
+
+  if (
+    type === "verified"
+  ) {
+
+    status.classList.add(
+      "verified",
+      "detected"
+    );
+
+  } else if (
+    [
+      "detected",
+      "manual",
+      "warning",
+      "select"
+    ].includes(type)
+  ) {
+
+    status.classList.add(type);
+
+  }
+
 };
 
 
@@ -1471,23 +1502,32 @@ App.prepareOnboarding = function () {
   const make =
     App.$("onboardingMake");
 
+  const model =
+    App.$("onboardingModel");
+
+
+  /*
+    Sonic 2015 is a verified record in vehicles.js V3,
+    which also gives us an easy reference for testing
+    automatic tank detection.
+  */
 
   App.populateYearSelect(
     year,
-    2020
-  );
-
-
-  App.populateMakeSelect(
-    make,
-    2020,
-    "Toyota"
+    2015
   );
 
 
   if (year) {
-    year.value = "2020";
+    year.value = "2015";
   }
+
+
+  App.populateMakeSelect(
+    make,
+    2015,
+    "Chevrolet"
+  );
 
 
   if (
@@ -1497,17 +1537,41 @@ App.prepareOnboarding = function () {
     ).some(
       option =>
         option.value ===
-        "Toyota"
+        "Chevrolet"
     )
   ) {
 
     make.value =
-      "Toyota";
+      "Chevrolet";
 
   }
 
 
-  App.updateOnboardingModels();
+  App.populateModelSelect(
+    2015,
+    "Chevrolet",
+    model,
+    "Sonic"
+  );
+
+
+  if (
+    model &&
+    Array.from(
+      model.options
+    ).some(
+      option =>
+        option.value ===
+        "Sonic"
+    )
+  ) {
+
+    model.value = "Sonic";
+
+  }
+
+
+  App.updateOnboardingVehicleSpec();
 
   App.updateOnboardingPowertrain();
 
@@ -1517,11 +1581,6 @@ App.prepareOnboarding = function () {
 
 
 App.showOnboarding = function () {
-
-  /*
-    Current V5 index uses #onboarding.
-    #onboardingModal is also supported.
-  */
 
   const onboarding =
     App.$("onboarding") ||
@@ -1610,9 +1669,7 @@ function () {
     !make ||
     !model
   ) {
-
     return;
-
   }
 
 
@@ -1672,6 +1729,22 @@ function () {
     );
 
 
+  /*
+    CRITICAL V5.5.1 FIX:
+
+    Save the current configuration BEFORE rebuilding
+    the select.
+
+    Previously selecting a configuration could cause
+    this function to rebuild the menu and erase the
+    option the driver had just selected.
+  */
+
+  const previousConfiguration =
+    configurationSelect?.value ||
+    "";
+
+
   if (
     !year ||
     !make ||
@@ -1695,11 +1768,6 @@ function () {
       model
     );
 
-
-  /*
-    No exact specification in database.
-    Keep the tank manually adjustable.
-  */
 
   if (!configurations.length) {
 
@@ -1727,13 +1795,6 @@ function () {
   }
 
 
-  /*
-    Show configuration only when multiple variants
-    actually exist.
-
-    With one configuration GasGo can resolve it safely.
-  */
-
   if (configurationField) {
 
     configurationField.style.display =
@@ -1746,7 +1807,8 @@ function () {
 
   App.populateConfigurationSelect(
     configurationSelect,
-    configurations
+    configurations,
+    previousConfiguration
   );
 
 
@@ -1876,16 +1938,15 @@ function () {
 
 
   const tank =
-    Number(
-      result.tankCapacity ??
-      result.tankLiters
+    App.firstFinitePositive(
+      result.tankLiters,
+      result.tankCapacity
     );
 
 
   if (
     powertrain !== "Electric" &&
-    Number.isFinite(tank) &&
-    tank > 0
+    tank !== null
   ) {
 
     App.setTankSliderValue(
@@ -1910,14 +1971,15 @@ function () {
   ) {
 
     const battery =
-      Number(
+      App.firstFinitePositive(
+        result.batteryKWh,
         result.batteryCapacity
       );
 
 
     App.setVehicleSpecStatus(
       "onboarding",
-      Number.isFinite(battery)
+      battery !== null
         ? "✓ Electric vehicle detected • " +
           App.number(
             battery,
@@ -1926,6 +1988,14 @@ function () {
           " kWh"
         : "✓ Electric vehicle detected.",
       "verified"
+    );
+
+  } else {
+
+    App.setVehicleSpecStatus(
+      "onboarding",
+      "Vehicle detected, but tank capacity is unavailable — adjust manually.",
+      "manual"
     );
 
   }
@@ -2232,7 +2302,8 @@ App.finishOnboarding = function () {
 
   const batteryCapacity =
     specification.found
-      ? Number(
+      ? App.firstFinitePositive(
+          specification.batteryKWh,
           specification.batteryCapacity
         )
       : null;
@@ -2279,11 +2350,10 @@ App.finishOnboarding = function () {
           ),
 
     batteryCapacity:
-      Number.isFinite(
-        batteryCapacity
-      )
-        ? batteryCapacity
-        : null,
+      batteryCapacity,
+
+    batteryKWh:
+      batteryCapacity,
 
     capacitySource:
       specification.found
@@ -2356,9 +2426,7 @@ App.getVehicleEnergyMode = function () {
   if (
     type === "electric"
   ) {
-
     return "ev";
-
   }
 
 
@@ -2366,9 +2434,7 @@ App.getVehicleEnergyMode = function () {
     type.includes("plug-in") ||
     type.includes("phev")
   ) {
-
     return "both";
-
   }
 
 
@@ -2405,9 +2471,7 @@ App.getVehicleRange = function () {
     if (
       Number.isFinite(result)
     ) {
-
       return result;
-
     }
 
   }
@@ -2460,9 +2524,22 @@ App.loadLocalData = function () {
 
 
   /*
-    Old V5 saves may contain a fake 46 L capacity for EVs.
-    V5.5 cleans that up.
+    Keep both EV battery property names synchronized.
   */
+
+  const savedBattery =
+    App.firstFinitePositive(
+      App.state.vehicle.batteryKWh,
+      App.state.vehicle.batteryCapacity
+    );
+
+
+  App.state.vehicle.batteryCapacity =
+    savedBattery;
+
+  App.state.vehicle.batteryKWh =
+    savedBattery;
+
 
   if (
     App.state.vehicle.powertrain ===
@@ -2845,9 +2922,7 @@ App.showScreen = function (
     screenName ===
     "dashboard"
   ) {
-
     App.renderDashboard();
-
   }
 
 
@@ -2855,9 +2930,7 @@ App.showScreen = function (
     screenName ===
     "rewards"
   ) {
-
     App.renderRewards();
-
   }
 
 
@@ -2865,9 +2938,7 @@ App.showScreen = function (
     screenName ===
     "car"
   ) {
-
     App.renderVehicle();
-
   }
 
 };
@@ -2898,9 +2969,7 @@ App.loadStations = async function () {
   if (
     App.state.stationsLoading
   ) {
-
     return;
-
   }
 
 
@@ -2955,12 +3024,6 @@ App.loadStations = async function () {
 
     }
 
-
-    /*
-      Support both:
-      { stations: [...] }
-      and a direct [...]
-    */
 
     if (
       Array.isArray(result)
@@ -3118,8 +3181,6 @@ App.loadStations = async function () {
 
 /* =========================================================
    MAP
-
-   map-v55.js may replace these functions after app.js loads.
    ========================================================= */
 
 App.initializeMap = function () {
@@ -3145,9 +3206,7 @@ App.initializeMap = function () {
     typeof L ===
       "undefined"
   ) {
-
     return;
-
   }
 
 
@@ -3209,10 +3268,8 @@ App.initializeMap = function () {
 
 
       if (loader) {
-
         loader.style.display =
           "none";
-
       }
 
     };
@@ -3418,9 +3475,6 @@ App.stationPopupHTML = function (
 
 /* =========================================================
    MAP MARKERS
-
-   This is the safe base implementation.
-   map-v55.js V5.6.2 can override it.
    ========================================================= */
 
 App.renderMapStations = function () {
@@ -3473,7 +3527,6 @@ App.renderMapStations = function () {
                 : 2,
 
             opacity: 1,
-
             fillOpacity: 0.9
           }
         );
@@ -3500,23 +3553,12 @@ App.renderMapStations = function () {
       );
 
 
-      /*
-        IMPORTANT:
-
-        We do NOT rebuild the entire marker layer when
-        a map marker is clicked.
-
-        map-v55.js improves this further and controls
-        the selected marker styling.
-      */
-
       marker.on(
         "click",
         () => {
 
           App.state.selectedStation =
             station;
-
 
           App.renderStationSheet();
 
@@ -3551,9 +3593,7 @@ App.applyStationFilters = function () {
   if (
     !window.GasGoData
   ) {
-
     return;
-
   }
 
 
@@ -3990,9 +4030,7 @@ App.getStationDistance = function (
     typeof GasGoData.distanceMiles !==
       "function"
   ) {
-
     return null;
-
   }
 
 
@@ -4015,9 +4053,7 @@ App.formatDistance = function (
       Number(distance)
     )
   ) {
-
     return "—";
-
   }
 
 
@@ -4041,15 +4077,19 @@ App.formatDistance = function (
 
 
 /* =========================================================
+   END PART 1/2
+
+   PART 2 begins with:
+   App.renderStationList = function () {
+   ========================================================= */
+/* =========================================================
    STATION LIST
    ========================================================= */
 
 App.renderStationList = function () {
 
   const container =
-    App.$(
-      "stationList"
-    );
+    App.$("stationList");
 
 
   if (!container) {
@@ -4066,17 +4106,9 @@ App.renderStationList = function () {
 
     container.innerHTML = `
       <div class="empty-state">
-
-        <div class="empty-icon">
-          🔎
-        </div>
-
-        <strong>
-          No locations found
-        </strong>
-
-        Try another search or filter.
-
+        <div class="empty-icon">📍</div>
+        <strong>No locations found</strong>
+        Try changing your filters or search.
       </div>
     `;
 
@@ -4088,88 +4120,88 @@ App.renderStationList = function () {
   container.innerHTML =
     stations.map(station => {
 
-      let distanceText =
-        "";
-
-
       const distance =
         App.getStationDistance(
           station
         );
 
 
-      if (
-        Number.isFinite(
+      const distanceText =
+        App.formatDistance(
           distance
-        )
-      ) {
-
-        distanceText =
-          " • " +
-          App.formatDistance(
-            distance
-          );
-
-      }
+        );
 
 
       if (
-        station.type ===
-        "ev"
+        station.type === "ev"
       ) {
 
         const ev =
           station.ev || {};
 
 
+        const power =
+          ev.power ||
+          "Power not listed";
+
+
+        const sockets =
+          Array.isArray(
+            ev.sockets
+          )
+            ? ev.sockets.join(", ")
+            : ev.sockets ||
+              "Connectors not listed";
+
+
         return `
-          <div
-            class="station-list-item"
+          <article
+            class="card station-list-item"
             onclick="GasGoApp.selectStationById('${App.escape(station.id)}')"
           >
 
-            <div class="station-list-icon">
-              ⚡
-            </div>
+            <div class="station-list-main">
 
-            <div class="station-list-info">
-
-              <div class="station-list-name">
-                ${App.escape(
-                  station.name
-                )}
+              <div class="station-list-icon">
+                ⚡
               </div>
 
-              <div class="station-list-meta">
+              <div class="station-list-info">
 
-                ${App.escape(
-                  station.brand ||
-                  "EV Charging"
-                )}
+                <strong>
+                  ${App.escape(station.name)}
+                </strong>
 
-                ${
-                  station.municipality
-                    ? " • " +
-                      App.escape(
-                        station.municipality
-                      )
-                    : ""
-                }
+                <div class="muted">
+                  ${App.escape(
+                    station.brand ||
+                    "EV Charging"
+                  )}
+                </div>
 
-                ${distanceText}
+                <div class="muted">
+                  ${App.escape(power)}
+                  •
+                  ${App.escape(sockets)}
+                </div>
 
               </div>
 
             </div>
 
-            <div class="station-list-price">
-              ${App.escape(
-                ev.power ||
-                "CHARGE"
-              )}
+            <div class="station-list-side">
+
+              <strong>
+                ${App.escape(distanceText)}
+              </strong>
+
+              <span class="badge">
+                EV
+              </span>
+
             </div>
 
-          </div>
+          </article>
         `;
 
       }
@@ -4187,56 +4219,64 @@ App.renderStationList = function () {
         );
 
 
+      const price =
+        Number(
+          prices[
+            App.state.selectedFuel
+          ]
+        );
+
+
       return `
-        <div
-          class="station-list-item"
+        <article
+          class="card station-list-item"
           onclick="GasGoApp.selectStationById('${App.escape(station.id)}')"
         >
 
-          <div class="station-list-icon">
-            ⛽
-          </div>
+          <div class="station-list-main">
 
-          <div class="station-list-info">
-
-            <div class="station-list-name">
-              ${App.escape(
-                station.name
-              )}
+            <div class="station-list-icon">
+              ⛽
             </div>
 
-            <div class="station-list-meta">
+            <div class="station-list-info">
 
-              ${App.escape(
-                station.brand || ""
-              )}
+              <strong>
+                ${App.escape(station.name)}
+              </strong>
 
+              <div class="muted">
+                ${App.escape(
+                  station.brand ||
+                  "Fuel Station"
+                )}
+              </div>
+
+              <div class="muted">
+                ${App.escape(distanceText)}
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="station-list-side">
+
+            <strong>
               ${
-                station.municipality
-                  ? " • " +
-                    App.escape(
-                      station.municipality
-                    )
-                  : ""
+                Number.isFinite(price)
+                  ? App.money(price)
+                  : "—"
               }
+            </strong>
 
-              ${distanceText}
-
-            </div>
-
-          </div>
-
-          <div class="station-list-price">
-
-            ${App.money(
-              prices[
-                App.state.selectedFuel
-              ]
-            )}
+            <span class="muted">
+              /L
+            </span>
 
           </div>
 
-        </div>
+        </article>
       `;
 
     }).join("");
@@ -4246,41 +4286,36 @@ App.renderStationList = function () {
 
 /* =========================================================
    SELECT STATION
-
-   Only ONE definition exists in V5.5.
-
-   IMPORTANT:
-   This intentionally avoids rebuilding the entire map
-   marker layer. map-v55.js controls marker selection.
    ========================================================= */
 
 App.selectStationById = function (
-  id
+  stationId
 ) {
 
   const station =
     App.state.stations.find(
       item =>
         String(item.id) ===
-        String(id)
+        String(stationId)
     );
 
 
-  if (station) {
-
-    App.selectStation(
-      station,
-      true
-    );
-
+  if (!station) {
+    return;
   }
+
+
+  App.selectStation(
+    station,
+    true
+  );
 
 };
 
 
 App.selectStation = function (
   station,
-  moveMap = true
+  focusMap = false
 ) {
 
   if (!station) {
@@ -4296,84 +4331,63 @@ App.selectStation = function (
 
 
   if (
-    moveMap &&
+    focusMap &&
     App.state.map
   ) {
 
-    App.state.map.flyTo(
-      [
-        Number(station.lat),
-        Number(station.lon)
-      ],
-      Math.max(
-        App.state.map.getZoom(),
-        14
-      ),
-      {
-        duration: 0.5
-      }
-    );
+    const lat =
+      Number(station.lat);
+
+    const lon =
+      Number(station.lon);
+
+
+    if (
+      Number.isFinite(lat) &&
+      Number.isFinite(lon)
+    ) {
+
+      App.state.map.setView(
+        [lat, lon],
+        Math.max(
+          App.state.map.getZoom(),
+          14
+        ),
+        {
+          animate: true
+        }
+      );
+
+    }
+
+
+    const marker =
+      App.state.markers.get(
+        String(station.id)
+      );
+
+
+    if (marker) {
+
+      setTimeout(() => {
+
+        try {
+          marker.openPopup();
+        } catch (error) {
+          console.warn(
+            "GasGo popup error:",
+            error
+          );
+        }
+
+      }, 100);
+
+    }
 
   }
 
 
-  /*
-    Do not call renderMapStations() here.
-
-    map-v55.js V5.6.2 already handles marker highlighting
-    without destroying the popup marker.
-  */
-
-  const marker =
-    App.state.markers.get(
-      String(station.id)
-    );
-
-
-  if (marker) {
-
-    setTimeout(
-      () => {
-
-        const currentMarker =
-          App.state.markers.get(
-            String(station.id)
-          );
-
-
-        if (!currentMarker) {
-          return;
-        }
-
-
-        try {
-
-          currentMarker.setPopupContent(
-            App.stationPopupHTML(
-              station
-            )
-          );
-
-        } catch {
-          /* popup may not exist yet */
-        }
-
-
-        try {
-
-          currentMarker.openPopup();
-
-        } catch {
-          /* safe fallback */
-        }
-
-      },
-      moveMap
-        ? 550
-        : 30
-    );
-
-  }
+  App.renderMapStations();
 
 };
 
@@ -4384,14 +4398,8 @@ App.selectStation = function (
 
 App.renderStationSheet = function () {
 
-  const station =
-    App.state.selectedStation;
-
-
   const sheet =
-    App.$(
-      "stationSheet"
-    );
+    App.$("stationSheet");
 
 
   if (!sheet) {
@@ -4399,35 +4407,21 @@ App.renderStationSheet = function () {
   }
 
 
+  const station =
+    App.state.selectedStation;
+
+
   if (!station) {
 
-    sheet.style.display =
-      "none";
+    sheet.innerHTML = `
+      <div class="muted">
+        Select a station or charger to view details.
+      </div>
+    `;
 
     return;
 
   }
-
-
-  sheet.style.display =
-    "";
-
-
-  App.setText(
-    "selectedStationName",
-    station.name || "Energy stop"
-  );
-
-
-  App.setText(
-    "selectedStationBrand",
-    station.brand ||
-    (
-      station.type === "ev"
-        ? "EV Charging"
-        : ""
-    )
-  );
 
 
   const distance =
@@ -4436,983 +4430,116 @@ App.renderStationSheet = function () {
     );
 
 
-  App.setText(
-    "selectedStationDistance",
-    Number.isFinite(distance)
-      ? App.formatDistance(
-          distance
-        )
-      : "Enable location"
-  );
-
-
-  const pricesContainer =
-    App.$(
-      "selectedStationPrices"
-    ) ||
-    App.$(
-      "stationPriceGrid"
-    );
-
-
-  if (pricesContainer) {
-
-    if (
-      station.type ===
-      "ev"
-    ) {
-
-      App.renderSelectedEVInfo(
-        pricesContainer
-      );
-
-    } else {
-
-      const prices =
-        station.prices ||
-        (
-          typeof GasGoData.getStationPrices ===
-            "function"
-            ? GasGoData.getStationPrices(
-                station
-              )
-            : {}
-        );
-
-
-      pricesContainer.innerHTML = `
-
-        <div class="station-price">
-          <span>Regular</span>
-          <strong>
-            ${App.money(
-              prices.regular
-            )}
-          </strong>
-          <small>PER L</small>
-        </div>
-
-        <div class="station-price">
-          <span>Premium</span>
-          <strong>
-            ${App.money(
-              prices.premium
-            )}
-          </strong>
-          <small>PER L</small>
-        </div>
-
-        <div class="station-price">
-          <span>Diesel</span>
-          <strong>
-            ${App.money(
-              prices.diesel
-            )}
-          </strong>
-          <small>PER L</small>
-        </div>
-
-      `;
-
-    }
-
-  }
-
-
-  App.renderCanIMakeIt();
-
-};
-
-
-/* =========================================================
-   EV INFORMATION
-   ========================================================= */
-
-App.renderSelectedEVInfo = function (
-  container
-) {
-
-  const station =
-    App.state.selectedStation;
-
-
-  if (
-    !station ||
-    station.type !==
-      "ev" ||
-    !container
-  ) {
-
-    return;
-
-  }
-
-
-  const ev =
-    station.ev || {};
-
-
-  const sockets =
-    Array.isArray(
-      ev.sockets
-    )
-      ? ev.sockets.join(", ")
-      : ev.sockets ||
-        "Not listed";
-
-
-  container.innerHTML = `
-
-    <div class="station-price">
-
-      <span>
-        Connectors
-      </span>
-
-      <strong>
-        ${App.escape(sockets)}
-      </strong>
-
-      <small>
-        OSM DATA
-      </small>
-
-    </div>
-
-
-    <div class="station-price">
-
-      <span>
-        Power
-      </span>
-
-      <strong>
-        ${App.escape(
-          ev.power ||
-          "—"
-        )}
-      </strong>
-
-      <small>
-        WHEN LISTED
-      </small>
-
-    </div>
-
-
-    <div class="station-price">
-
-      <span>
-        Ports
-      </span>
-
-      <strong>
-        ${App.escape(
-          ev.capacity ||
-          "—"
-        )}
-      </strong>
-
-      <small>
-        WHEN LISTED
-      </small>
-
-    </div>
-
-  `;
-
-};
-
-
-/* =========================================================
-   CAN I MAKE IT?
-
-   smart-v6.js can replace this implementation.
-   ========================================================= */
-
-App.renderCanIMakeIt = function () {
-
-  const element =
-    App.$(
-      "rangeResult"
-    );
-
-
-  if (!element) {
-    return;
-  }
-
-
-  if (
-    !App.state.selectedStation
-  ) {
-
-    element.innerHTML =
-      "Select a location to estimate range.";
-
-    return;
-
-  }
-
-
-  if (
-    !App.state.userLocation
-  ) {
-
-    element.className =
-      "range-result";
-
-
-    element.innerHTML = `
-      <div class="range-result-title">
-        📍 Location needed
-      </div>
-
-      Share your approximate location to compare the
-      selected stop with your estimated vehicle range.
-
-      <div class="muted mt-8">
-        GasGo does not guarantee remaining range.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  if (
-    typeof GasGoData.canIMakeIt !==
-      "function"
-  ) {
-
-    return;
-
-  }
-
-
-  const result =
-    GasGoData.canIMakeIt(
-      App.state.selectedStation,
-      App.state.userLocation,
-      App.state.vehicle
-    );
-
-
-  element.className =
-    "range-result " +
-    (
-      result.status ||
-      ""
-    );
-
-
-  let title =
-    "Range estimate";
-
-
-  if (
-    result.status ===
-    "safe"
-  ) {
-
-    title =
-      "🟢 Likely within range";
-
-  } else if (
-    result.status ===
-    "warning"
-  ) {
-
-    title =
-      "🟡 Low safety margin";
-
-  } else if (
-    result.status ===
-    "danger"
-  ) {
-
-    title =
-      "🔴 Choose a closer option";
-
-  }
-
-
-  element.innerHTML = `
-
-    <div class="range-result-title">
-      ${title}
-    </div>
-
-    ${App.escape(
-      result.message || ""
-    )}
-
-    ${
-      Number.isFinite(
-        result.distance
-      )
-        ? `
-          <br>
-          Approx. distance:
-          <strong>
-            ${App.formatDistance(
-              result.distance
-            )}
-          </strong>
-        `
-        : ""
-    }
-
-    ${
-      Number.isFinite(
-        result.range
-      )
-        ? `
-          <br>
-          Estimated range:
-          <strong>
-            ${Math.round(
-              result.range
-            )} mi
-          </strong>
-        `
-        : ""
-    }
-
-    <div class="muted mt-8">
-      Prototype estimate only. Distance is approximate
-      and estimated vehicle range is not guaranteed.
-    </div>
-
-  `;
-
-};
-
-
-/* =========================================================
-   SAFER OPTION
-   ========================================================= */
-
-App.findSaferOption = function () {
-
-  if (
-    !App.state.userLocation
-  ) {
-
-    App.toast(
-      "Share your location first.",
-      "error"
-    );
-
-
-    App.requestLocation();
-
-    return;
-
-  }
-
-
-  if (
-    typeof GasGoData.findSaferStation !==
-      "function"
-  ) {
-
-    App.toast(
-      "Safer-stop analysis is unavailable.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const safer =
-    GasGoData.findSaferStation(
-      App.state.stations,
-      App.state.userLocation,
-      App.state.vehicle,
-      App.state.selectedFuel
-    );
-
-
-  if (!safer) {
-
-    App.toast(
-      "No safer mapped option was found.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  App.selectStation(
-    safer,
-    true
-  );
-
-
-  App.toast(
-    "Safer option selected.",
-    "success"
-  );
-
-};
-
-
-/* =========================================================
-   DIRECTIONS
-   ========================================================= */
-
-App.openDirections = function () {
-
-  const station =
-    App.state.selectedStation;
-
-
-  if (!station) {
-
-    App.toast(
-      "Choose a location first.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  const apple =
-    /iPhone|iPad|iPod|Macintosh/i
-      .test(
-        navigator.userAgent
-      );
-
-
-  let url = "";
-
-
-  if (
-    apple &&
-    typeof GasGoData.getAppleMapsURL ===
-      "function"
-  ) {
-
-    url =
-      GasGoData.getAppleMapsURL(
-        station
-      );
-
-  } else if (
-    typeof GasGoData.getGoogleMapsURL ===
-      "function"
-  ) {
-
-    url =
-      GasGoData.getGoogleMapsURL(
-        station
-      );
-
-  }
-
-
-  if (!url) {
-
-    url =
-      "https://www.google.com/maps/search/?api=1&query=" +
-      encodeURIComponent(
-        station.lat +
-        "," +
-        station.lon
-      );
-
-  }
-
-
-  window.open(
-    url,
-    "_blank",
-    "noopener"
-  );
-
-};
-
-
-/* =========================================================
-   LOCATION
-   ========================================================= */
-
-App.requestLocation = function () {
-
-  if (
-    !navigator.geolocation
-  ) {
-
-    App.toast(
-      "Location is not supported.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  App.setStationStatus(
-    "Waiting for location permission…"
-  );
-
-
-  navigator.geolocation.getCurrentPosition(
-
-    position => {
-
-      App.state.userLocation = {
-
-        lat:
-          position.coords.latitude,
-
-        lon:
-          position.coords.longitude,
-
-        accuracy:
-          position.coords.accuracy
-
-      };
-
-
-      App.renderUserMarker();
-
-      App.applyStationFilters();
-
-      App.renderStationSheet();
-
-      App.updateSmartStop();
-
-      App.renderPlanMyStop();
-
-
-      App.toast(
-        "Location enabled.",
-        "success"
-      );
-
-    },
-
-
-    error => {
-
-      console.warn(
-        "Location error:",
-        error
-      );
-
-
-      App.toast(
-        "Location wasn't shared.",
-        "error"
-      );
-
-
-      App.setStationStatus(
-        App.state.stations.length +
-        " mapped locations loaded. Location is off."
-      );
-
-    },
-
-
-    {
-      enableHighAccuracy: false,
-      timeout: 10000,
-      maximumAge: 60000
-    }
-
-  );
-
-};
-
-
-/* =========================================================
-   USER MARKER
-   ========================================================= */
-
-App.renderUserMarker = function () {
-
-  if (
-    !App.state.map ||
-    !App.state.userLocation ||
-    typeof L === "undefined"
-  ) {
-
-    return;
-
-  }
-
-
-  if (
-    App.state.userMarker
-  ) {
-
-    try {
-
-      App.state.map.removeLayer(
-        App.state.userMarker
-      );
-
-    } catch {
-      /* safe */
-    }
-
-  }
-
-
-  const icon =
-    L.divIcon({
-      className: "",
-
-      html:
-        '<div class="user-location-marker"></div>',
-
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
-    });
-
-
-  App.state.userMarker =
-    L.marker(
-      [
-        App.state.userLocation.lat,
-        App.state.userLocation.lon
-      ],
-      {
-        icon,
-        zIndexOffset: 1000
-      }
-    )
-      .addTo(
-        App.state.map
-      )
-      .bindPopup(
-        "Your approximate location"
-      );
-
-
-  App.state.map.flyTo(
-    [
-      App.state.userLocation.lat,
-      App.state.userLocation.lon
-    ],
-    13,
-    {
-      duration: 0.5
-    }
-  );
-
-};
-
-
-/* =========================================================
-   RESET MAP
-   ========================================================= */
-
-App.resetMap = function () {
-
-  if (
-    !App.state.map
-  ) {
-
-    return;
-
-  }
-
-
-  const center =
-    GasGoData.PR_CENTER || {
-      lat: 18.2208,
-      lon: -66.5901,
-      zoom: 9
-    };
-
-
-  App.state.map.flyTo(
-    [
-      center.lat,
-      center.lon
-    ],
-    center.zoom,
-    {
-      duration: 0.5
-    }
-  );
-
-};
-
-
-/* =========================================================
-   SMART STOP
-   ========================================================= */
-
-App.updateSmartStop = function () {
-
-  const card =
-    App.$(
-      "smartStopCard"
-    );
-
-
-  if (!card) {
-    return;
-  }
-
-
-  if (
-    !App.state.stations.length
-  ) {
-
-    card.innerHTML = `
-      <div class="smart-stop-title">
-        Finding your Smart Stop…
-      </div>
-
-      <div class="smart-stop-subtitle">
-        Loading mapped energy locations.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  const mode =
-    App.getVehicleEnergyMode();
-
-
-  let candidates = [
-    ...App.state.stations
-  ];
-
-
-  if (
-    mode === "ev"
-  ) {
-
-    candidates =
-      candidates.filter(
-        station =>
-          station.type ===
-          "ev"
-      );
-
-  } else if (
-    mode === "fuel"
-  ) {
-
-    candidates =
-      candidates.filter(
-        station =>
-          station.type ===
-          "fuel"
-      );
-
-  }
-
-
-  let station = null;
-
-
-  if (
-    App.state.userLocation &&
-    typeof GasGoData.sortClosest ===
-      "function"
-  ) {
-
-    const sorted =
-      GasGoData.sortClosest(
-        candidates,
-        App.state.userLocation
-      );
-
-
-    station =
-      sorted[0] || null;
-
-  } else if (
-    mode === "fuel" &&
-    typeof GasGoData.sortCheapest ===
-      "function"
-  ) {
-
-    const sorted =
-      GasGoData.sortCheapest(
-        candidates,
-        App.state.selectedFuel
-      );
-
-
-    station =
-      sorted[0] || null;
-
-  } else {
-
-    station =
-      candidates[0] || null;
-
-  }
-
-
-  if (!station) {
-
-    App.state.smartStop =
-      null;
-
-
-    card.innerHTML = `
-      <div class="smart-stop-title">
-        Smart Stop unavailable
-      </div>
-
-      <div class="smart-stop-subtitle">
-        No compatible mapped stop was found.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  App.state.smartStop = {
-    station
-  };
-
-
-  let distanceText =
-    "Enable location";
-
-
-  const distance =
-    App.getStationDistance(
-      station
-    );
-
-
-  if (
-    Number.isFinite(
+  const distanceText =
+    App.formatDistance(
       distance
-    )
-  ) {
-
-    distanceText =
-      App.formatDistance(
-        distance
-      );
-
-  }
+    );
 
 
   if (
-    station.type ===
-    "ev"
+    station.type === "ev"
   ) {
 
     const ev =
       station.ev || {};
 
 
-    card.innerHTML = `
+    const sockets =
+      Array.isArray(
+        ev.sockets
+      )
+        ? ev.sockets.join(", ")
+        : ev.sockets ||
+          "Not listed";
 
-      <div class="smart-stop-header">
+
+    sheet.innerHTML = `
+      <div class="station-sheet-head">
 
         <div>
 
           <div class="eyebrow">
-            GASGO SMART STOP
+            EV CHARGER
           </div>
 
-          <div class="smart-stop-title">
-            ⚡ ${App.escape(
-              station.name
-            )}
-          </div>
+          <h3>
+            ⚡ ${App.escape(station.name)}
+          </h3>
 
-          <div class="smart-stop-subtitle">
+          <div class="muted">
             ${App.escape(
               station.brand ||
               "EV Charging"
             )}
+            ${
+              distance !== null
+                ? " • " +
+                  App.escape(
+                    distanceText
+                  )
+                : ""
+            }
           </div>
 
         </div>
 
-        <div class="smart-stop-price">
-          ⚡
-          <small>EV</small>
-        </div>
-
       </div>
 
+      <div class="station-sheet-grid">
 
-      <div class="smart-stop-grid">
-
-        <div class="smart-stat">
-          <span>Distance</span>
+        <div class="station-sheet-stat">
+          <span>Connectors</span>
           <strong>
-            ${distanceText}
+            ${App.escape(sockets)}
           </strong>
         </div>
 
-        <div class="smart-stat">
+        <div class="station-sheet-stat">
           <span>Power</span>
           <strong>
             ${App.escape(
               ev.power ||
+              "Not listed"
+            )}
+          </strong>
+        </div>
+
+        <div class="station-sheet-stat">
+          <span>Ports</span>
+          <strong>
+            ${App.escape(
+              ev.capacity ||
               "—"
             )}
           </strong>
         </div>
 
-        <div class="smart-stat">
-          <span>Range</span>
-          <strong>
-            ${Math.round(
-              App.getVehicleRange()
-            )} mi
-          </strong>
-        </div>
-
       </div>
 
-
-      <div class="muted">
-        Charging price and live availability are not
-        assumed when the mapped data does not provide them.
+      <div class="notice mt-12">
+        Charging availability and pricing may not be
+        available in OpenStreetMap data.
       </div>
-
 
       <div class="button-row mt-12">
 
         <button
           class="secondary"
-          onclick="GasGoApp.openSmartStop()"
+          onclick="GasGoApp.runCanIMakeIt()"
         >
-          VIEW
+          CAN I MAKE IT?
         </button>
 
         <button
           class="primary"
-          onclick="GasGoApp.goToSmartStop()"
+          onclick="GasGoApp.openDirections()"
         >
-          GO
+          DIRECTIONS
         </button>
 
       </div>
-
     `;
+
 
     return;
 
@@ -5431,8 +4558,853 @@ App.updateSmartStop = function () {
     );
 
 
-  card.innerHTML = `
+  sheet.innerHTML = `
+    <div class="station-sheet-head">
 
+      <div>
+
+        <div class="eyebrow">
+          FUEL STATION
+        </div>
+
+        <h3>
+          ⛽ ${App.escape(station.name)}
+        </h3>
+
+        <div class="muted">
+          ${App.escape(
+            station.brand ||
+            "Fuel Station"
+          )}
+          ${
+            distance !== null
+              ? " • " +
+                App.escape(
+                  distanceText
+                )
+              : ""
+          }
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="price-grid mt-12">
+
+      <div class="price-box">
+        <span>Regular</span>
+        <b>
+          ${App.money(
+            prices.regular
+          )}
+        </b>
+        <span>per L</span>
+      </div>
+
+      <div class="price-box">
+        <span>Premium</span>
+        <b>
+          ${App.money(
+            prices.premium
+          )}
+        </b>
+        <span>per L</span>
+      </div>
+
+      <div class="price-box">
+        <span>Diesel</span>
+        <b>
+          ${App.money(
+            prices.diesel
+          )}
+        </b>
+        <span>per L</span>
+      </div>
+
+    </div>
+
+    <div class="notice mt-12">
+      Prototype fuel prices are estimates for the GasGo demo.
+    </div>
+
+    <div class="button-row mt-12">
+
+      <button
+        class="secondary"
+        onclick="GasGoApp.runCanIMakeIt()"
+      >
+        CAN I MAKE IT?
+      </button>
+
+      <button
+        class="primary"
+        onclick="GasGoApp.openDirections()"
+      >
+        DIRECTIONS
+      </button>
+
+    </div>
+
+    <button
+      class="secondary full-button mt-8"
+      onclick="GasGoApp.openFuelLogModal()"
+    >
+      + LOG FILL-UP
+    </button>
+  `;
+
+};
+
+
+/* =========================================================
+   LOCATION
+   ========================================================= */
+
+App.requestLocation = function () {
+
+  if (
+    !navigator.geolocation
+  ) {
+
+    App.toast(
+      "Location is not supported on this device.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  App.toast(
+    "Requesting your location…"
+  );
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    position => {
+
+      App.state.userLocation = {
+        lat:
+          position.coords.latitude,
+
+        lon:
+          position.coords.longitude
+      };
+
+
+      App.state.location =
+        App.state.userLocation;
+
+
+      App.updateUserMarker();
+
+      App.applyStationFilters();
+
+      App.updateSmartStop();
+
+      App.renderPlanMyStop();
+
+
+      App.toast(
+        "Location updated 📍",
+        "success"
+      );
+
+    },
+
+    error => {
+
+      console.warn(
+        "GasGo location error:",
+        error
+      );
+
+
+      App.toast(
+        "Location permission was not available.",
+        "error"
+      );
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000
+    }
+
+  );
+
+};
+
+
+App.updateUserMarker = function () {
+
+  if (
+    !App.state.map ||
+    !App.state.userLocation ||
+    typeof L === "undefined"
+  ) {
+    return;
+  }
+
+
+  const lat =
+    App.state.userLocation.lat;
+
+  const lon =
+    App.state.userLocation.lon;
+
+
+  if (
+    App.state.userMarker
+  ) {
+
+    App.state.userMarker.setLatLng(
+      [lat, lon]
+    );
+
+  } else {
+
+    App.state.userMarker =
+      L.circleMarker(
+        [lat, lon],
+        {
+          radius: 8,
+          weight: 4,
+          fillOpacity: 1
+        }
+      )
+      .bindTooltip(
+        "YOU",
+        {
+          permanent: false
+        }
+      )
+      .addTo(
+        App.state.map
+      );
+
+  }
+
+
+  App.state.map.setView(
+    [lat, lon],
+    Math.max(
+      App.state.map.getZoom(),
+      12
+    )
+  );
+
+};
+
+
+/* =========================================================
+   DIRECTIONS
+   ========================================================= */
+
+App.openDirections = function () {
+
+  const station =
+    App.state.selectedStation;
+
+
+  if (!station) {
+
+    App.toast(
+      "Select a location first.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  let url = "";
+
+
+  if (
+    window.GasGoData &&
+    typeof GasGoData.getGoogleMapsURL ===
+      "function"
+  ) {
+
+    url =
+      GasGoData.getGoogleMapsURL(
+        station
+      );
+
+  }
+
+
+  if (!url) {
+
+    url =
+      "https://www.google.com/maps/dir/?api=1&destination=" +
+      encodeURIComponent(
+        station.lat +
+        "," +
+        station.lon
+      );
+
+  }
+
+
+  window.open(
+    url,
+    "_blank",
+    "noopener,noreferrer"
+  );
+
+};
+
+
+/* =========================================================
+   CAN I MAKE IT?
+   ========================================================= */
+
+App.runCanIMakeIt = function () {
+
+  const station =
+    App.state.selectedStation;
+
+
+  if (!station) {
+
+    App.toast(
+      "Select a station or charger first.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  App.renderCanIMakeIt(
+    station
+  );
+
+};
+
+
+App.renderCanIMakeIt = function (
+  station
+) {
+
+  const container =
+    App.$(
+      "rangeResult"
+    );
+
+
+  if (!container) {
+
+    const distance =
+      App.getStationDistance(
+        station
+      );
+
+
+    if (
+      distance === null
+    ) {
+
+      App.toast(
+        "Share your location to estimate whether you can reach this stop."
+      );
+
+      App.requestLocation();
+
+      return;
+
+    }
+
+
+    const range =
+      App.getVehicleRange();
+
+
+    const safe =
+      range >=
+      distance * 1.25;
+
+
+    App.toast(
+      safe
+        ? "Estimated range looks sufficient."
+        : "Your estimated range may be too low for this stop.",
+      safe
+        ? "success"
+        : "error"
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    !App.state.userLocation
+  ) {
+
+    container.innerHTML = `
+      <div class="range-result warning">
+        <strong>Location required</strong>
+        Share your location so GasGo can compare
+        your estimated range with the distance
+        to this stop.
+      </div>
+    `;
+
+
+    App.requestLocation();
+
+    return;
+
+  }
+
+
+  let result = null;
+
+
+  if (
+    window.GasGoData &&
+    typeof GasGoData.canIMakeIt ===
+      "function"
+  ) {
+
+    result =
+      GasGoData.canIMakeIt(
+        station,
+        App.state.userLocation,
+        App.state.vehicle
+      );
+
+  }
+
+
+  const distance =
+    result?.distance ??
+    App.getStationDistance(
+      station
+    );
+
+
+  const range =
+    result?.range ??
+    App.getVehicleRange();
+
+
+  let status =
+    result?.status;
+
+
+  if (!status) {
+
+    if (
+      range >=
+      distance * 1.25
+    ) {
+
+      status = "safe";
+
+    } else if (
+      range >= distance
+    ) {
+
+      status = "warning";
+
+    } else {
+
+      status = "danger";
+
+    }
+
+  }
+
+
+  const remaining =
+    Math.max(
+      0,
+      Number(range) -
+      Number(distance)
+    );
+
+
+  let title = "";
+  let message = "";
+  let icon = "";
+
+
+  if (
+    status === "safe"
+  ) {
+
+    title =
+      "You can make it";
+
+    message =
+      "Your estimated range provides a safety reserve for this trip.";
+
+    icon = "✓";
+
+  } else if (
+    status === "warning"
+  ) {
+
+    title =
+      "Low range";
+
+    message =
+      "You may reach this stop, but your estimated safety reserve is low.";
+
+    icon = "!";
+
+  } else {
+
+    title =
+      "Choose a closer stop";
+
+    message =
+      "Your estimated range is below the distance to this location.";
+
+    icon = "⚠";
+
+  }
+
+
+  container.innerHTML = `
+    <div class="range-result ${App.escape(status)}">
+
+      <div class="range-result-icon">
+        ${icon}
+      </div>
+
+      <div>
+
+        <strong>
+          ${App.escape(title)}
+        </strong>
+
+        <div>
+          ${App.escape(message)}
+        </div>
+
+        <div class="range-result-grid">
+
+          <div>
+            <span>Distance</span>
+            <b>
+              ${App.escape(
+                App.formatDistance(
+                  distance
+                )
+              )}
+            </b>
+          </div>
+
+          <div>
+            <span>Est. range</span>
+            <b>
+              ${Math.round(range)} mi
+            </b>
+          </div>
+
+          <div>
+            <span>Est. remaining</span>
+            <b>
+              ${remaining.toFixed(1)} mi
+            </b>
+          </div>
+
+        </div>
+
+        <div class="muted mt-8">
+          GasGo range is an estimate and is not a guarantee.
+          Driving conditions, vehicle condition, speed,
+          weather and other factors can affect actual range.
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+};
+
+
+/* =========================================================
+   SMART STOP
+   ========================================================= */
+
+App.updateSmartStop = function () {
+
+  if (
+    !App.state.stations.length ||
+    !window.GasGoData
+  ) {
+
+    App.state.smartStop =
+      null;
+
+    App.renderSmartStop();
+
+    return;
+
+  }
+
+
+  let result = null;
+
+
+  if (
+    typeof GasGoData.getSmartStop ===
+      "function"
+  ) {
+
+    result =
+      GasGoData.getSmartStop(
+        App.state.stations,
+        App.state.userLocation,
+        App.state.vehicle,
+        App.state.selectedFuel
+      );
+
+  }
+
+
+  if (
+    result?.station
+  ) {
+
+    App.state.smartStop =
+      result;
+
+  } else {
+
+    let compatible =
+      App.state.stations.filter(
+        station => {
+
+          const mode =
+            App.getVehicleEnergyMode();
+
+
+          if (
+            mode === "ev"
+          ) {
+
+            return (
+              station.type ===
+              "ev"
+            );
+
+          }
+
+
+          if (
+            mode === "both"
+          ) {
+
+            return true;
+
+          }
+
+
+          return (
+            station.type ===
+            "fuel"
+          );
+
+        }
+      );
+
+
+    if (
+      App.state.userLocation &&
+      typeof GasGoData.sortClosest ===
+        "function"
+    ) {
+
+      compatible =
+        GasGoData.sortClosest(
+          compatible,
+          App.state.userLocation
+        );
+
+    }
+
+
+    App.state.smartStop =
+      compatible[0]
+        ? {
+            station:
+              compatible[0]
+          }
+        : null;
+
+  }
+
+
+  App.renderSmartStop();
+
+};
+
+
+/* =========================================================
+   SMART STOP CARD
+   ========================================================= */
+
+App.renderSmartStop = function () {
+
+  const card =
+    App.$(
+      "smartStopCard"
+    );
+
+
+  if (!card) {
+    return;
+  }
+
+
+  const station =
+    App.state.smartStop?.station;
+
+
+  if (!station) {
+
+    card.innerHTML = `
+      <div class="muted">
+        Loading your recommended stop…
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  const distance =
+    App.formatDistance(
+      App.getStationDistance(
+        station
+      )
+    );
+
+
+  if (
+    station.type === "ev"
+  ) {
+
+    const ev =
+      station.ev || {};
+
+
+    card.innerHTML = `
+      <div class="smart-stop-header">
+
+        <div>
+
+          <div class="eyebrow">
+            GASGO SMART STOP
+          </div>
+
+          <div class="smart-stop-title">
+            ⚡ ${App.escape(station.name)}
+          </div>
+
+          <div class="smart-stop-subtitle">
+            ${App.escape(
+              station.brand ||
+              "EV Charging"
+            )}
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="smart-stop-grid">
+
+        <div class="smart-stat">
+          <span>Distance</span>
+          <strong>
+            ${App.escape(distance)}
+          </strong>
+        </div>
+
+        <div class="smart-stat">
+          <span>Est. range</span>
+          <strong>
+            ${Math.round(
+              App.getVehicleRange()
+            )} mi
+          </strong>
+        </div>
+
+        <div class="smart-stat">
+          <span>Power</span>
+          <strong>
+            ${App.escape(
+              ev.power ||
+              "—"
+            )}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="button-row mt-12">
+
+        <button
+          class="secondary"
+          onclick="GasGoApp.openSmartStop()"
+        >
+          VIEW
+        </button>
+
+        <button
+          class="primary"
+          onclick="GasGoApp.goToSmartStop()"
+        >
+          GO
+        </button>
+
+      </div>
+    `;
+
+
+    return;
+
+  }
+
+
+  const prices =
+    station.prices ||
+    (
+      typeof GasGoData.getStationPrices ===
+        "function"
+        ? GasGoData.getStationPrices(
+            station
+          )
+        : {}
+    );
+
+
+  const price =
+    prices[
+      App.state.selectedFuel
+    ];
+
+
+  card.innerHTML = `
     <div class="smart-stop-header">
 
       <div>
@@ -5442,43 +5414,31 @@ App.updateSmartStop = function () {
         </div>
 
         <div class="smart-stop-title">
-          ${App.escape(
-            station.name
-          )}
+          ${App.escape(station.name)}
         </div>
 
         <div class="smart-stop-subtitle">
           ${App.escape(
-            station.brand || ""
+            station.brand ||
+            "Fuel Station"
           )}
         </div>
 
       </div>
 
-
       <div class="smart-stop-price">
-
-        ${App.money(
-          prices[
-            App.state.selectedFuel
-          ]
-        )}
-
-        <small>
-          /L
-        </small>
-
+        ${App.money(price)}
+        <small>/L</small>
       </div>
 
     </div>
-
 
     <div class="smart-stop-grid">
 
       <div class="smart-stat">
         <span>Distance</span>
         <strong>
-          ${distanceText}
+          ${App.escape(distance)}
         </strong>
       </div>
 
@@ -5502,7 +5462,6 @@ App.updateSmartStop = function () {
 
     </div>
 
-
     <div class="button-row mt-12">
 
       <button
@@ -5520,15 +5479,10 @@ App.updateSmartStop = function () {
       </button>
 
     </div>
-
   `;
 
 };
 
-
-/* =========================================================
-   SMART STOP ACTIONS
-   ========================================================= */
 
 App.openSmartStop = function () {
 
@@ -5640,18 +5594,9 @@ App.renderPlanMyStop = function () {
     App.state.vehicle;
 
 
-  if (!vehicle) {
-    return;
-  }
-
-
   const mode =
     App.getVehicleEnergyMode();
 
-
-  /* =======================================================
-     ELECTRIC
-     ======================================================= */
 
   if (
     mode === "ev"
@@ -5706,7 +5651,6 @@ App.renderPlanMyStop = function () {
 
 
     container.innerHTML = `
-
       <div class="smart-stop-header">
 
         <div>
@@ -5716,9 +5660,7 @@ App.renderPlanMyStop = function () {
           </div>
 
           <div class="smart-stop-title">
-            ⚡ ${App.escape(
-              station.name
-            )}
+            ⚡ ${App.escape(station.name)}
           </div>
 
           <div class="smart-stop-subtitle">
@@ -5732,60 +5674,40 @@ App.renderPlanMyStop = function () {
 
       </div>
 
-
       <div class="smart-stop-grid mt-12">
 
         <div class="smart-stat">
-
-          <span>
-            Est. range
-          </span>
-
+          <span>Est. range</span>
           <strong>
             ${Math.round(
               App.getVehicleRange()
             )} mi
           </strong>
-
         </div>
 
-
         <div class="smart-stat">
-
-          <span>
-            Power
-          </span>
-
+          <span>Power</span>
           <strong>
             ${App.escape(
               ev.power ||
               "—"
             )}
           </strong>
-
         </div>
 
-
         <div class="smart-stat">
-
-          <span>
-            Price
-          </span>
-
+          <span>Price</span>
           <strong>
             —
           </strong>
-
         </div>
 
       </div>
 
-
       <div class="muted mt-8">
-        Charging price is not invented when the mapped
-        charger does not provide pricing information.
+        Charging price is not invented when mapped
+        data does not provide it.
       </div>
-
 
       <div class="button-row mt-12">
 
@@ -5804,17 +5726,13 @@ App.renderPlanMyStop = function () {
         </button>
 
       </div>
-
     `;
+
 
     return;
 
   }
 
-
-  /* =======================================================
-     GASOLINE / HYBRID / PHEV
-     ======================================================= */
 
   let fuelStations =
     App.state.stations.filter(
@@ -5874,13 +5792,8 @@ App.renderPlanMyStop = function () {
 
   const prices =
     station.prices ||
-    (
-      typeof GasGoData.getStationPrices ===
-        "function"
-        ? GasGoData.getStationPrices(
-            station
-          )
-        : {}
+    GasGoData.getStationPrices(
+      station
     );
 
 
@@ -5892,22 +5805,6 @@ App.renderPlanMyStop = function () {
     );
 
 
-  if (
-    !Number.isFinite(price) ||
-    price <= 0
-  ) {
-
-    container.innerHTML = `
-      <div class="muted">
-        A prototype fuel price is unavailable for this stop.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
   const level =
     App.clamp(
       vehicle.level,
@@ -5915,6 +5812,11 @@ App.renderPlanMyStop = function () {
       100
     );
 
+
+  /*
+    This value now comes from the vehicle database
+    when a verified vehicle/configuration is selected.
+  */
 
   const tank =
     Number(
@@ -5929,8 +5831,23 @@ App.renderPlanMyStop = function () {
 
     container.innerHTML = `
       <div class="muted">
-        Add your vehicle's tank capacity to calculate
-        a fuel plan.
+        Add your vehicle tank capacity to calculate this plan.
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  if (
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+
+    container.innerHTML = `
+      <div class="muted">
+        Fuel price data is unavailable for this stop.
       </div>
     `;
 
@@ -5966,20 +5883,13 @@ App.renderPlanMyStop = function () {
       ) /
       price;
 
-
-    liters =
-      Math.min(
-        liters,
-        remainingCapacity
-      );
-
   }
 
 
   liters =
-    Math.max(
-      0,
-      liters
+    Math.min(
+      liters,
+      remainingCapacity
     );
 
 
@@ -5987,18 +5897,14 @@ App.renderPlanMyStop = function () {
     liters * price;
 
 
-  const addedLevel =
-    tank > 0
-      ? liters /
-        tank *
-        100
-      : 0;
-
-
   const newLevel =
     App.clamp(
       level +
-      addedLevel,
+      (
+        liters /
+        tank *
+        100
+      ),
       0,
       100
     );
@@ -6013,7 +5919,6 @@ App.renderPlanMyStop = function () {
 
 
   container.innerHTML = `
-
     <div class="smart-stop-header">
 
       <div>
@@ -6023,79 +5928,57 @@ App.renderPlanMyStop = function () {
         </div>
 
         <div class="smart-stop-title">
-          ${App.escape(
-            station.name
-          )}
+          ${App.escape(station.name)}
         </div>
 
         <div class="smart-stop-subtitle">
           ${App.escape(
-            station.brand || ""
+            station.brand ||
+            "Fuel Station"
           )}
         </div>
 
       </div>
 
-
       <div class="smart-stop-price">
-
         ${App.money(price)}
-
-        <small>
-          /L
-        </small>
-
+        <small>/L</small>
       </div>
 
     </div>
-
 
     <div class="smart-stop-grid mt-12">
 
       <div class="smart-stat">
         <span>Add</span>
         <strong>
-          ${App.number(
-            liters,
-            1
-          )} L
+          ${App.number(liters, 1)} L
         </strong>
       </div>
 
       <div class="smart-stat">
         <span>Est. cost</span>
         <strong>
-          ${App.money(
-            cost
-          )}
+          ${App.money(cost)}
         </strong>
       </div>
 
       <div class="smart-stat">
         <span>New level</span>
         <strong>
-          ${Math.round(
-            newLevel
-          )}%
+          ${Math.round(newLevel)}%
         </strong>
       </div>
 
     </div>
 
-
     <div class="muted mt-8">
-
       Estimated range after adding fuel:
       <strong>
-        ${Math.round(
-          newRange
-        )} mi
+        ${Math.round(newRange)} mi
       </strong>.
-
       Fuel prices are prototype estimates.
-
     </div>
-
 
     <div class="button-row mt-12">
 
@@ -6114,7 +5997,6 @@ App.renderPlanMyStop = function () {
       </button>
 
     </div>
-
   `;
 
 };
@@ -6125,9 +6007,7 @@ App.viewPlanStop = function () {
   if (
     !App.state.planStation
   ) {
-
     return;
-
   }
 
 
@@ -6153,9 +6033,7 @@ App.goToPlanStop = function () {
   if (
     !App.state.planStation
   ) {
-
     return;
-
   }
 
 
@@ -6202,7 +6080,9 @@ App.renderVehicle = function () {
   App.setText(
     "vehicleLevelDisplay",
     Math.round(
-      vehicle.level
+      Number(
+        vehicle.level
+      )
     ) + "%"
   );
 
@@ -6211,35 +6091,18 @@ App.renderVehicle = function () {
     "vehicleRangeDisplay",
     Math.round(
       App.getVehicleRange()
-    ) +
-    " mi"
+    ) + " mi"
   );
 
 
   App.setText(
     "vehicleFullRangeDisplay",
     Math.round(
-      vehicle.fullRange
-    ) +
-    " mi"
+      Number(
+        vehicle.fullRange
+      )
+    ) + " mi"
   );
-
-
-  const configurationDisplay =
-    App.$(
-      "vehicleConfigurationDisplay"
-    );
-
-
-  if (
-    configurationDisplay
-  ) {
-
-    configurationDisplay.textContent =
-      vehicle.configuration ||
-      "Manual / not specified";
-
-  }
 
 
   const capacityLabel =
@@ -6248,10 +6111,26 @@ App.renderVehicle = function () {
     );
 
 
-  const tankDisplay =
+  if (capacityLabel) {
+
+    capacityLabel.textContent =
+      vehicle.powertrain ===
+        "Electric"
+        ? "Battery capacity"
+        : "Tank capacity";
+
+  }
+
+
+  const capacityDisplay =
     App.$(
       "vehicleTankDisplay"
     );
+
+
+  if (!capacityDisplay) {
+    return;
+  }
 
 
   if (
@@ -6259,53 +6138,36 @@ App.renderVehicle = function () {
     "Electric"
   ) {
 
-    if (capacityLabel) {
-
-      capacityLabel.textContent =
-        "Battery capacity";
-
-    }
-
-
-    if (tankDisplay) {
-
-      const battery =
-        Number(
-          vehicle.batteryCapacity
-        );
+    const battery =
+      App.firstFinitePositive(
+        vehicle.batteryKWh,
+        vehicle.batteryCapacity
+      );
 
 
-      tankDisplay.textContent =
-        Number.isFinite(battery)
-          ? App.number(
-              battery,
-              1
-            ) +
-            " kWh"
-          : "Battery";
-
-    }
+    capacityDisplay.textContent =
+      battery !== null
+        ? App.number(
+            battery,
+            1
+          ) + " kWh"
+        : "Not listed";
 
   } else {
 
-    if (capacityLabel) {
-
-      capacityLabel.textContent =
-        "Tank capacity";
-
-    }
+    const tank =
+      Number(
+        vehicle.tankCapacity
+      );
 
 
-    if (tankDisplay) {
-
-      tankDisplay.textContent =
-        App.number(
-          vehicle.tankCapacity,
-          1
-        ) +
-        " L";
-
-    }
+    capacityDisplay.textContent =
+      Number.isFinite(tank)
+        ? App.number(
+            tank,
+            1
+          ) + " L"
+        : "Not set";
 
   }
 
@@ -6313,7 +6175,7 @@ App.renderVehicle = function () {
 
 
 /* =========================================================
-   VEHICLE MODAL
+   OPEN VEHICLE MODAL
    ========================================================= */
 
 App.openVehicleModal = function () {
@@ -6324,186 +6186,149 @@ App.openVehicleModal = function () {
     );
 
 
-  if (!modal) {
-    return;
-  }
-
-
   const vehicle =
     App.state.vehicle;
 
 
-  if (!vehicle) {
+  if (
+    !modal ||
+    !vehicle
+  ) {
     return;
   }
 
 
-  const year =
-    App.$(
-      "vehicleYear"
-    );
-
-
-  const make =
-    App.$(
-      "vehicleMake"
-    );
-
-
-  const model =
-    App.$(
-      "vehicleModel"
-    );
-
-
   App.populateYearSelect(
-    year,
+    App.$("vehicleYear"),
     vehicle.year
   );
 
 
-  if (year) {
+  if (
+    App.$("vehicleYear")
+  ) {
 
-    year.value =
-      String(
-        vehicle.year
-      );
+    App.$("vehicleYear").value =
+      String(vehicle.year);
 
   }
 
 
   App.populateMakeSelect(
-    make,
+    App.$("vehicleMake"),
     vehicle.year,
     vehicle.make
   );
 
 
-  if (
-    make &&
-    Array.from(
-      make.options
-    ).some(
-      option =>
-        option.value ===
-        vehicle.make
-    )
-  ) {
-
-    make.value =
-      vehicle.make;
-
-  }
-
-
   App.populateModelSelect(
     vehicle.year,
     vehicle.make,
-    model,
+    App.$("vehicleModel"),
     vehicle.model
   );
 
 
-  if (
-    model &&
-    Array.from(
-      model.options
-    ).some(
-      option =>
-        option.value ===
-        vehicle.model
-    )
-  ) {
-
-    model.value =
-      vehicle.model;
-
-  }
+  const configurationSelect =
+    App.$(
+      "vehicleConfiguration"
+    );
 
 
-  App.updateVehicleSpec(
+  const configurationField =
+    App.$(
+      "vehicleConfigurationField"
+    );
+
+
+  const configurations =
+    App.getVehicleConfigurations(
+      vehicle.year,
+      vehicle.make,
+      vehicle.model
+    );
+
+
+  App.populateConfigurationSelect(
+    configurationSelect,
+    configurations,
     vehicle.configuration ||
-    "",
-    true
+    ""
   );
 
 
-  const powertrain =
-    App.$(
-      "vehiclePowertrain"
-    );
+  if (
+    configurationField
+  ) {
 
-
-  if (powertrain) {
-
-    const exists =
-      Array.from(
-        powertrain.options
-      ).some(
-        option =>
-          option.value ===
-          vehicle.powertrain
-      );
-
-
-    if (exists) {
-
-      powertrain.value =
-        vehicle.powertrain;
-
-    }
+    configurationField.style.display =
+      configurations.length > 1
+        ? ""
+        : "none";
 
   }
 
 
-  const level =
-    App.$(
-      "vehicleLevel"
-    );
+  if (
+    App.$("vehiclePowertrain")
+  ) {
+
+    App.$("vehiclePowertrain").value =
+      vehicle.powertrain;
+
+  }
 
 
-  if (level) {
+  if (
+    App.$("vehicleLevel")
+  ) {
 
-    level.value =
+    App.$("vehicleLevel").value =
       vehicle.level;
 
   }
 
 
-  const fullRange =
-    App.$(
-      "vehicleFullRange"
-    );
+  if (
+    App.$("vehicleFullRange")
+  ) {
 
-
-  if (fullRange) {
-
-    fullRange.value =
+    App.$("vehicleFullRange").value =
       vehicle.fullRange;
 
   }
 
 
-  const tank =
-    App.$(
-      "vehicleTankCapacity"
-    );
-
-
   if (
-    tank &&
-    vehicle.powertrain !==
-      "Electric" &&
-    Number.isFinite(
-      Number(
-        vehicle.tankCapacity
-      )
-    )
+    App.$("vehicleTankCapacity") &&
+    vehicle.tankCapacity !== null
   ) {
 
     App.setTankSliderValue(
-      tank,
+      App.$("vehicleTankCapacity"),
       vehicle.tankCapacity
+    );
+
+  }
+
+
+  if (
+    vehicle.capacitySource ===
+    "vehicle-database"
+  ) {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "✓ Saved from vehicle specification database",
+      "verified"
+    );
+
+  } else {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Manual capacity",
+      "manual"
     );
 
   }
@@ -6533,7 +6358,7 @@ App.closeVehicleModal = function () {
 
 
 /* =========================================================
-   VEHICLE MODAL YEAR
+   VEHICLE YEAR
    ========================================================= */
 
 App.updateVehicleYear = function () {
@@ -6553,7 +6378,9 @@ App.updateVehicleYear = function () {
 
 
   const previousMake =
-    make?.value || "";
+    make?.value ||
+    App.state.vehicle?.make ||
+    "";
 
 
   App.populateMakeSelect(
@@ -6569,7 +6396,7 @@ App.updateVehicleYear = function () {
 
 
 /* =========================================================
-   VEHICLE MODAL MODELS
+   VEHICLE MODELS
    ========================================================= */
 
 App.updateVehicleModels = function (
@@ -6600,22 +6427,21 @@ App.updateVehicleModels = function (
     !make ||
     !model
   ) {
-
     return;
-
   }
 
 
-  const previousModel =
-    selectedModel ||
-    model.value;
+  const modelToPreserve =
+    selectedModel ??
+    model.value ??
+    "";
 
 
   App.populateModelSelect(
     year,
     make.value,
     model,
-    previousModel
+    modelToPreserve
   );
 
 
@@ -6625,7 +6451,7 @@ App.updateVehicleModels = function (
 
 
 /* =========================================================
-   VEHICLE MODAL SPEC
+   VEHICLE SPECIFICATION
    ========================================================= */
 
 App.updateVehicleSpec = function (
@@ -6653,16 +6479,29 @@ App.updateVehicleSpec = function (
     )?.value;
 
 
+  const select =
+    App.$(
+      "vehicleConfiguration"
+    );
+
+
   const field =
     App.$(
       "vehicleConfigurationField"
     );
 
 
-  const select =
-    App.$(
-      "vehicleConfiguration"
-    );
+  /*
+    CRITICAL FIX:
+
+    If the function was called because the user changed
+    the configuration itself, preserve the current value.
+  */
+
+  const currentConfiguration =
+    selectedConfiguration ??
+    select?.value ??
+    "";
 
 
   if (
@@ -6676,7 +6515,7 @@ App.updateVehicleSpec = function (
         "none";
     }
 
-    return;
+    return null;
 
   }
 
@@ -6690,38 +6529,8 @@ App.updateVehicleSpec = function (
 
 
   if (
-    !configurations.length
+    field
   ) {
-
-    if (field) {
-
-      field.style.display =
-        "none";
-
-    }
-
-
-    if (select) {
-
-      select.innerHTML =
-        "";
-
-    }
-
-
-    App.setVehicleSpecStatus(
-      "vehicle",
-      "Specification unavailable — adjust tank capacity manually.",
-      "manual"
-    );
-
-
-    return;
-
-  }
-
-
-  if (field) {
 
     field.style.display =
       configurations.length > 1
@@ -6734,7 +6543,7 @@ App.updateVehicleSpec = function (
   App.populateConfigurationSelect(
     select,
     configurations,
-    selectedConfiguration
+    currentConfiguration
   );
 
 
@@ -6749,20 +6558,26 @@ App.updateVehicleSpec = function (
       "select"
     );
 
-    return;
+    return {
+      found: true,
+      exact: false,
+      requiresConfiguration: true
+    };
 
   }
 
 
-  App.applyVehicleSpecification(
-    preserveManualValues
+  return (
+    App.applyVehicleSpecification(
+      preserveManualValues
+    )
   );
 
 };
 
 
 /* =========================================================
-   APPLY VEHICLE MODAL SPEC
+   APPLY VEHICLE SPECIFICATION
    ========================================================= */
 
 App.applyVehicleSpecification =
@@ -6815,20 +6630,25 @@ function (
       "select"
     );
 
-    return;
+    return result;
 
   }
 
 
   if (!result.found) {
 
-    App.setVehicleSpecStatus(
-      "vehicle",
-      "Specification unavailable — adjust tank capacity manually.",
-      "manual"
-    );
+    if (!preserveManualValues) {
 
-    return;
+      App.setVehicleSpecStatus(
+        "vehicle",
+        "Exact specification unavailable • adjust capacity manually.",
+        "manual"
+      );
+
+    }
+
+
+    return result;
 
   }
 
@@ -6845,9 +6665,7 @@ function (
     );
 
 
-  if (
-    powertrainSelect
-  ) {
+  if (powertrainSelect) {
 
     const exists =
       Array.from(
@@ -6870,36 +6688,23 @@ function (
 
 
   const tank =
-    Number(
-      result.tankCapacity ??
-      result.tankLiters
+    App.firstFinitePositive(
+      result.tankLiters,
+      result.tankCapacity
     );
 
 
   if (
     powertrain !== "Electric" &&
-    Number.isFinite(tank) &&
-    tank > 0
+    tank !== null
   ) {
 
-    /*
-      When opening an already saved vehicle we preserve
-      the saved value. When the user changes the vehicle,
-      the verified database value is applied automatically.
-    */
-
-    if (
-      !preserveManualValues
-    ) {
-
-      App.setTankSliderValue(
-        App.$(
-          "vehicleTankCapacity"
-        ),
-        tank
-      );
-
-    }
+    App.setTankSliderValue(
+      App.$(
+        "vehicleTankCapacity"
+      ),
+      tank
+    );
 
 
     App.setVehicleSpecStatus(
@@ -6914,19 +6719,19 @@ function (
     );
 
   } else if (
-    powertrain ===
-    "Electric"
+    powertrain === "Electric"
   ) {
 
     const battery =
-      Number(
+      App.firstFinitePositive(
+        result.batteryKWh,
         result.batteryCapacity
       );
 
 
     App.setVehicleSpecStatus(
       "vehicle",
-      Number.isFinite(battery)
+      battery !== null
         ? "✓ Electric vehicle detected • " +
           App.number(
             battery,
@@ -6937,12 +6742,23 @@ function (
       "verified"
     );
 
+  } else {
+
+    App.setVehicleSpecStatus(
+      "vehicle",
+      "Vehicle detected, but tank capacity is unavailable • adjust manually.",
+      "manual"
+    );
+
   }
 
 
   App.updateVehiclePowertrainUI();
 
   App.updateVehicleSliderLabels();
+
+
+  return result;
 
 };
 
@@ -6973,15 +6789,12 @@ function () {
 
 
   if (
-    powertrain ===
-    "Electric"
+    powertrain === "Electric"
   ) {
 
     if (tankField) {
-
       tankField.style.display =
         "none";
-
     }
 
 
@@ -6995,10 +6808,8 @@ function () {
   } else {
 
     if (tankField) {
-
       tankField.style.display =
         "";
-
     }
 
 
@@ -7065,8 +6876,7 @@ function () {
   ) {
 
     rangeValue.textContent =
-      range.value +
-      " mi";
+      range.value + " mi";
 
   }
 
@@ -7137,6 +6947,27 @@ function () {
 };
 
 
+/*
+  Compatibility aliases for the inline handlers already
+  used by the V5 index.html.
+*/
+
+App.markOnboardingTankManual =
+function () {
+
+  App.onOnboardingTankManualInput();
+
+};
+
+
+App.markVehicleTankManual =
+function () {
+
+  App.onVehicleTankManualInput();
+
+};
+
+
 /* =========================================================
    SAVE VEHICLE
    ========================================================= */
@@ -7191,7 +7022,7 @@ App.saveVehicle = function () {
     );
 
 
-  const tank =
+  const manualTank =
     Number(
       App.$(
         "vehicleTankCapacity"
@@ -7207,7 +7038,7 @@ App.saveVehicle = function () {
   ) {
 
     App.toast(
-      "Complete your vehicle information.",
+      "Complete your vehicle setup.",
       "error"
     );
 
@@ -7230,7 +7061,7 @@ App.saveVehicle = function () {
   ) {
 
     App.toast(
-      "Select your vehicle configuration.",
+      "Choose your vehicle configuration.",
       "error"
     );
 
@@ -7248,12 +7079,47 @@ App.saveVehicle = function () {
     });
 
 
-  const batteryCapacity =
-    specification.found
-      ? Number(
-          specification.batteryCapacity
-        )
-      : null;
+  const detectedTank =
+    App.firstFinitePositive(
+      specification.tankLiters,
+      specification.tankCapacity
+    );
+
+
+  const battery =
+    App.firstFinitePositive(
+      specification.batteryKWh,
+      specification.batteryCapacity
+    );
+
+
+  let finalTank = null;
+
+
+  if (
+    powertrain !== "Electric"
+  ) {
+
+    if (
+      detectedTank !== null
+    ) {
+
+      finalTank =
+        detectedTank;
+
+    } else if (
+      Number.isFinite(
+        manualTank
+      ) &&
+      manualTank > 0
+    ) {
+
+      finalTank =
+        manualTank;
+
+    }
+
+  }
 
 
   App.state.vehicle = {
@@ -7283,27 +7149,24 @@ App.saveVehicle = function () {
       ),
 
     tankCapacity:
-      powertrain ===
-        "Electric"
+      finalTank === null
         ? null
-        : (
-            Number.isFinite(tank) &&
-            tank > 0
-              ? Number(
-                  tank.toFixed(1)
-                )
-              : 46
+        : Number(
+            finalTank.toFixed(1)
           ),
 
     batteryCapacity:
-      Number.isFinite(
-        batteryCapacity
-      )
-        ? batteryCapacity
-        : null,
+      battery,
+
+    batteryKWh:
+      battery,
 
     capacitySource:
-      specification.found
+      specification.found &&
+      (
+        detectedTank !== null ||
+        battery !== null
+      )
         ? "vehicle-database"
         : "manual"
 
@@ -7332,8 +7195,9 @@ App.saveVehicle = function () {
 
 
   App.toast(
-    specification.found
-      ? "Vehicle saved • specifications detected."
+    specification.found &&
+    detectedTank !== null
+      ? "Vehicle saved • tank detected automatically."
       : "Vehicle saved.",
     "success"
   );
@@ -7342,7 +7206,7 @@ App.saveVehicle = function () {
 
 
 /* =========================================================
-   REFRESH VEHICLE
+   REFRESH VEHICLE UI
    ========================================================= */
 
 App.refreshVehicleUI = function () {
@@ -7361,7 +7225,7 @@ App.refreshVehicleUI = function () {
 
 
 /* =========================================================
-   FUEL LEVEL AFTER FILL-UP
+   FUEL LOG CALCULATIONS
    ========================================================= */
 
 App.calculateLevelAfterFillUp =
@@ -7376,9 +7240,7 @@ function (liters) {
     vehicle.powertrain ===
       "Electric"
   ) {
-
     return null;
-
   }
 
 
@@ -7398,9 +7260,7 @@ function (liters) {
     !Number.isFinite(added) ||
     added <= 0
   ) {
-
     return null;
-
   }
 
 
@@ -7412,16 +7272,14 @@ function (liters) {
     );
 
 
-  const addedPercent =
-    added /
-    tank *
-    100;
-
-
   const newLevel =
     App.clamp(
       oldLevel +
-      addedPercent,
+      (
+        added /
+        tank *
+        100
+      ),
       0,
       100
     );
@@ -7442,9 +7300,8 @@ function (liters) {
 App.openFuelLogModal = function () {
 
   if (
-    App.state.vehicle
-      ?.powertrain ===
-      "Electric"
+    App.state.vehicle?.powertrain ===
+    "Electric"
   ) {
 
     App.toast(
@@ -7458,9 +7315,8 @@ App.openFuelLogModal = function () {
 
 
   if (
-    App.state.selectedStation
-      ?.type ===
-      "ev"
+    App.state.selectedStation?.type ===
+    "ev"
   ) {
 
     App.toast(
@@ -7502,8 +7358,8 @@ App.openFuelLogModal = function () {
         now.getTimezoneOffset() *
         60000
       )
-        .toISOString()
-        .slice(0, 10);
+      .toISOString()
+      .slice(0, 10);
 
   }
 
@@ -7512,35 +7368,28 @@ App.openFuelLogModal = function () {
     App.state.selectedStation
   ) {
 
-    const stationInput =
-      App.$(
-        "logStation"
-      );
+    const station =
+      App.state.selectedStation;
 
 
-    if (stationInput) {
+    if (
+      App.$("logStation")
+    ) {
 
-      stationInput.value =
-        App.state.selectedStation
-          .name;
+      App.$("logStation").value =
+        station.name;
 
     }
 
 
     const prices =
-      App.state.selectedStation
-        .prices ||
-      (
-        typeof GasGoData.getStationPrices ===
-          "function"
-          ? GasGoData.getStationPrices(
-              App.state.selectedStation
-            )
-          : {}
+      station.prices ||
+      GasGoData.getStationPrices(
+        station
       );
 
 
-    const selectedPrice =
+    const price =
       Number(
         prices[
           App.state.selectedFuel
@@ -7548,21 +7397,13 @@ App.openFuelLogModal = function () {
       );
 
 
-    const price =
-      App.$(
-        "logPrice"
-      );
-
-
     if (
-      price &&
-      Number.isFinite(
-        selectedPrice
-      )
+      App.$("logPrice") &&
+      Number.isFinite(price)
     ) {
 
-      price.value =
-        selectedPrice.toFixed(2);
+      App.$("logPrice").value =
+        price.toFixed(2);
 
     }
 
@@ -7579,11 +7420,8 @@ App.openFuelLogModal = function () {
 };
 
 
-/* =========================================================
-   CLOSE FUEL LOG
-   ========================================================= */
-
-App.closeFuelLogModal = function () {
+App.closeFuelLogModal =
+function () {
 
   App.$(
     "fuelLogModal"
@@ -7618,8 +7456,10 @@ function () {
 
 
   const total =
-    Number.isFinite(liters) &&
-    Number.isFinite(price)
+    (
+      Number.isFinite(liters) &&
+      Number.isFinite(price)
+    )
       ? liters * price
       : 0;
 
@@ -7677,8 +7517,7 @@ App.saveFuelLog = function () {
     String(
       App.$(
         "logStation"
-      )?.value ||
-      ""
+      )?.value || ""
     ).trim();
 
 
@@ -7734,7 +7573,7 @@ App.saveFuelLog = function () {
     );
 
 
-  const log = {
+  App.state.fuelLogs.unshift({
 
     id:
       "log-" +
@@ -7753,17 +7592,14 @@ App.saveFuelLog = function () {
     total,
 
     vehicleLevelBefore:
-      level?.oldLevel ?? null,
+      level?.oldLevel ??
+      null,
 
     vehicleLevelAfter:
-      level?.newLevel ?? null
+      level?.newLevel ??
+      null
 
-  };
-
-
-  App.state.fuelLogs.unshift(
-    log
-  );
+  });
 
 
   App.saveStorage(
@@ -7776,7 +7612,9 @@ App.saveFuelLog = function () {
 
     App.state.vehicle.level =
       Number(
-        level.newLevel.toFixed(1)
+        level.newLevel.toFixed(
+          1
+        )
       );
 
 
@@ -7850,7 +7688,7 @@ App.renderDashboard = function () {
     App.state.fuelLogs;
 
 
-  const totalSpent =
+  const spent =
     logs.reduce(
       (sum, log) =>
         sum +
@@ -7861,7 +7699,7 @@ App.renderDashboard = function () {
     );
 
 
-  const totalLiters =
+  const liters =
     logs.reduce(
       (sum, log) =>
         sum +
@@ -7872,28 +7710,24 @@ App.renderDashboard = function () {
     );
 
 
-  const averagePrice =
-    totalLiters > 0
-      ? totalSpent /
-        totalLiters
+  const average =
+    liters > 0
+      ? spent / liters
       : 0;
 
 
   App.setText(
     "dashSpent",
-    App.money(
-      totalSpent
-    )
+    App.money(spent)
   );
 
 
   App.setText(
     "dashLiters",
     App.number(
-      totalLiters,
+      liters,
       1
-    ) +
-    " L"
+    ) + " L"
   );
 
 
@@ -7905,17 +7739,16 @@ App.renderDashboard = function () {
 
   App.setText(
     "dashFillUps",
-    logs.length
+    String(logs.length)
   );
 
 
   App.setText(
     "dashAveragePrice",
-    averagePrice > 0
+    average > 0
       ? App.money(
-          averagePrice
-        ) +
-        "/L"
+          average
+        ) + "/L"
       : "—"
   );
 
@@ -7973,7 +7806,6 @@ App.renderFuelLogs = function () {
     App.state.fuelLogs
       .slice(0, 30)
       .map(log => `
-
         <div class="log-item">
 
           <div class="log-icon">
@@ -7983,41 +7815,23 @@ App.renderFuelLogs = function () {
           <div class="log-info">
 
             <div class="log-title">
-              ${App.escape(
-                log.station
-              )}
+              ${App.escape(log.station)}
             </div>
 
             <div class="log-meta">
-
-              ${App.escape(
-                log.date
-              )}
-
+              ${App.escape(log.date)}
               •
-
-              ${App.number(
-                log.liters,
-                1
-              )} L
-
+              ${App.number(log.liters, 1)} L
               •
-
-              ${App.money(
-                log.price
-              )}/L
-
+              ${App.money(log.price)}/L
             </div>
 
           </div>
 
-
           <div>
 
             <div class="log-total">
-              ${App.money(
-                log.total
-              )}
+              ${App.money(log.total)}
             </div>
 
             <button
@@ -8030,8 +7844,8 @@ App.renderFuelLogs = function () {
           </div>
 
         </div>
-
-      `).join("");
+      `)
+      .join("");
 
 };
 
@@ -8054,7 +7868,6 @@ App.renderSpendingChart = function () {
 
 
   const months = [];
-
 
   const now =
     new Date();
@@ -8108,17 +7921,6 @@ App.renderSpendingChart = function () {
         );
 
 
-      if (
-        Number.isNaN(
-          date.getTime()
-        )
-      ) {
-
-        return;
-
-      }
-
-
       const month =
         months.find(
           item =>
@@ -8159,14 +7961,13 @@ App.renderSpendingChart = function () {
           ? Math.max(
               5,
               month.total /
-                max *
-                100
+              max *
+              100
             )
           : 2;
 
 
       return `
-
         <div class="chart-column">
 
           <div class="chart-value">
@@ -8193,7 +7994,6 @@ App.renderSpendingChart = function () {
           </div>
 
         </div>
-
       `;
 
     }).join("");
@@ -8218,24 +8018,22 @@ App.renderRewards = function () {
   }
 
 
-  let totalPoints = 0;
-
-
-  Object.values(
-    App.state.rewards
-  ).forEach(reward => {
-
-    totalPoints +=
-      Number(
-        reward.points || 0
-      );
-
-  });
+  const total =
+    Object.values(
+      App.state.rewards
+    ).reduce(
+      (sum, reward) =>
+        sum +
+        Number(
+          reward.points || 0
+        ),
+      0
+    );
 
 
   App.setText(
     "totalRewardPoints",
-    totalPoints.toLocaleString()
+    total.toLocaleString()
   );
 
 
@@ -8243,9 +8041,8 @@ App.renderRewards = function () {
     Object.entries(
       App.state.rewards
     )
-      .map(
-        ([brand, reward]) => `
-
+    .map(
+      ([brand, reward]) => `
         <div class="card reward-card">
 
           <div class="reward-head">
@@ -8259,9 +8056,7 @@ App.renderRewards = function () {
             <div class="reward-info">
 
               <strong>
-                ${App.escape(
-                  brand
-                )}
+                ${App.escape(brand)}
               </strong>
 
               <div class="muted">
@@ -8271,31 +8066,27 @@ App.renderRewards = function () {
             </div>
 
             <div class="reward-points">
-
               ${Number(
                 reward.points || 0
               ).toLocaleString()}
-
               pts
-
             </div>
 
           </div>
 
         </div>
-
-      `)
-      .join("");
+      `
+    )
+    .join("");
 
 };
 
 
 /* =========================================================
-   PRICE REFERENCES
+   PRICE REFERENCE
    ========================================================= */
 
-App.renderPriceReference =
-function () {
+App.renderPriceReference = function () {
 
   const container =
     App.$(
@@ -8308,9 +8099,7 @@ function () {
     !window.GasGoData ||
     !GasGoData.BRAND_PRICES
   ) {
-
     return;
-
   }
 
 
@@ -8318,14 +8107,13 @@ function () {
     Object.entries(
       GasGoData.BRAND_PRICES
     )
-      .filter(
-        ([brand]) =>
-          brand !==
-          "Independent"
-      )
-      .map(
-        ([brand, prices]) => `
-
+    .filter(
+      ([brand]) =>
+        brand !==
+        "Independent"
+    )
+    .map(
+      ([brand, prices]) => `
         <div class="card price-card">
 
           <div class="row">
@@ -8333,9 +8121,7 @@ function () {
             <div>
 
               <strong>
-                ${App.escape(
-                  brand
-                )}
+                ${App.escape(brand)}
               </strong>
 
               <div class="muted">
@@ -8350,14 +8136,11 @@ function () {
 
           </div>
 
-
           <div class="price-grid mt-12">
 
             <div class="price-box">
 
-              <span>
-                Regular
-              </span>
+              <span>Regular</span>
 
               <b>
                 ${App.money(
@@ -8365,18 +8148,13 @@ function () {
                 )}
               </b>
 
-              <span>
-                per L
-              </span>
+              <span>per L</span>
 
             </div>
 
-
             <div class="price-box">
 
-              <span>
-                Premium
-              </span>
+              <span>Premium</span>
 
               <b>
                 ${App.money(
@@ -8384,18 +8162,13 @@ function () {
                 )}
               </b>
 
-              <span>
-                per L
-              </span>
+              <span>per L</span>
 
             </div>
 
-
             <div class="price-box">
 
-              <span>
-                Diesel
-              </span>
+              <span>Diesel</span>
 
               <b>
                 ${App.money(
@@ -8403,70 +8176,182 @@ function () {
                 )}
               </b>
 
-              <span>
-                per L
-              </span>
+              <span>per L</span>
 
             </div>
 
           </div>
 
         </div>
-
-      `)
-      .join("");
+      `
+    )
+    .join("");
 
 };
 
 
 /* =========================================================
-   QUICK ACTIONS
+   RESET GASGO
+   ========================================================= */
+
+App.resetApp = function () {
+
+  const confirmed =
+    window.confirm(
+      "Reset GasGo? This will remove your saved vehicle, fuel logs, rewards progress and app setup from this device."
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  Object.values(
+    App.STORAGE
+  ).forEach(key => {
+
+    try {
+      localStorage.removeItem(
+        key
+      );
+    } catch (error) {
+      console.warn(
+        "GasGo reset storage error:",
+        error
+      );
+    }
+
+  });
+
+
+  App.state.vehicle = {
+    ...App.DEFAULT_VEHICLE
+  };
+
+
+  App.state.rewards =
+    JSON.parse(
+      JSON.stringify(
+        App.DEFAULT_REWARDS
+      )
+    );
+
+
+  App.state.fuelLogs = [];
+
+  App.state.favorites = [];
+
+  App.state.selectedStation =
+    null;
+
+  App.state.smartStop =
+    null;
+
+  App.state.planStation =
+    null;
+
+
+  App.renderHomeVehicle();
+
+  App.renderVehicle();
+
+  App.renderRewards();
+
+  App.renderDashboard();
+
+  App.renderStationSheet();
+
+  App.updateSmartStop();
+
+  App.renderPlanMyStop();
+
+
+  App.toast(
+    "GasGo reset complete.",
+    "success"
+  );
+
+
+  setTimeout(() => {
+
+    App.showScreen(
+      "home"
+    );
+
+    App.showOnboarding();
+
+  }, 250);
+
+};
+
+
+/* =========================================================
+   NAVIGATION ALIASES
    ========================================================= */
 
 App.openStations = function () {
-  App.showScreen(
-    "stations"
-  );
+  App.showScreen("stations");
 };
 
 
 App.openDashboard = function () {
-  App.showScreen(
-    "dashboard"
-  );
+  App.showScreen("dashboard");
 };
 
 
 App.openRewards = function () {
-  App.showScreen(
-    "rewards"
-  );
+  App.showScreen("rewards");
 };
 
 
 App.openCar = function () {
-  App.showScreen(
-    "car"
-  );
+  App.showScreen("car");
 };
 
 
 App.openPrices = function () {
-  App.showScreen(
-    "prices"
-  );
+  App.showScreen("prices");
 };
 
 
 /* =========================================================
-   LISTENERS
+   COMPATIBILITY ALIASES
+   ========================================================= */
+
+/*
+  These keep older V5 HTML onclick handlers working.
+*/
+
+App.navTo = function (
+  screen
+) {
+  App.showScreen(screen);
+};
+
+
+App.changeScreen = function (
+  screen
+) {
+  App.showScreen(screen);
+};
+
+
+App.openMap = function () {
+  App.showScreen("stations");
+};
+
+
+App.locateMe = function () {
+  App.requestLocation();
+};
+
+
+/* =========================================================
+   EVENT LISTENERS
    ========================================================= */
 
 App.setupListeners = function () {
-
-  /* -------------------------
-     STATION SEARCH
-     ------------------------- */
 
   const search =
     App.$(
@@ -8490,9 +8375,13 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     ONBOARDING YEAR
-     ------------------------- */
+  /*
+    Vehicle onboarding listeners.
+
+    Some of these also exist inline in index.html.
+    The functions are idempotent and preserve the
+    configuration selection.
+  */
 
   const onboardingYear =
     App.$(
@@ -8510,10 +8399,6 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     ONBOARDING MAKE
-     ------------------------- */
-
   const onboardingMake =
     App.$(
       "onboardingMake"
@@ -8529,10 +8414,6 @@ App.setupListeners = function () {
 
   }
 
-
-  /* -------------------------
-     ONBOARDING MODEL
-     ------------------------- */
 
   const onboardingModel =
     App.$(
@@ -8550,10 +8431,6 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     ONBOARDING CONFIGURATION
-     ------------------------- */
-
   const onboardingConfiguration =
     App.$(
       "onboardingConfiguration"
@@ -8564,15 +8441,11 @@ App.setupListeners = function () {
 
     onboardingConfiguration.addEventListener(
       "change",
-      App.applyOnboardingVehicleSpecification
+      App.updateOnboardingVehicleSpec
     );
 
   }
 
-
-  /* -------------------------
-     ONBOARDING POWERTRAIN
-     ------------------------- */
 
   const onboardingPowertrain =
     App.$(
@@ -8590,50 +8463,9 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     ONBOARDING SLIDERS
-     ------------------------- */
-
-  [
-    "onboardingLevel",
-    "onboardingRange"
-  ].forEach(id => {
-
-    const element =
-      App.$(id);
-
-
-    if (element) {
-
-      element.addEventListener(
-        "input",
-        App.updateOnboardingSliderLabels
-      );
-
-    }
-
-  });
-
-
-  const onboardingTank =
-    App.$(
-      "onboardingTank"
-    );
-
-
-  if (onboardingTank) {
-
-    onboardingTank.addEventListener(
-      "input",
-      App.onOnboardingTankManualInput
-    );
-
-  }
-
-
-  /* -------------------------
-     VEHICLE YEAR
-     ------------------------- */
+  /*
+    Vehicle modal listeners.
+  */
 
   const vehicleYear =
     App.$(
@@ -8651,10 +8483,6 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     VEHICLE MAKE
-     ------------------------- */
-
   const vehicleMake =
     App.$(
       "vehicleMake"
@@ -8665,19 +8493,12 @@ App.setupListeners = function () {
 
     vehicleMake.addEventListener(
       "change",
-      () => {
-
-        App.updateVehicleModels();
-
-      }
+      () =>
+        App.updateVehicleModels()
     );
 
   }
 
-
-  /* -------------------------
-     VEHICLE MODEL
-     ------------------------- */
 
   const vehicleModel =
     App.$(
@@ -8689,19 +8510,12 @@ App.setupListeners = function () {
 
     vehicleModel.addEventListener(
       "change",
-      () => {
-
-        App.updateVehicleSpec();
-
-      }
+      () =>
+        App.updateVehicleSpec()
     );
 
   }
 
-
-  /* -------------------------
-     VEHICLE CONFIGURATION
-     ------------------------- */
 
   const vehicleConfiguration =
     App.$(
@@ -8713,21 +8527,12 @@ App.setupListeners = function () {
 
     vehicleConfiguration.addEventListener(
       "change",
-      () => {
-
-        App.applyVehicleSpecification(
-          false
-        );
-
-      }
+      () =>
+        App.updateVehicleSpec()
     );
 
   }
 
-
-  /* -------------------------
-     VEHICLE POWERTRAIN
-     ------------------------- */
 
   const vehiclePowertrain =
     App.$(
@@ -8745,75 +8550,72 @@ App.setupListeners = function () {
   }
 
 
-  /* -------------------------
-     VEHICLE SLIDERS
-     ------------------------- */
+  /*
+    Sliders
+  */
+
+  [
+    "onboardingLevel",
+    "onboardingRange"
+  ].forEach(id => {
+
+    App.$(id)?.addEventListener(
+      "input",
+      App.updateOnboardingSliderLabels
+    );
+
+  });
+
+
+  App.$(
+    "onboardingTank"
+  )?.addEventListener(
+    "input",
+    App.onOnboardingTankManualInput
+  );
+
 
   [
     "vehicleLevel",
     "vehicleFullRange"
   ].forEach(id => {
 
-    const element =
-      App.$(id);
-
-
-    if (element) {
-
-      element.addEventListener(
-        "input",
-        App.updateVehicleSliderLabels
-      );
-
-    }
+    App.$(id)?.addEventListener(
+      "input",
+      App.updateVehicleSliderLabels
+    );
 
   });
 
 
-  const vehicleTank =
-    App.$(
-      "vehicleTankCapacity"
-    );
+  App.$(
+    "vehicleTankCapacity"
+  )?.addEventListener(
+    "input",
+    App.onVehicleTankManualInput
+  );
 
 
-  if (vehicleTank) {
-
-    vehicleTank.addEventListener(
-      "input",
-      App.onVehicleTankManualInput
-    );
-
-  }
-
-
-  /* -------------------------
-     FUEL LOG
-     ------------------------- */
+  /*
+    Fuel log
+  */
 
   [
     "logLiters",
     "logPrice"
   ].forEach(id => {
 
-    const element =
-      App.$(id);
-
-
-    if (element) {
-
-      element.addEventListener(
-        "input",
-        App.updateFuelLogPreview
-      );
-
-    }
+    App.$(id)?.addEventListener(
+      "input",
+      App.updateFuelLogPreview
+    );
 
   });
 
 
-  /* -------------------------
-     ESCAPE
-     ------------------------- */
+  /*
+    Escape closes modals.
+  */
 
   document.addEventListener(
     "keydown",
@@ -8832,64 +8634,6 @@ App.setupListeners = function () {
 
     }
   );
-
-};
-
-
-/* =========================================================
-   VEHICLE DATABASE DIAGNOSTICS
-   ========================================================= */
-
-App.checkVehicleDatabase = function () {
-
-  const DB =
-    App.getVehicleDB();
-
-
-  if (!DB) {
-
-    console.warn(
-      "GasGo vehicles.js was not detected. Manual vehicle mode will be used."
-    );
-
-    return;
-
-  }
-
-
-  console.log(
-    "GasGo vehicle database:",
-    DB.VERSION ||
-    "loaded"
-  );
-
-
-  if (
-    typeof DB.validateDatabase ===
-      "function"
-  ) {
-
-    try {
-
-      const validation =
-        DB.validateDatabase();
-
-
-      console.log(
-        "GasGo vehicle DB validation:",
-        validation
-      );
-
-    } catch (error) {
-
-      console.warn(
-        "Vehicle database validation failed:",
-        error
-      );
-
-    }
-
-  }
 
 };
 
@@ -8920,11 +8664,15 @@ App.init = function () {
   }
 
 
-  /*
-    vehicles.js is recommended but not fatal.
-  */
+  if (
+    !window.GasGoVehicles
+  ) {
 
-  App.checkVehicleDatabase();
+    console.warn(
+      "vehicles.js was not found. GasGo will use the fallback vehicle catalog."
+    );
+
+  }
 
 
   App.loadLocalData();
@@ -8947,18 +8695,8 @@ App.init = function () {
     "home"
   );
 
-
-  /*
-    Stations load in the background.
-    Home can render before Overpass finishes.
-  */
-
   App.loadStations();
 
-
-  /*
-    FIRST-TIME EXPERIENCE
-  */
 
   if (
     App.shouldShowOnboarding()
@@ -8974,97 +8712,12 @@ App.init = function () {
 
 
   console.log(
-    "GasGo ready 🚗⛽⚡"
+    "GasGo ready 🚗⛽⚡ • app.js v" +
+    App.VERSION
   );
 
 };
 
-/* =========================================================
-   RESET GASGO
-
-   Clears only GasGo local data and returns the app
-   to the first-time onboarding experience.
-   ========================================================= */
-
-App.resetApp = function () {
-
-  const confirmed = window.confirm(
-    "Reset GasGo?\n\nThis will remove your saved vehicle, fuel logs, rewards and preferences from this device."
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-
-    Object.values(App.STORAGE).forEach(key => {
-      localStorage.removeItem(key);
-    });
-
-    /*
-      Also remove older GasGo keys in case a previous
-      prototype version left data behind.
-    */
-
-    const oldKeys = [
-      "gasgoVehicle",
-      "gasgoVehicleV4",
-      "gasgoOnboarding",
-      "gasgoOnboardingV5",
-      "gasgoOnboardingV53",
-      "gasgoRewards",
-      "gasgoFuelLogs",
-      "gasgoFavorites"
-    ];
-
-    oldKeys.forEach(key => {
-      localStorage.removeItem(key);
-    });
-
-    console.log(
-      "GasGo local data reset successfully."
-    );
-
-    window.location.reload();
-
-  } catch (error) {
-
-    console.error(
-      "GasGo reset error:",
-      error
-    );
-
-    App.toast(
-      "GasGo could not be reset.",
-      "error"
-    );
-
-  }
-
-};
-
-
-/* =========================================================
-   COMPATIBILITY ALIASES
-
-   Supports the function names already used by index.html.
-   ========================================================= */
-
-App.markOnboardingTankManual =
-function () {
-
-  App.onOnboardingTankManualInput();
-
-};
-
-
-App.markVehicleTankManual =
-function () {
-
-  App.onVehicleTankManualInput();
-
-};
 
 /* =========================================================
    START
