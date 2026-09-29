@@ -8979,6 +8979,92 @@ App.init = function () {
 
 };
 
+/* =========================================================
+   RESET GASGO
+
+   Clears only GasGo local data and returns the app
+   to the first-time onboarding experience.
+   ========================================================= */
+
+App.resetApp = function () {
+
+  const confirmed = window.confirm(
+    "Reset GasGo?\n\nThis will remove your saved vehicle, fuel logs, rewards and preferences from this device."
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    Object.values(App.STORAGE).forEach(key => {
+      localStorage.removeItem(key);
+    });
+
+    /*
+      Also remove older GasGo keys in case a previous
+      prototype version left data behind.
+    */
+
+    const oldKeys = [
+      "gasgoVehicle",
+      "gasgoVehicleV4",
+      "gasgoOnboarding",
+      "gasgoOnboardingV5",
+      "gasgoOnboardingV53",
+      "gasgoRewards",
+      "gasgoFuelLogs",
+      "gasgoFavorites"
+    ];
+
+    oldKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+
+    console.log(
+      "GasGo local data reset successfully."
+    );
+
+    window.location.reload();
+
+  } catch (error) {
+
+    console.error(
+      "GasGo reset error:",
+      error
+    );
+
+    App.toast(
+      "GasGo could not be reset.",
+      "error"
+    );
+
+  }
+
+};
+
+
+/* =========================================================
+   COMPATIBILITY ALIASES
+
+   Supports the function names already used by index.html.
+   ========================================================= */
+
+App.markOnboardingTankManual =
+function () {
+
+  App.onOnboardingTankManualInput();
+
+};
+
+
+App.markVehicleTankManual =
+function () {
+
+  App.onVehicleTankManualInput();
+
+};
 
 /* =========================================================
    START
