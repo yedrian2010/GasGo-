@@ -2,32 +2,26 @@
 
 /* =========================================================
    GASGO VEHICLE DATABASE
-   Version 4.0.0
+   Version 4.1.0
 
-   Purpose:
-   - Vehicle year / make / model catalog
-   - Configuration-aware tank lookup
-   - Automatic tank capacity when verified
-   - Manual fallback when exact data is unavailable
-   - EV / PHEV architecture ready
-
-   IMPORTANT:
-   A model appearing in CATALOG does NOT mean GasGo knows
-   its exact tank capacity.
-
-   Tank capacity is only returned automatically when a
-   matching verified DATABASE record exists.
+   IMPORTANT
+   ---------------------------------------------------------
+   - The vehicle catalog and verified specifications are
+     intentionally separate.
+   - A vehicle can appear in the selector even when GasGo
+     does not yet have a verified tank specification.
+   - GasGo NEVER invents a tank capacity.
+   - When an exact specification is unavailable, the app
+     falls back to manual capacity entry.
    ========================================================= */
 
 (function () {
 
-  window.GasGoVehicles =
-    window.GasGoVehicles || {};
+  window.GasGoVehicles = window.GasGoVehicles || {};
 
-  const Vehicles =
-    window.GasGoVehicles;
+  const Vehicles = window.GasGoVehicles;
 
-  Vehicles.VERSION = "4.0.0";
+  Vehicles.VERSION = "4.1.0";
 
 
   /* =======================================================
@@ -35,261 +29,151 @@
      ======================================================= */
 
   function normalize(value) {
-
     return String(value ?? "")
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
-
   }
 
 
   function gallonsToLiters(gallons) {
+    const value = Number(gallons);
 
-    const number =
-      Number(gallons);
-
-    if (
-      !Number.isFinite(number) ||
-      number <= 0
-    ) {
+    if (!Number.isFinite(value)) {
       return null;
     }
 
-    return Number(
-      (
-        number *
-        3.785411784
-      ).toFixed(2)
-    );
-
+    return Number((value * 3.785411784).toFixed(1));
   }
 
 
   function litersToGallons(liters) {
+    const value = Number(liters);
 
-    const number =
-      Number(liters);
-
-    if (
-      !Number.isFinite(number) ||
-      number <= 0
-    ) {
+    if (!Number.isFinite(value)) {
       return null;
     }
 
-    return Number(
-      (
-        number /
-        3.785411784
-      ).toFixed(2)
-    );
-
+    return Number((value / 3.785411784).toFixed(2));
   }
 
 
   function unique(values) {
-
-    return [
-      ...new Set(
-        values.filter(Boolean)
-      )
-    ];
-
+    return [...new Set(values)];
   }
 
 
   function alphabetical(values) {
-
-    return [...values].sort(
-      (a, b) =>
-        String(a).localeCompare(
-          String(b),
-          undefined,
-          {
-            sensitivity: "base"
-          }
-        )
+    return [...values].sort((a, b) =>
+      String(a).localeCompare(String(b))
     );
-
   }
 
 
-  function yearMatches(
-    vehicle,
-    year
-  ) {
+  function yearMatches(vehicle, year) {
 
-    const target =
-      Number(year);
+    const requestedYear = Number(year);
 
-    if (
-      !Number.isFinite(target)
-    ) {
+    if (!requestedYear) {
       return true;
     }
 
+    if (Number(vehicle.year) === requestedYear) {
+      return true;
+    }
 
     if (
-      Number.isFinite(
-        Number(vehicle.year)
-      )
+      vehicle.startYear != null &&
+      vehicle.endYear != null
     ) {
 
       return (
-        Number(vehicle.year) ===
-        target
+        requestedYear >= Number(vehicle.startYear) &&
+        requestedYear <= Number(vehicle.endYear)
       );
 
     }
-
-
-    const start =
-      Number(
-        vehicle.startYear
-      );
-
-
-    const end =
-      Number(
-        vehicle.endYear
-      );
-
-
-    if (
-      Number.isFinite(start) &&
-      Number.isFinite(end)
-    ) {
-
-      return (
-        target >= start &&
-        target <= end
-      );
-
-    }
-
-
-    if (
-      Number.isFinite(start)
-    ) {
-
-      return target >= start;
-
-    }
-
 
     return false;
-
-  }
-
-
-  function vehicleYears(
-    vehicle
-  ) {
-
-    if (
-      Number.isFinite(
-        Number(vehicle.year)
-      )
-    ) {
-
-      return [
-        Number(vehicle.year)
-      ];
-
-    }
-
-
-    const start =
-      Number(
-        vehicle.startYear
-      );
-
-
-    const end =
-      Number(
-        vehicle.endYear
-      );
-
-
-    if (
-      !Number.isFinite(start)
-    ) {
-      return [];
-    }
-
-
-    const finalYear =
-      Number.isFinite(end)
-        ? end
-        : start;
-
-
-    const years = [];
-
-
-    for (
-      let year = start;
-      year <= finalYear;
-      year++
-    ) {
-
-      years.push(year);
-
-    }
-
-
-    return years;
-
   }
 
 
   function createVehicle(data) {
 
     const vehicle = {
-      market: "US",
-      verified: true,
-      ...data
+      year: data.year ?? null,
+      startYear: data.startYear ?? null,
+      endYear: data.endYear ?? null,
+
+      make: data.make || "",
+      model: data.model || "",
+
+      trim: data.trim || "",
+      engine: data.engine || "",
+      drivetrain: data.drivetrain || "",
+
+      configuration: data.configuration || "",
+
+      powertrain: data.powertrain || "Gasoline",
+
+      bodyStyle: data.bodyStyle || "",
+
+      tankLiters:
+        Number.isFinite(Number(data.tankLiters))
+          ? Number(data.tankLiters)
+          : null,
+
+      tankGallons:
+        Number.isFinite(Number(data.tankGallons))
+          ? Number(data.tankGallons)
+          : null,
+
+      batteryKWh:
+        Number.isFinite(Number(data.batteryKWh))
+          ? Number(data.batteryKWh)
+          : null,
+
+      source: data.source || "",
+      sourceType: data.sourceType || "manufacturer",
+
+      verified: data.verified !== false
     };
 
 
     if (
       vehicle.tankLiters == null &&
-      vehicle.tankGallonsUS != null
+      vehicle.tankGallons != null
     ) {
 
       vehicle.tankLiters =
-        gallonsToLiters(
-          vehicle.tankGallonsUS
-        );
+        gallonsToLiters(vehicle.tankGallons);
 
     }
 
 
     if (
-      vehicle.tankGallonsUS == null &&
+      vehicle.tankGallons == null &&
       vehicle.tankLiters != null
     ) {
 
-      vehicle.tankGallonsUS =
-        litersToGallons(
-          vehicle.tankLiters
-        );
+      vehicle.tankGallons =
+        litersToGallons(vehicle.tankLiters);
 
     }
 
 
     return vehicle;
-
   }
 
 
-  /* =======================================================
-     VERIFIED SPECIFICATION DATABASE
 
-     NOTE:
-     Records are configuration-specific whenever capacity
-     differs between variants.
+  /* =======================================================
+     VERIFIED VEHICLE SPECIFICATIONS
+
+     These records are used ONLY for automatic capacity
+     detection.
+
+     The model selector DOES NOT depend on this list.
      ======================================================= */
 
   Vehicles.DATABASE = [
@@ -302,568 +186,346 @@
       year: 2015,
       make: "Chevrolet",
       model: "Sonic",
-      body: "Sedan / Hatchback",
-      trim: "Gasoline",
-      engine: "1.4L Turbo / 1.8L",
+      engine: "1.4L Turbo",
       drivetrain: "FWD",
       powertrain: "Gasoline",
+      bodyStyle: "Sedan / Hatchback",
       tankLiters: 46.0,
-      sourceName:
-        "Chevrolet Sonic Owner Manual",
-      sourceType:
-        "manufacturer"
+      source: "Chevrolet Owner Manual",
+      verified: true
     }),
 
+    createVehicle({
+      year: 2015,
+      make: "Chevrolet",
+      model: "Sonic",
+      engine: "1.8L",
+      drivetrain: "FWD",
+      powertrain: "Gasoline",
+      bodyStyle: "Sedan / Hatchback",
+      tankLiters: 46.0,
+      source: "Chevrolet Owner Manual",
+      verified: true
+    }),
 
     createVehicle({
       year: 2020,
       make: "Chevrolet",
       model: "Sonic",
-      body: "Sedan / Hatchback",
-      trim: "Gasoline",
       engine: "1.4L Turbo",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 12.1,
-      sourceName:
-        "Chevrolet Sonic specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.1,
+      source: "Chevrolet vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       TOYOTA COROLLA
+       TOYOTA
        ===================================================== */
-
-    createVehicle({
-      year: 2000,
-      make: "Toyota",
-      model: "Corolla",
-      body: "Sedan",
-      trim: "Gasoline",
-      powertrain: "Gasoline",
-      tankLiters: 50.0,
-      sourceName:
-        "Toyota 2000 Corolla Owner's Manual",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2001,
-      make: "Toyota",
-      model: "Corolla",
-      body: "Sedan",
-      trim: "Gasoline",
-      powertrain: "Gasoline",
-      tankLiters: 50.0,
-      sourceName:
-        "Toyota 2001 Corolla Owner's Manual",
-      sourceType:
-        "manufacturer"
-    }),
-
 
     createVehicle({
       year: 2023,
       make: "Toyota",
       model: "Corolla",
-      body: "Sedan",
       trim: "LE / SE / XSE",
       engine: "2.0L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 13.2,
-      sourceName:
-        "Toyota Corolla specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 13.2,
+      source: "Toyota vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2023,
       make: "Toyota",
       model: "Corolla",
-      body: "Sedan",
       trim: "Hybrid",
+      engine: "1.8L Hybrid",
       drivetrain: "FWD / AWD",
       powertrain: "Hybrid",
-      tankGallonsUS: 11.3,
-      sourceName:
-        "Toyota Corolla Hybrid specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 11.3,
+      source: "Toyota vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Toyota",
       model: "Corolla",
-      body: "Sedan",
-      trim: "Gasoline",
       engine: "2.0L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 13.2,
-      sourceName:
-        "Toyota Corolla specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 13.2,
+      source: "Toyota vehicle specification",
+      verified: true
     }),
-
-
-    /* =====================================================
-       TOYOTA COROLLA CROSS
-       ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Toyota",
       model: "Corolla Cross",
-      body: "SUV",
-      trim: "Gasoline",
+      engine: "2.0L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
       tankLiters: 47.0,
-      sourceName:
-        "Toyota Corolla Cross specifications",
-      sourceType:
-        "manufacturer"
+      source: "Toyota vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Toyota",
       model: "Corolla Cross",
-      body: "SUV",
-      trim: "Gasoline",
+      engine: "2.0L",
       drivetrain: "AWD",
       powertrain: "Gasoline",
       tankLiters: 50.0,
-      sourceName:
-        "Toyota Corolla Cross specifications",
-      sourceType:
-        "manufacturer"
+      source: "Toyota vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       HONDA CIVIC
+       HONDA
        ===================================================== */
 
     createVehicle({
-      year: 2015,
+      year: 2024,
       make: "Honda",
       model: "Civic",
-      body: "Coupe",
-      trim: "Si",
-      engine: "2.4L",
+      bodyStyle: "Sedan",
       drivetrain: "FWD",
-      transmission: "Manual",
       powertrain: "Gasoline",
-      tankLiters: 50.0,
-      tankGallonsUS: 13.2,
-      sourceName:
-        "Honda 2015 Civic Coupe Si specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.39,
+      source: "Honda vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Honda",
       model: "Civic",
-      body: "Hatchback",
-      trim: "Gasoline",
-      engine: "2.0L",
+      bodyStyle: "Hatchback",
+      configuration: "Gasoline • CVT",
       drivetrain: "FWD",
-      transmission: "CVT",
       powertrain: "Gasoline",
-      tankLiters: 46.9,
-      tankGallonsUS: 12.39,
-      sourceName:
-        "Honda Civic Hatchback 2025 Owner's Manual",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.39,
+      source: "Honda vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Honda",
       model: "Civic",
-      body: "Hatchback",
-      trim: "Gasoline",
-      engine: "2.0L",
+      bodyStyle: "Hatchback",
+      configuration: "Gasoline • Manual",
       drivetrain: "FWD",
-      transmission: "Manual",
       powertrain: "Gasoline",
-      tankLiters: 47.0,
-      tankGallonsUS: 12.4,
-      sourceName:
-        "Honda Civic Hatchback 2025 Owner's Manual",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.4,
+      source: "Honda vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Honda",
       model: "Civic",
-      body: "Sedan",
-      trim: "Hybrid",
-      engine: "2.0L Hybrid",
+      bodyStyle: "Sedan",
+      configuration: "Hybrid",
       drivetrain: "FWD",
       powertrain: "Hybrid",
-      tankLiters: 40.36,
-      tankGallonsUS: 10.6,
-      sourceName:
-        "Honda Civic Sedan Hybrid 2025 Owner's Manual",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2026,
-      make: "Honda",
-      model: "Civic",
-      body: "Hatchback",
-      trim: "Hybrid",
-      engine: "2.0L Hybrid",
-      drivetrain: "FWD",
-      powertrain: "Hybrid",
-      tankLiters: 40.36,
-      tankGallonsUS: 10.6,
-      sourceName:
-        "Honda Civic Hatchback Hybrid 2026 Owner's Manual",
-      sourceType:
-        "manufacturer"
+      tankGallons: 10.6,
+      source: "Honda vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       HYUNDAI ELANTRA
+       HYUNDAI
        ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Hyundai",
       model: "Elantra",
-      body: "Sedan",
-      trim: "Gasoline",
       engine: "2.0L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 12.4,
-      sourceName:
-        "Hyundai Elantra specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.4,
+      source: "Hyundai vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Hyundai",
       model: "Elantra",
-      body: "Sedan",
       trim: "N Line",
       engine: "1.6L Turbo",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 12.4,
-      sourceName:
-        "Hyundai Elantra specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.4,
+      source: "Hyundai vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Hyundai",
       model: "Elantra",
-      body: "Sedan",
       trim: "Hybrid",
-      engine: "1.6L",
+      engine: "1.6L Hybrid",
       drivetrain: "FWD",
       powertrain: "Hybrid",
-      tankGallonsUS: 11.0,
-      sourceName:
-        "Hyundai Elantra Hybrid specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 11.0,
+      source: "Hyundai vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       FORD ESCAPE 2021
-       ===================================================== */
-
-    createVehicle({
-      year: 2021,
-      make: "Ford",
-      model: "Escape",
-      body: "SUV",
-      engine: "1.5L EcoBoost",
-      drivetrain: "FWD",
-      powertrain: "Gasoline",
-      tankGallonsUS: 14.8,
-      sourceName:
-        "Ford 2021 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2021,
-      make: "Ford",
-      model: "Escape",
-      body: "SUV",
-      engine: "1.5L EcoBoost",
-      drivetrain: "AWD",
-      powertrain: "Gasoline",
-      tankGallonsUS: 15.7,
-      sourceName:
-        "Ford 2021 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2021,
-      make: "Ford",
-      model: "Escape",
-      body: "SUV",
-      engine: "2.0L EcoBoost",
-      drivetrain: "AWD",
-      powertrain: "Gasoline",
-      tankGallonsUS: 15.7,
-      sourceName:
-        "Ford 2021 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2021,
-      make: "Ford",
-      model: "Escape",
-      body: "SUV",
-      trim: "Hybrid",
-      engine: "2.5L",
-      drivetrain: "FWD / AWD",
-      powertrain: "Hybrid",
-      tankGallonsUS: 14.2,
-      sourceName:
-        "Ford 2021 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    createVehicle({
-      year: 2021,
-      make: "Ford",
-      model: "Escape",
-      body: "SUV",
-      trim: "Plug-in Hybrid",
-      engine: "2.5L",
-      drivetrain: "FWD",
-      powertrain: "Plug-in Hybrid",
-      tankGallonsUS: 11.2,
-      sourceName:
-        "Ford 2021 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
-    }),
-
-
-    /* =====================================================
-       FORD ESCAPE 2025
+       FORD
        ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Ford",
       model: "Escape",
-      body: "SUV",
       engine: "1.5L EcoBoost",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 14.8,
-      sourceName:
-        "Ford 2025 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 14.8,
+      source: "Ford vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Ford",
       model: "Escape",
-      body: "SUV",
       engine: "1.5L EcoBoost",
       drivetrain: "AWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 15.7,
-      sourceName:
-        "Ford 2025 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 15.7,
+      source: "Ford vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Ford",
       model: "Escape",
-      body: "SUV",
       engine: "2.0L EcoBoost",
       drivetrain: "AWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 15.7,
-      sourceName:
-        "Ford 2025 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 15.7,
+      source: "Ford vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Ford",
       model: "Escape",
-      body: "SUV",
-      trim: "Hybrid",
-      engine: "2.5L",
+      engine: "2.5L Hybrid",
       drivetrain: "FWD / AWD",
       powertrain: "Hybrid",
-      tankGallonsUS: 14.3,
-      sourceName:
-        "Ford 2025 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 14.3,
+      source: "Ford vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Ford",
       model: "Escape",
-      body: "SUV",
-      trim: "Plug-in Hybrid",
-      engine: "2.5L",
+      engine: "2.5L Plug-in Hybrid",
       drivetrain: "FWD",
       powertrain: "Plug-in Hybrid",
-      tankGallonsUS: 11.1,
-      sourceName:
-        "Ford 2025 Escape Technical Specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 11.1,
+      source: "Ford vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       NISSAN SENTRA
+       NISSAN
        ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Nissan",
       model: "Sentra",
-      body: "Sedan",
       trim: "S / SV / SR",
       engine: "2.0L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 12.4,
-      sourceName:
-        "Nissan Sentra specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 12.4,
+      source: "Nissan vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       MAZDA3
+       MAZDA
        ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Mazda",
       model: "Mazda3",
-      body: "Sedan / Hatchback",
       engine: "2.5L",
       drivetrain: "FWD",
       powertrain: "Gasoline",
       tankLiters: 50.0,
-      sourceName:
-        "Mazda3 specifications",
-      sourceType:
-        "manufacturer"
+      source: "Mazda vehicle specification",
+      verified: true
     }),
-
 
     createVehicle({
       year: 2025,
       make: "Mazda",
       model: "Mazda3",
-      body: "Sedan / Hatchback",
       engine: "2.5L / Turbo",
       drivetrain: "AWD",
       powertrain: "Gasoline",
       tankLiters: 48.0,
-      sourceName:
-        "Mazda3 specifications",
-      sourceType:
-        "manufacturer"
+      source: "Mazda vehicle specification",
+      verified: true
     }),
 
 
     /* =====================================================
-       SUBARU CROSSTREK
+       SUBARU
        ===================================================== */
 
     createVehicle({
       year: 2025,
       make: "Subaru",
       model: "Crosstrek",
-      body: "SUV",
       engine: "2.0L / 2.5L",
       drivetrain: "AWD",
       powertrain: "Gasoline",
-      tankGallonsUS: 16.6,
-      sourceName:
-        "Subaru Crosstrek specifications",
-      sourceType:
-        "manufacturer"
+      tankGallons: 16.6,
+      source: "Subaru vehicle specification",
+      verified: true
     })
 
   ];
 
 
+
   /* =======================================================
-     COMPLETE DISPLAY CATALOG
+     MASTER MODEL CATALOG
 
-     These are models GasGo can display in the selector.
+     THIS controls what appears in the dropdown.
 
-     This is intentionally separate from DATABASE.
-
-     A model can therefore appear even when an exact
-     capacity has not yet been verified.
+     IMPORTANT:
+     It is NOT filtered by DATABASE availability.
      ======================================================= */
 
   Vehicles.CATALOG = {
@@ -876,19 +538,20 @@
       "Highlander",
       "Grand Highlander",
       "Tacoma",
-      "4Runner",
-      "Prius",
       "Tundra",
+      "4Runner",
+      "Sequoia",
+      "Prius",
       "Sienna",
+      "GR86",
+      "GR Corolla",
+      "GR Supra",
       "Crown",
       "Crown Signia",
-      "GR Corolla",
-      "GR86",
-      "GR Supra",
       "bZ4X",
-      "Land Cruiser",
-      "Sequoia"
+      "Other"
     ],
+
 
     Honda: [
       "Civic",
@@ -900,22 +563,25 @@
       "Ridgeline",
       "Odyssey",
       "Prologue",
-      "Insight",
+      "Clarity",
       "Fit",
-      "CR-Z"
+      "Insight",
+      "CR-Z",
+      "Other"
     ],
+
 
     Chevrolet: [
       "Sonic",
       "Spark",
-      "Cruze",
       "Malibu",
+      "Cruze",
       "Impala",
       "Trax",
       "Trailblazer",
       "Equinox",
-      "Traverse",
       "Blazer",
+      "Traverse",
       "Tahoe",
       "Suburban",
       "Silverado",
@@ -925,31 +591,37 @@
       "Bolt EV",
       "Bolt EUV",
       "Equinox EV",
-      "Blazer EV"
+      "Blazer EV",
+      "Silverado EV",
+      "Other"
     ],
+
 
     Hyundai: [
       "Accent",
       "Elantra",
-      "Elantra N",
       "Sonata",
       "Venue",
       "Kona",
-      "Kona Electric",
       "Tucson",
       "Santa Fe",
       "Palisade",
       "Santa Cruz",
+      "Veloster",
       "Ioniq",
       "Ioniq 5",
-      "Ioniq 6"
+      "Ioniq 6",
+      "Nexo",
+      "Other"
     ],
+
 
     Kia: [
       "Rio",
       "Forte",
       "K4",
       "K5",
+      "Stinger",
       "Soul",
       "Seltos",
       "Sportage",
@@ -959,8 +631,9 @@
       "Niro",
       "EV6",
       "EV9",
-      "Stinger"
+      "Other"
     ],
+
 
     Nissan: [
       "Versa",
@@ -977,29 +650,33 @@
       "Z",
       "GT-R",
       "Leaf",
-      "Ariya"
+      "Ariya",
+      "Other"
     ],
+
 
     Ford: [
       "Fiesta",
       "Focus",
       "Fusion",
+      "Taurus",
       "Mustang",
-      "EcoSport",
       "Escape",
       "Edge",
       "Explorer",
       "Expedition",
+      "EcoSport",
       "Bronco",
       "Bronco Sport",
       "Maverick",
       "Ranger",
       "F-150",
-      "F-250",
-      "F-350",
+      "Super Duty",
       "Mustang Mach-E",
-      "F-150 Lightning"
+      "F-150 Lightning",
+      "Other"
     ],
+
 
     Jeep: [
       "Wrangler",
@@ -1010,8 +687,10 @@
       "Gladiator",
       "Wagoneer",
       "Grand Wagoneer",
-      "Avenger"
+      "Avenger",
+      "Other"
     ],
+
 
     Mitsubishi: [
       "Mirage",
@@ -1020,11 +699,12 @@
       "Outlander",
       "Outlander Sport",
       "Eclipse Cross",
-      "Outlander PHEV"
+      "Outlander PHEV",
+      "Other"
     ],
 
+
     Mazda: [
-      "Mazda2",
       "Mazda3",
       "Mazda6",
       "CX-3",
@@ -1035,8 +715,10 @@
       "CX-9",
       "CX-90",
       "MX-5 Miata",
-      "MX-30"
+      "MX-30",
+      "Other"
     ],
+
 
     Subaru: [
       "Impreza",
@@ -1044,11 +726,13 @@
       "Crosstrek",
       "Forester",
       "Outback",
+      "Ascent",
       "WRX",
       "BRZ",
-      "Ascent",
-      "Solterra"
+      "Solterra",
+      "Other"
     ],
+
 
     Volkswagen: [
       "Jetta",
@@ -1063,8 +747,10 @@
       "Atlas",
       "Atlas Cross Sport",
       "ID.4",
-      "ID. Buzz"
+      "ID. Buzz",
+      "Other"
     ],
+
 
     BMW: [
       "2 Series",
@@ -1085,8 +771,11 @@
       "i4",
       "i5",
       "i7",
-      "iX"
+      "iX",
+      "XM",
+      "Other"
     ],
+
 
     "Mercedes-Benz": [
       "A-Class",
@@ -1105,8 +794,10 @@
       "EQA",
       "EQB",
       "EQE",
-      "EQS"
+      "EQS",
+      "Other"
     ],
+
 
     Audi: [
       "A3",
@@ -1123,8 +814,10 @@
       "TT",
       "R8",
       "e-tron",
-      "e-tron GT"
+      "e-tron GT",
+      "Other"
     ],
+
 
     Lexus: [
       "IS",
@@ -1137,65 +830,80 @@
       "RX",
       "GX",
       "LX",
+      "RZ",
       "TX",
-      "RZ"
+      "Other"
     ],
+
 
     Tesla: [
       "Model 3",
-      "Model Y",
       "Model S",
       "Model X",
-      "Cybertruck"
+      "Model Y",
+      "Cybertruck",
+      "Roadster",
+      "Other"
     ],
+
 
     Acura: [
       "Integra",
       "TLX",
       "ILX",
+      "RLX",
       "RDX",
       "MDX",
       "ZDX",
-      "NSX"
+      "NSX",
+      "Other"
     ],
+
 
     GMC: [
       "Terrain",
       "Acadia",
+      "Yukon",
       "Canyon",
       "Sierra",
-      "Yukon",
-      "Hummer EV"
+      "Hummer EV",
+      "Other"
     ],
+
 
     Dodge: [
       "Dart",
       "Charger",
       "Challenger",
+      "Hornet",
       "Journey",
       "Durango",
-      "Hornet",
-      "Viper"
+      "Grand Caravan",
+      "Other"
     ],
+
 
     Ram: [
       "1500",
       "2500",
       "3500",
       "ProMaster",
-      "ProMaster City"
+      "ProMaster City",
+      "Other"
     ],
 
+
     Buick: [
-      "Verano",
-      "Regal",
-      "LaCrosse",
       "Encore",
       "Encore GX",
+      "Envista",
       "Envision",
       "Enclave",
-      "Envista"
+      "Regal",
+      "LaCrosse",
+      "Other"
     ],
+
 
     Cadillac: [
       "ATS",
@@ -1207,16 +915,19 @@
       "XT5",
       "XT6",
       "Escalade",
-      "Lyriq"
+      "Lyriq",
+      "Other"
     ],
+
 
     Chrysler: [
       "200",
       "300",
       "Pacifica",
       "Voyager",
-      "Town & Country"
+      "Other"
     ],
+
 
     Infiniti: [
       "Q50",
@@ -1225,8 +936,10 @@
       "QX50",
       "QX55",
       "QX60",
-      "QX80"
+      "QX80",
+      "Other"
     ],
+
 
     Lincoln: [
       "MKZ",
@@ -1234,14 +947,18 @@
       "Corsair",
       "Nautilus",
       "Aviator",
-      "Navigator"
+      "Navigator",
+      "Other"
     ],
+
 
     Mini: [
       "Cooper",
-      "Clubman",
-      "Countryman"
+      "Cooper Clubman",
+      "Cooper Countryman",
+      "Other"
     ],
+
 
     Volvo: [
       "S60",
@@ -1251,251 +968,64 @@
       "XC40",
       "XC60",
       "XC90",
-      "C40",
+      "C40 Recharge",
       "EX30",
-      "EX90"
+      "EX90",
+      "Other"
     ],
+
 
     Porsche: [
-      "718",
+      "718 Boxster",
+      "718 Cayman",
       "911",
+      "Panamera",
       "Macan",
       "Cayenne",
-      "Panamera",
-      "Taycan"
+      "Taycan",
+      "Other"
     ],
 
-    LandRover: [
+
+    "Land Rover": [
       "Range Rover",
       "Range Rover Sport",
       "Range Rover Velar",
       "Range Rover Evoque",
       "Discovery",
       "Discovery Sport",
-      "Defender"
+      "Defender",
+      "Other"
     ]
 
   };
 
 
+
   /* =======================================================
-     MODEL YEAR AVAILABILITY
+     YEARS
+
+     GasGo currently allows model years 1996 through 2027.
 
      IMPORTANT:
-     This table controls which catalog models appear for a
-     selected year.
-
-     If a model is not listed here, GasGo can still display
-     it through the broad catalog fallback.
+     Models are NOT removed from the dropdown simply
+     because GasGo does not yet have a verified spec.
      ======================================================= */
 
-  Vehicles.MODEL_YEARS = {
+  Vehicles.MIN_YEAR = 1996;
+  Vehicles.MAX_YEAR = 2027;
 
-    Chevrolet: {
-
-      Sonic: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
-
-      Spark: [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-
-      Cruze: [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-
-      Malibu: [
-        1997, 1998, 1999, 2000, 2001, 2002, 2003,
-        2004, 2005, 2006, 2007, 2008, 2009, 2010,
-        2011, 2012, 2013, 2014, 2015, 2016, 2017,
-        2018, 2019, 2020, 2021, 2022, 2023, 2024,
-        2025
-      ],
-
-      Trax: [
-        2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2024, 2025,
-        2026
-      ],
-
-      Equinox: [
-        2005, 2006, 2007, 2008, 2009, 2010,
-        2011, 2012, 2013, 2014, 2015, 2016,
-        2017, 2018, 2019, 2020, 2021, 2022,
-        2023, 2024, 2025, 2026
-      ],
-
-      Traverse: [
-        2009, 2010, 2011, 2012, 2013, 2014,
-        2015, 2016, 2017, 2018, 2019, 2020,
-        2021, 2022, 2023, 2024, 2025, 2026
-      ],
-
-      Tahoe: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      Silverado: [
-        1999, 2000, 2001, 2002, 2003, 2004,
-        2005, 2006, 2007, 2008, 2009, 2010,
-        2011, 2012, 2013, 2014, 2015, 2016,
-        2017, 2018, 2019, 2020, 2021, 2022,
-        2023, 2024, 2025, 2026
-      ]
-
-    },
-
-
-    Toyota: {
-
-      Corolla: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      Camry: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      RAV4: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      Prius: [
-        2001, 2002, 2003, 2004, 2005, 2006,
-        2007, 2008, 2009, 2010, 2011, 2012,
-        2013, 2014, 2015, 2016, 2017, 2018,
-        2019, 2020, 2021, 2022, 2023, 2024,
-        2025, 2026
-      ],
-
-      Tacoma: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ]
-
-    },
-
-
-    Honda: {
-
-      Civic: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      Accord: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      "CR-V": [
-        1997, 1998, 1999, 2000, 2001, 2002,
-        2003, 2004, 2005, 2006, 2007, 2008,
-        2009, 2010, 2011, 2012, 2013, 2014,
-        2015, 2016, 2017, 2018, 2019, 2020,
-        2021, 2022, 2023, 2024, 2025, 2026
-      ],
-
-      Pilot: [
-        2003, 2004, 2005, 2006, 2007, 2008,
-        2009, 2010, 2011, 2012, 2013, 2014,
-        2015, 2016, 2017, 2018, 2019, 2020,
-        2021, 2022, 2023, 2024, 2025, 2026
-      ]
-
-    },
-
-
-    Ford: {
-
-      Escape: [
-        2001, 2002, 2003, 2004, 2005, 2006,
-        2007, 2008, 2009, 2010, 2011, 2012,
-        2013, 2014, 2015, 2016, 2017, 2018,
-        2019, 2020, 2021, 2022, 2023, 2024,
-        2025
-      ],
-
-      Mustang: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      Explorer: [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ],
-
-      "F-150": [
-        1996, 1997, 1998, 1999, 2000, 2001,
-        2002, 2003, 2004, 2005, 2006, 2007,
-        2008, 2009, 2010, 2011, 2012, 2013,
-        2014, 2015, 2016, 2017, 2018, 2019,
-        2020, 2021, 2022, 2023, 2024, 2025,
-        2026
-      ]
-
-    }
-
-  };
 
 
   /* =======================================================
-     PUBLIC HELPERS
+     PUBLIC API
      ======================================================= */
-
-  Vehicles.normalize =
-    normalize;
-
-
-  Vehicles.gallonsToLiters =
-    gallonsToLiters;
-
-
-  Vehicles.litersToGallons =
-    litersToGallons;
-
 
   Vehicles.getAll = function () {
 
-    return [
-      ...Vehicles.DATABASE
-    ];
+    return Vehicles.DATABASE.map(vehicle => ({
+      ...vehicle
+    }));
 
   };
 
@@ -1504,991 +1034,586 @@
 
     const years = [];
 
-
-    /*
-      GasGo Link targets OBD-II-era vehicles.
-
-      Include 1996 through next model year in the UI,
-      even if the specification database does not yet
-      contain every single vehicle.
-    */
-
-    const currentYear =
-      new Date().getFullYear();
-
-
-    const maximumYear =
-      Math.max(
-        currentYear + 1,
-        2027
-      );
-
-
     for (
-      let year = 1996;
-      year <= maximumYear;
-      year++
+      let year = Vehicles.MAX_YEAR;
+      year >= Vehicles.MIN_YEAR;
+      year--
     ) {
 
       years.push(year);
 
     }
 
-
-    return years.sort(
-      (a, b) => b - a
-    );
+    return years;
 
   };
 
 
-  Vehicles.getMakes = function (
-    year = null
-  ) {
+  /* =======================================================
+     MAKES
 
-    /*
-      V4 FIX:
-      Do NOT restrict the make selector only to verified
-      specification records.
+     FIX V4.1:
+     ALL catalog makes are returned regardless of whether
+     a verified database record exists for that year.
+     ======================================================= */
 
-      All catalog makes remain available.
-    */
+  Vehicles.getMakes = function () {
 
-    return alphabetical(
-      Object.keys(
-        Vehicles.CATALOG
-      )
-    );
+    return Object.keys(Vehicles.CATALOG);
 
   };
 
 
-  Vehicles.modelAvailableInYear =
-  function (
+  /* =======================================================
+     MODELS
+
+     CRITICAL V4.1 FIX
+
+     The year DOES NOT reduce the model list to only
+     verified DATABASE entries.
+
+     Example:
+
+     getModels(2015, "Chevrolet")
+
+     returns:
+     Sonic, Spark, Malibu, Cruze, Impala, Trax, etc.
+
+     It does NOT return only Sonic.
+     ======================================================= */
+
+  Vehicles.getModels = function (year, make) {
+
+    const requestedMake = String(make || "").trim();
+
+    if (!requestedMake) {
+      return ["Other"];
+    }
+
+
+    const catalogMake = Object.keys(Vehicles.CATALOG)
+      .find(
+        key =>
+          normalize(key) === normalize(requestedMake)
+      );
+
+
+    if (!catalogMake) {
+
+      return ["Other"];
+
+    }
+
+
+    const models =
+      Vehicles.CATALOG[catalogMake] || [];
+
+
+    return [...models];
+
+  };
+
+
+
+  /* =======================================================
+     CONFIGURATIONS
+
+     Configurations ARE based on verified records because
+     GasGo needs actual specification data before offering
+     an automatic capacity.
+     ======================================================= */
+
+  Vehicles.getConfigurations = function (
     year,
     make,
     model
   ) {
 
-    const makeTable =
-      Vehicles.MODEL_YEARS[
-        make
-      ];
+    const records = Vehicles.DATABASE.filter(vehicle => {
+
+      return (
+        yearMatches(vehicle, year) &&
+        normalize(vehicle.make) === normalize(make) &&
+        normalize(vehicle.model) === normalize(model)
+      );
+
+    });
 
 
-    if (
-      !makeTable ||
-      !makeTable[model]
-    ) {
-
-      /*
-        Unknown year mapping.
-
-        We return true so the user can still select
-        the model and manually enter capacity.
-      */
-
-      return true;
-
-    }
-
-
-    return makeTable[
-      model
-    ].includes(
-      Number(year)
-    );
+    return records.map(vehicle => ({
+      ...vehicle
+    }));
 
   };
 
 
-  Vehicles.getModels = function (
-    year,
-    make
-  ) {
-
-    const catalogModels =
-      Vehicles.CATALOG[
-        make
-      ] || [];
+  Vehicles.getVehicleConfigurations =
+    Vehicles.getConfigurations;
 
 
-    /*
-      First use year-specific availability where we
-      actually have it.
-    */
 
-    const mappedModels =
-      catalogModels.filter(
-        model =>
-          Vehicles.modelAvailableInYear(
-            year,
-            make,
-            model
-          )
-      );
+  /* =======================================================
+     CONFIGURATION LABEL
+     ======================================================= */
 
-
-    /*
-      Also include any verified database models for this
-      year/make in case they are not yet in CATALOG.
-    */
-
-    const verifiedModels =
-      Vehicles.DATABASE
-        .filter(
-          vehicle =>
-            normalize(
-              vehicle.make
-            ) ===
-              normalize(make) &&
-            yearMatches(
-              vehicle,
-              year
-            )
-        )
-        .map(
-          vehicle =>
-            vehicle.model
-        );
-
-
-    const result =
-      unique([
-        ...mappedModels,
-        ...verifiedModels
-      ]);
-
-
-    /*
-      Never let the selector collapse to a single verified
-      model just because DATABASE is incomplete.
-    */
-
-    if (!result.length) {
-
-      return alphabetical(
-        unique([
-          ...catalogModels,
-          "Other"
-        ])
-      );
-
-    }
-
-
-    if (
-      !result.includes(
-        "Other"
-      )
-    ) {
-
-      result.push(
-        "Other"
-      );
-
-    }
-
-
-    return alphabetical(
-      result
-    );
-
-  };
-
-
-  Vehicles.getConfigurations =
-  function (
-    year,
-    make,
-    model
-  ) {
-
-    return Vehicles.DATABASE
-      .filter(
-        vehicle => {
-
-          return (
-            yearMatches(
-              vehicle,
-              year
-            ) &&
-
-            normalize(
-              vehicle.make
-            ) ===
-              normalize(make) &&
-
-            normalize(
-              vehicle.model
-            ) ===
-              normalize(model)
-          );
-
-        }
-      );
-
-  };
-
-
-  Vehicles.getConfigurationLabel =
-  function (
-    vehicle
-  ) {
+  Vehicles.getConfigurationLabel = function (vehicle) {
 
     if (!vehicle) {
-      return "";
+      return "Standard";
+    }
+
+
+    if (vehicle.configuration) {
+      return vehicle.configuration;
     }
 
 
     const parts = [];
 
 
-    if (
-      vehicle.body
-    ) {
-      parts.push(
-        vehicle.body
-      );
+    if (vehicle.trim) {
+      parts.push(vehicle.trim);
     }
 
 
-    if (
-      vehicle.trim
-    ) {
-      parts.push(
-        vehicle.trim
-      );
+    if (vehicle.engine) {
+      parts.push(vehicle.engine);
     }
 
 
-    if (
-      vehicle.engine
-    ) {
-      parts.push(
-        vehicle.engine
-      );
+    if (vehicle.drivetrain) {
+      parts.push(vehicle.drivetrain);
     }
 
 
-    if (
-      vehicle.transmission
-    ) {
-      parts.push(
-        vehicle.transmission
-      );
+    if (vehicle.bodyStyle) {
+      parts.push(vehicle.bodyStyle);
     }
 
 
-    if (
-      vehicle.drivetrain
-    ) {
-      parts.push(
-        vehicle.drivetrain
-      );
+    if (vehicle.powertrain) {
+
+      const powertrainAlreadyIncluded =
+        parts.some(part =>
+          normalize(part).includes(
+            normalize(vehicle.powertrain)
+          )
+        );
+
+
+      if (!powertrainAlreadyIncluded) {
+        parts.push(vehicle.powertrain);
+      }
+
     }
 
 
-    return unique(
-      parts
-    ).join(" • ");
+    return parts.length
+      ? unique(parts).join(" • ")
+      : "Standard";
 
   };
+
 
 
   /* =======================================================
-     END PART 1/2
-
-     PART 2 starts with:
-
-     Vehicles.find = function (options = {}) {
+     FIND
      ======================================================= */
 
-   /* =======================================================
-     FIND EXACT VEHICLE
-     ======================================================= */
+  Vehicles.find = function (options = {}) {
 
-  Vehicles.find = function (
-    options = {}
-  ) {
-
-    const year =
-      Number(options.year);
-
-    const make =
-      normalize(
-        options.make
-      );
-
-    const model =
-      normalize(
-        options.model
-      );
-
-    const configuration =
-      normalize(
-        options.configuration
-      );
-
-    const trim =
-      normalize(
-        options.trim
-      );
-
-    const engine =
-      normalize(
-        options.engine
-      );
-
-    const drivetrain =
-      normalize(
-        options.drivetrain
-      );
-
-    const transmission =
-      normalize(
-        options.transmission
-      );
+    const {
+      year,
+      make,
+      model,
+      configuration,
+      powertrain,
+      engine,
+      drivetrain,
+      trim
+    } = options;
 
 
-    if (
-      !Number.isFinite(year) ||
-      !make ||
-      !model ||
-      model === "other"
-    ) {
+    return Vehicles.DATABASE.filter(vehicle => {
 
-      return null;
-
-    }
+      if (
+        year != null &&
+        !yearMatches(vehicle, year)
+      ) {
+        return false;
+      }
 
 
-    let candidates =
-      Vehicles.DATABASE.filter(
-        vehicle => {
+      if (
+        make &&
+        normalize(vehicle.make) !== normalize(make)
+      ) {
+        return false;
+      }
 
-          return (
-            yearMatches(
-              vehicle,
-              year
-            ) &&
 
-            normalize(
-              vehicle.make
-            ) === make &&
+      if (
+        model &&
+        normalize(vehicle.model) !== normalize(model)
+      ) {
+        return false;
+      }
 
-            normalize(
-              vehicle.model
-            ) === model
-          );
 
+      if (
+        powertrain &&
+        normalize(vehicle.powertrain) !==
+          normalize(powertrain)
+      ) {
+        return false;
+      }
+
+
+      if (
+        engine &&
+        !normalize(vehicle.engine).includes(
+          normalize(engine)
+        )
+      ) {
+        return false;
+      }
+
+
+      if (
+        drivetrain &&
+        !normalize(vehicle.drivetrain).includes(
+          normalize(drivetrain)
+        )
+      ) {
+        return false;
+      }
+
+
+      if (
+        trim &&
+        !normalize(vehicle.trim).includes(
+          normalize(trim)
+        )
+      ) {
+        return false;
+      }
+
+
+      if (configuration) {
+
+        const label =
+          Vehicles.getConfigurationLabel(vehicle);
+
+
+        if (
+          normalize(label) !==
+          normalize(configuration)
+        ) {
+          return false;
         }
-      );
-
-
-    if (
-      candidates.length === 0
-    ) {
-
-      return null;
-
-    }
-
-
-    /*
-      If only one verified configuration exists,
-      GasGo can safely use it automatically.
-    */
-
-    if (
-      candidates.length === 1
-    ) {
-
-      return candidates[0];
-
-    }
-
-
-    /*
-      Exact configuration label.
-    */
-
-    if (configuration) {
-
-      const exactConfiguration =
-        candidates.find(
-          vehicle => {
-
-            return (
-              normalize(
-                Vehicles.getConfigurationLabel(
-                  vehicle
-                )
-              ) ===
-              configuration
-            );
-
-          }
-        );
-
-
-      if (
-        exactConfiguration
-      ) {
-
-        return exactConfiguration;
-
-      }
-
-    }
-
-
-    /*
-      Optional field-by-field matching.
-    */
-
-    if (trim) {
-
-      const filtered =
-        candidates.filter(
-          vehicle =>
-            normalize(
-              vehicle.trim
-            ) === trim
-        );
-
-
-      if (
-        filtered.length === 1
-      ) {
-
-        return filtered[0];
 
       }
 
 
-      if (
-        filtered.length > 1
-      ) {
+      return true;
 
-        candidates =
-          filtered;
-
-      }
-
-    }
-
-
-    if (engine) {
-
-      const filtered =
-        candidates.filter(
-          vehicle =>
-            normalize(
-              vehicle.engine
-            ) === engine
-        );
-
-
-      if (
-        filtered.length === 1
-      ) {
-
-        return filtered[0];
-
-      }
-
-
-      if (
-        filtered.length > 1
-      ) {
-
-        candidates =
-          filtered;
-
-      }
-
-    }
-
-
-    if (drivetrain) {
-
-      const filtered =
-        candidates.filter(
-          vehicle =>
-            normalize(
-              vehicle.drivetrain
-            ) === drivetrain
-        );
-
-
-      if (
-        filtered.length === 1
-      ) {
-
-        return filtered[0];
-
-      }
-
-
-      if (
-        filtered.length > 1
-      ) {
-
-        candidates =
-          filtered;
-
-      }
-
-    }
-
-
-    if (transmission) {
-
-      const filtered =
-        candidates.filter(
-          vehicle =>
-            normalize(
-              vehicle.transmission
-            ) === transmission
-        );
-
-
-      if (
-        filtered.length === 1
-      ) {
-
-        return filtered[0];
-
-      }
-
-
-      if (
-        filtered.length > 1
-      ) {
-
-        candidates =
-          filtered;
-
-      }
-
-    }
-
-
-    /*
-      IMPORTANT:
-
-      If multiple verified configurations remain,
-      DO NOT guess.
-
-      app.js will ask the user to choose the correct
-      configuration.
-    */
-
-    return null;
+    }).map(vehicle => ({
+      ...vehicle
+    }));
 
   };
+
 
 
   /* =======================================================
      LOOKUP
 
-     This is the main function used by app.js.
+     Exact record:
+       exact = true
+
+     Multiple configurations:
+       requiresConfiguration = true
+
+     No verified record:
+       manual = true
      ======================================================= */
 
-  Vehicles.lookup = function (
-    options = {}
-  ) {
+  Vehicles.lookup = function (options = {}) {
 
-    const year =
-      Number(options.year);
+    const year = Number(options.year);
 
     const make =
-      String(
-        options.make || ""
-      ).trim();
+      String(options.make || "").trim();
 
     const model =
-      String(
-        options.model || ""
-      ).trim();
+      String(options.model || "").trim();
 
     const configuration =
-      String(
-        options.configuration || ""
-      ).trim();
+      String(options.configuration || "").trim();
 
 
-    if (
-      !Number.isFinite(year) ||
-      !make ||
-      !model
-    ) {
+    if (!year || !make || !model) {
 
       return {
-
         found: false,
-
         exact: false,
-
-        requiresConfiguration:
-          false,
-
+        manual: true,
+        requiresConfiguration: false,
         vehicle: null,
-
-        configurations: [],
-
         tankLiters: null,
-
-        tankGallonsUS: null,
-
         batteryKWh: null,
-
-        powertrain: null,
-
-        verified: false,
-
-        sourceName: "",
-
-        message:
-          "Select a year, make and model."
-
+        matches: []
       };
 
     }
 
 
-    if (
-      normalize(model) ===
-      "other"
-    ) {
+    let matches = Vehicles.find({
+      year,
+      make,
+      model
+    });
+
+
+    if (!matches.length) {
 
       return {
-
         found: false,
-
         exact: false,
-
-        requiresConfiguration:
-          false,
-
+        manual: true,
+        requiresConfiguration: false,
         vehicle: null,
-
-        configurations: [],
-
         tankLiters: null,
-
-        tankGallonsUS: null,
-
         batteryKWh: null,
-
-        powertrain: null,
-
-        verified: false,
-
-        sourceName: "",
-
-        message:
-          "Exact specification unavailable. Enter capacity manually."
-
+        matches: []
       };
 
     }
 
 
-    const configurations =
-      Vehicles.getConfigurations(
-        year,
-        make,
-        model
+    if (configuration) {
+
+      const exactConfiguration =
+        matches.find(vehicle => {
+
+          const label =
+            Vehicles.getConfigurationLabel(vehicle);
+
+          return (
+            normalize(label) ===
+            normalize(configuration)
+          );
+
+        });
+
+
+      if (exactConfiguration) {
+
+        return {
+          found: true,
+          exact: true,
+          manual: false,
+          requiresConfiguration: false,
+
+          vehicle: {
+            ...exactConfiguration
+          },
+
+          tankLiters:
+            exactConfiguration.tankLiters,
+
+          tankGallons:
+            exactConfiguration.tankGallons,
+
+          batteryKWh:
+            exactConfiguration.batteryKWh,
+
+          matches: matches.map(vehicle => ({
+            ...vehicle
+          }))
+        };
+
+      }
+
+    }
+
+
+    if (matches.length === 1) {
+
+      const vehicle = matches[0];
+
+
+      return {
+        found: true,
+        exact: true,
+        manual: false,
+        requiresConfiguration: false,
+
+        vehicle: {
+          ...vehicle
+        },
+
+        tankLiters:
+          vehicle.tankLiters,
+
+        tankGallons:
+          vehicle.tankGallons,
+
+        batteryKWh:
+          vehicle.batteryKWh,
+
+        matches: [
+          {
+            ...vehicle
+          }
+        ]
+      };
+
+    }
+
+
+    /* -----------------------------------------------------
+       If all records have the SAME relevant capacity and
+       powertrain, GasGo can safely use that specification
+       without forcing the user to choose a configuration.
+       ----------------------------------------------------- */
+
+    const capacityKeys =
+      unique(
+        matches.map(vehicle => {
+
+          return [
+            vehicle.tankLiters ?? "",
+            vehicle.batteryKWh ?? "",
+            normalize(vehicle.powertrain)
+          ].join("|");
+
+        })
       );
 
 
-    /*
-      Vehicle is in catalog, but GasGo does not yet
-      have a verified capacity record for it.
-    */
+    if (capacityKeys.length === 1) {
 
-    if (
-      configurations.length === 0
-    ) {
+      const vehicle = matches[0];
+
 
       return {
-
-        found: false,
-
-        exact: false,
-
-        requiresConfiguration:
-          false,
-
-        vehicle: null,
-
-        configurations: [],
-
-        tankLiters: null,
-
-        tankGallonsUS: null,
-
-        batteryKWh: null,
-
-        powertrain: null,
-
-        verified: false,
-
-        sourceName: "",
-
-        message:
-          "Specification unavailable — enter capacity manually."
-
-      };
-
-    }
-
-
-    /*
-      If several records exist and the driver has not
-      selected one, GasGo must not guess.
-    */
-
-    if (
-      configurations.length > 1 &&
-      !configuration
-    ) {
-
-      return {
-
         found: true,
+        exact: true,
+        manual: false,
+        requiresConfiguration: false,
 
-        exact: false,
+        vehicle: {
+          ...vehicle
+        },
 
-        requiresConfiguration:
-          true,
+        tankLiters:
+          vehicle.tankLiters,
 
-        vehicle: null,
+        tankGallons:
+          vehicle.tankGallons,
 
-        configurations,
+        batteryKWh:
+          vehicle.batteryKWh,
 
-        tankLiters: null,
-
-        tankGallonsUS: null,
-
-        batteryKWh: null,
-
-        powertrain: null,
-
-        verified: false,
-
-        sourceName: "",
-
-        message:
-          "Select the correct vehicle configuration."
-
-      };
-
-    }
-
-
-    const vehicle =
-      Vehicles.find({
-        year,
-        make,
-        model,
-        configuration,
-        trim:
-          options.trim,
-        engine:
-          options.engine,
-        drivetrain:
-          options.drivetrain,
-        transmission:
-          options.transmission
-      });
-
-
-    if (!vehicle) {
-
-      return {
-
-        found: true,
-
-        exact: false,
-
-        requiresConfiguration:
-          configurations.length > 1,
-
-        vehicle: null,
-
-        configurations,
-
-        tankLiters: null,
-
-        tankGallonsUS: null,
-
-        batteryKWh: null,
-
-        powertrain: null,
-
-        verified: false,
-
-        sourceName: "",
-
-        message:
-          configurations.length > 1
-            ? "Select the correct vehicle configuration."
-            : "Exact specification unavailable — enter capacity manually."
-
+        matches: matches.map(item => ({
+          ...item
+        }))
       };
 
     }
 
 
     return {
+      found: false,
+      exact: false,
+      manual: false,
+      requiresConfiguration: true,
 
-      found: true,
+      vehicle: null,
+      tankLiters: null,
+      tankGallons: null,
+      batteryKWh: null,
 
-      exact: true,
-
-      requiresConfiguration:
-        false,
-
-      vehicle,
-
-      configurations,
-
-      tankLiters:
-        vehicle.tankLiters ??
-        null,
-
-      tankGallonsUS:
-        vehicle.tankGallonsUS ??
-        null,
-
-      batteryKWh:
-        vehicle.batteryKWh ??
-        null,
-
-      powertrain:
-        vehicle.powertrain ||
-        null,
-
-      verified:
-        vehicle.verified ===
-        true,
-
-      sourceName:
-        vehicle.sourceName ||
-        "",
-
-      sourceType:
-        vehicle.sourceType ||
-        "",
-
-      message:
-        vehicle.tankLiters != null
-          ? "Tank capacity detected."
-          : vehicle.batteryKWh != null
-            ? "Battery capacity detected."
-            : "Vehicle specification detected."
-
+      matches: matches.map(vehicle => ({
+        ...vehicle
+      }))
     };
 
   };
 
 
+
   /* =======================================================
-     GET TANK CAPACITY
+     CAPACITY HELPERS
      ======================================================= */
 
-  Vehicles.getTankCapacity =
-  function (
-    options = {}
+  Vehicles.getTankCapacity = function (
+    year,
+    make,
+    model,
+    configuration = ""
   ) {
 
-    const result =
-      Vehicles.lookup(
-        options
-      );
+    const result = Vehicles.lookup({
+      year,
+      make,
+      model,
+      configuration
+    });
 
 
     if (
-      !result.exact
+      result.exact &&
+      Number.isFinite(Number(result.tankLiters))
     ) {
 
-      return null;
+      return Number(result.tankLiters);
 
     }
 
 
-    const liters =
-      Number(
-        result.tankLiters
-      );
-
-
-    return (
-      Number.isFinite(liters) &&
-      liters > 0
-    )
-      ? liters
-      : null;
+    return null;
 
   };
 
 
-  /* =======================================================
-     GET TANK GALLONS
-     ======================================================= */
+  Vehicles.getTankLiters =
+    Vehicles.getTankCapacity;
 
-  Vehicles.getTankGallons =
-  function (
-    options = {}
+
+  Vehicles.getTankGallons = function (
+    year,
+    make,
+    model,
+    configuration = ""
   ) {
 
-    const result =
-      Vehicles.lookup(
-        options
-      );
+    const result = Vehicles.lookup({
+      year,
+      make,
+      model,
+      configuration
+    });
 
 
     if (
-      !result.exact
+      result.exact &&
+      Number.isFinite(Number(result.tankGallons))
     ) {
 
-      return null;
+      return Number(result.tankGallons);
 
     }
 
 
-    const gallons =
-      Number(
-        result.tankGallonsUS
-      );
-
-
     if (
-      Number.isFinite(gallons) &&
-      gallons > 0
-    ) {
-
-      return gallons;
-
-    }
-
-
-    const liters =
-      Number(
-        result.tankLiters
-      );
-
-
-    if (
-      Number.isFinite(liters) &&
-      liters > 0
+      result.exact &&
+      Number.isFinite(Number(result.tankLiters))
     ) {
 
       return litersToGallons(
-        liters
+        result.tankLiters
       );
 
     }
@@ -2499,138 +1624,254 @@
   };
 
 
-  /* =======================================================
-     GET POWERTRAIN
-     ======================================================= */
-
-  Vehicles.getPowertrain =
-  function (
-    options = {}
+  Vehicles.getBatteryCapacity = function (
+    year,
+    make,
+    model,
+    configuration = ""
   ) {
 
-    const result =
-      Vehicles.lookup(
-        options
-      );
+    const result = Vehicles.lookup({
+      year,
+      make,
+      model,
+      configuration
+    });
 
 
-    return (
-      result.exact
-        ? result.powertrain
-        : null
+    if (
+      result.exact &&
+      Number.isFinite(Number(result.batteryKWh))
+    ) {
+
+      return Number(result.batteryKWh);
+
+    }
+
+
+    return null;
+
+  };
+
+
+  Vehicles.getBatteryKWh =
+    Vehicles.getBatteryCapacity;
+
+
+
+  /* =======================================================
+     POWERTRAIN
+     ======================================================= */
+
+  Vehicles.getPowertrain = function (
+    year,
+    make,
+    model,
+    configuration = ""
+  ) {
+
+    const result = Vehicles.lookup({
+      year,
+      make,
+      model,
+      configuration
+    });
+
+
+    if (
+      result.exact &&
+      result.vehicle
+    ) {
+
+      return result.vehicle.powertrain;
+
+    }
+
+
+    return null;
+
+  };
+
+
+
+  /* =======================================================
+     CATALOG CHECK
+     ======================================================= */
+
+  Vehicles.hasCatalogModel = function (
+    make,
+    model
+  ) {
+
+    const models =
+      Vehicles.getModels(null, make);
+
+
+    return models.some(
+      item =>
+        normalize(item) ===
+        normalize(model)
     );
 
   };
 
 
+
   /* =======================================================
-     GET BATTERY CAPACITY
+     VERIFIED SPEC CHECK
      ======================================================= */
 
-  Vehicles.getBatteryCapacity =
-  function (
-    options = {}
+  Vehicles.hasVerifiedSpec = function (
+    year,
+    make,
+    model
   ) {
 
-    const result =
-      Vehicles.lookup(
-        options
-      );
-
-
-    if (
-      !result.exact
-    ) {
-
-      return null;
-
-    }
-
-
-    const battery =
-      Number(
-        result.batteryKWh
-      );
-
-
-    return (
-      Number.isFinite(battery) &&
-      battery > 0
-    )
-      ? battery
-      : null;
+    return Vehicles.find({
+      year,
+      make,
+      model
+    }).length > 0;
 
   };
 
 
+
   /* =======================================================
-     SEARCH
+     MODEL INFO
      ======================================================= */
 
-  Vehicles.search = function (
-    query = ""
+  Vehicles.getModelInfo = function (
+    year,
+    make,
+    model
   ) {
 
-    const value =
-      normalize(query);
+    const inCatalog =
+      Vehicles.hasCatalogModel(
+        make,
+        model
+      );
 
 
-    if (!value) {
+    const verifiedRecords =
+      Vehicles.find({
+        year,
+        make,
+        model
+      });
 
-      return [
-        ...Vehicles.DATABASE
-      ];
 
+    return {
+      year: Number(year) || null,
+      make: make || "",
+      model: model || "",
+
+      inCatalog,
+
+      verified:
+        verifiedRecords.length > 0,
+
+      configurations:
+        verifiedRecords.map(vehicle => ({
+          ...vehicle
+        })),
+
+      requiresManualCapacity:
+        verifiedRecords.length === 0
+    };
+
+  };
+
+
+
+  /* =======================================================
+     SEARCH VERIFIED DATABASE
+     ======================================================= */
+
+  Vehicles.search = function (query = "") {
+
+    const q = normalize(query);
+
+    if (!q) {
+      return Vehicles.getAll();
     }
 
 
     return Vehicles.DATABASE
-      .filter(
-        vehicle => {
+      .filter(vehicle => {
 
-          const text = [
-
-            vehicle.year,
-
-            vehicle.make,
-
-            vehicle.model,
-
-            vehicle.body,
-
-            vehicle.trim,
-
-            vehicle.engine,
-
-            vehicle.transmission,
-
-            vehicle.drivetrain,
-
-            vehicle.powertrain
-
-          ]
-            .filter(Boolean)
-            .join(" ");
+        const text = normalize([
+          vehicle.year,
+          vehicle.make,
+          vehicle.model,
+          vehicle.trim,
+          vehicle.engine,
+          vehicle.drivetrain,
+          vehicle.powertrain,
+          vehicle.bodyStyle
+        ].join(" "));
 
 
-          return normalize(
-            text
-          ).includes(
-            value
-          );
+        return text.includes(q);
 
-        }
-      );
+      })
+      .map(vehicle => ({
+        ...vehicle
+      }));
 
   };
+
+
+
+  /* =======================================================
+     SEARCH CATALOG
+     ======================================================= */
+
+  Vehicles.searchCatalog = function (
+    query = ""
+  ) {
+
+    const q = normalize(query);
+
+    const results = [];
+
+
+    Object.entries(Vehicles.CATALOG)
+      .forEach(([make, models]) => {
+
+        models.forEach(model => {
+
+          if (
+            !q ||
+            normalize(
+              make + " " + model
+            ).includes(q)
+          ) {
+
+            results.push({
+              make,
+              model
+            });
+
+          }
+
+        });
+
+      });
+
+
+    return results;
+
+  };
+
 
 
   /* =======================================================
      DISPLAY NAME
      ======================================================= */
 
-  Vehicles.getDisplayName =
-  function (
+  Vehicles.getDisplayName = function (
     vehicle
   ) {
 
@@ -2639,55 +1880,133 @@
     }
 
 
-    const year =
-      vehicle.year ??
-      vehicle.startYear ??
-      "";
-
-
-    return [
-      year,
+    const base = [
+      vehicle.year,
       vehicle.make,
       vehicle.model
     ]
       .filter(Boolean)
       .join(" ");
 
+
+    const configuration =
+      Vehicles.getConfigurationLabel(
+        vehicle
+      );
+
+
+    if (
+      configuration &&
+      configuration !== "Standard"
+    ) {
+
+      return (
+        base +
+        " • " +
+        configuration
+      );
+
+    }
+
+
+    return base;
+
   };
+
 
 
   /* =======================================================
      FORMAT CAPACITY
      ======================================================= */
 
-  Vehicles.formatCapacity =
-  function (
+  Vehicles.formatCapacity = function (
     vehicle
   ) {
 
     if (!vehicle) {
-      return "Not available";
+      return "Capacity unavailable";
     }
 
 
+    const powertrain =
+      normalize(vehicle.powertrain);
+
+
     if (
-      vehicle.powertrain ===
-        "Electric" &&
-      vehicle.batteryKWh != null
+      powertrain.includes("plug-in") ||
+      powertrain.includes("phev")
     ) {
 
-      return (
-        Number(
-          vehicle.batteryKWh
-        ).toFixed(1) +
-        " kWh"
-      );
+      const parts = [];
+
+
+      if (
+        Number.isFinite(
+          Number(vehicle.tankLiters)
+        )
+      ) {
+
+        parts.push(
+          Number(
+            vehicle.tankLiters
+          ).toFixed(1) + " L"
+        );
+
+      }
+
+
+      if (
+        Number.isFinite(
+          Number(vehicle.batteryKWh)
+        )
+      ) {
+
+        parts.push(
+          Number(
+            vehicle.batteryKWh
+          ).toFixed(1) + " kWh"
+        );
+
+      }
+
+
+      return parts.length
+        ? parts.join(" + ")
+        : "Capacity unavailable";
 
     }
 
 
     if (
-      vehicle.tankLiters != null
+      powertrain === "electric" ||
+      powertrain === "ev"
+    ) {
+
+      if (
+        Number.isFinite(
+          Number(vehicle.batteryKWh)
+        )
+      ) {
+
+        return (
+          Number(
+            vehicle.batteryKWh
+          ).toFixed(1) +
+          " kWh"
+        );
+
+      }
+
+
+      return "Battery capacity unavailable";
+
+    }
+
+
+    if (
+      Number.isFinite(
+        Number(vehicle.tankLiters)
+      )
     ) {
 
       return (
@@ -2700,504 +2019,167 @@
     }
 
 
-    return "Not available";
+    return "Tank capacity unavailable";
 
   };
 
 
-  /* =======================================================
-     CATALOG SEARCH
-
-     Searches every model that GasGo can display,
-     not only verified capacity records.
-     ======================================================= */
-
-  Vehicles.searchCatalog =
-  function (
-    query = ""
-  ) {
-
-    const value =
-      normalize(query);
-
-
-    const results = [];
-
-
-    Object.entries(
-      Vehicles.CATALOG
-    ).forEach(
-      ([make, models]) => {
-
-        models.forEach(
-          model => {
-
-            const text =
-              normalize(
-                make +
-                " " +
-                model
-              );
-
-
-            if (
-              !value ||
-              text.includes(value)
-            ) {
-
-              results.push({
-                make,
-                model
-              });
-
-            }
-
-          }
-        );
-
-      }
-    );
-
-
-    return results;
-
-  };
-
 
   /* =======================================================
-     CATALOG STATUS
+     DATABASE VALIDATION
      ======================================================= */
 
-  Vehicles.hasCatalogModel =
-  function (
-    make,
-    model
-  ) {
+  Vehicles.validateDatabase = function () {
 
-    const models =
-      Vehicles.CATALOG[
-        make
-      ];
+    const problems = [];
+
+    const seen = new Set();
 
 
-    if (
-      !Array.isArray(models)
-    ) {
-      return false;
-    }
+    Vehicles.DATABASE
+      .forEach((vehicle, index) => {
+
+        if (!vehicle.make) {
+
+          problems.push(
+            `Record ${index}: missing make`
+          );
+
+        }
 
 
-    return models.some(
-      item =>
-        normalize(item) ===
-        normalize(model)
-    );
+        if (!vehicle.model) {
 
-  };
+          problems.push(
+            `Record ${index}: missing model`
+          );
 
-
-  /* =======================================================
-     HAS VERIFIED SPECIFICATION
-     ======================================================= */
-
-  Vehicles.hasVerifiedSpec =
-  function (
-    year,
-    make,
-    model
-  ) {
-
-    return (
-      Vehicles.getConfigurations(
-        year,
-        make,
-        model
-      ).length > 0
-    );
-
-  };
+        }
 
 
-  /* =======================================================
-     GET MODEL INFO
-     ======================================================= */
+        if (
+          vehicle.year == null &&
+          vehicle.startYear == null
+        ) {
 
-  Vehicles.getModelInfo =
-  function (
-    year,
-    make,
-    model
-  ) {
+          problems.push(
+            `Record ${index}: missing year`
+          );
 
-    const configurations =
-      Vehicles.getConfigurations(
-        year,
-        make,
-        model
-      );
+        }
+
+
+        const key = [
+          vehicle.year ?? "",
+          vehicle.startYear ?? "",
+          vehicle.endYear ?? "",
+          normalize(vehicle.make),
+          normalize(vehicle.model),
+          normalize(
+            Vehicles.getConfigurationLabel(
+              vehicle
+            )
+          )
+        ].join("|");
+
+
+        if (seen.has(key)) {
+
+          problems.push(
+            `Possible duplicate: ${key}`
+          );
+
+        }
+
+
+        seen.add(key);
+
+
+        if (
+          vehicle.tankLiters != null &&
+          !Number.isFinite(
+            Number(vehicle.tankLiters)
+          )
+        ) {
+
+          problems.push(
+            `Record ${index}: invalid tank liters`
+          );
+
+        }
+
+
+        if (
+          vehicle.batteryKWh != null &&
+          !Number.isFinite(
+            Number(vehicle.batteryKWh)
+          )
+        ) {
+
+          problems.push(
+            `Record ${index}: invalid battery capacity`
+          );
+
+        }
+
+      });
 
 
     return {
-
-      year:
-        Number(year),
-
-      make,
-
-      model,
-
-      catalog:
-        Vehicles.hasCatalogModel(
-          make,
-          model
-        ),
-
-      availableInYear:
-        Vehicles.modelAvailableInYear(
-          year,
-          make,
-          model
-        ),
-
-      verified:
-        configurations.length >
-        0,
-
-      configurations,
-
-      requiresConfiguration:
-        configurations.length >
-        1
-
+      valid: problems.length === 0,
+      problems
     };
 
   };
 
 
-  /* =======================================================
-     VALIDATE DATABASE
-     ======================================================= */
-
-  Vehicles.validateDatabase =
-  function () {
-
-    const errors = [];
-
-    const warnings = [];
-
-
-    Vehicles.DATABASE
-      .forEach(
-        (vehicle, index) => {
-
-          if (
-            !vehicle.make
-          ) {
-
-            errors.push(
-              "Record " +
-              index +
-              ": missing make"
-            );
-
-          }
-
-
-          if (
-            !vehicle.model
-          ) {
-
-            errors.push(
-              "Record " +
-              index +
-              ": missing model"
-            );
-
-          }
-
-
-          if (
-            !vehicle.year &&
-            !vehicle.startYear
-          ) {
-
-            errors.push(
-              "Record " +
-              index +
-              ": missing year"
-            );
-
-          }
-
-
-          if (
-            vehicle.tankLiters != null
-          ) {
-
-            const liters =
-              Number(
-                vehicle.tankLiters
-              );
-
-
-            if (
-              !Number.isFinite(liters) ||
-              liters <= 0
-            ) {
-
-              errors.push(
-                "Record " +
-                index +
-                ": invalid tankLiters"
-              );
-
-            }
-
-          }
-
-
-          if (
-            vehicle.tankGallonsUS != null
-          ) {
-
-            const gallons =
-              Number(
-                vehicle.tankGallonsUS
-              );
-
-
-            if (
-              !Number.isFinite(gallons) ||
-              gallons <= 0
-            ) {
-
-              errors.push(
-                "Record " +
-                index +
-                ": invalid tankGallonsUS"
-              );
-
-            }
-
-          }
-
-
-          if (
-            vehicle.batteryKWh != null
-          ) {
-
-            const battery =
-              Number(
-                vehicle.batteryKWh
-              );
-
-
-            if (
-              !Number.isFinite(battery) ||
-              battery <= 0
-            ) {
-
-              errors.push(
-                "Record " +
-                index +
-                ": invalid batteryKWh"
-              );
-
-            }
-
-          }
-
-
-          if (
-            !vehicle.sourceName
-          ) {
-
-            warnings.push(
-              "Record " +
-              index +
-              ": sourceName missing"
-            );
-
-          }
-
-        }
-      );
-
-
-    /*
-      Duplicate configuration detection.
-    */
-
-    const seen =
-      new Map();
-
-
-    Vehicles.DATABASE
-      .forEach(
-        (vehicle, index) => {
-
-          const key =
-            normalize(
-              [
-                vehicle.year,
-                vehicle.make,
-                vehicle.model,
-                Vehicles.getConfigurationLabel(
-                  vehicle
-                )
-              ].join("|")
-            );
-
-
-          if (
-            seen.has(key)
-          ) {
-
-            warnings.push(
-              "Possible duplicate records: " +
-              seen.get(key) +
-              " and " +
-              index
-            );
-
-          } else {
-
-            seen.set(
-              key,
-              index
-            );
-
-          }
-
-        }
-      );
-
-
-    return {
-
-      valid:
-        errors.length === 0,
-
-      errors,
-
-      warnings,
-
-      records:
-        Vehicles.DATABASE.length
-
-    };
-
-  };
-
 
   /* =======================================================
-     STATISTICS
+     STATS
      ======================================================= */
 
-  Vehicles.getStats =
-  function () {
+  Vehicles.getStats = function () {
 
-    const catalogMakes =
-      Object.keys(
-        Vehicles.CATALOG
-      );
+    const makes =
+      Object.keys(Vehicles.CATALOG);
 
 
     const catalogModels =
-      Object.values(
-        Vehicles.CATALOG
-      ).reduce(
-        (total, models) =>
-          total +
-          models.length,
-        0
-      );
-
-
-    const verifiedMakes =
-      unique(
-        Vehicles.DATABASE.map(
-          vehicle =>
-            vehicle.make
-        )
-      );
-
-
-    const verifiedModels =
-      unique(
-        Vehicles.DATABASE.map(
-          vehicle =>
-            vehicle.make +
-            "|" +
-            vehicle.model
-        )
-      );
-
-
-    const verifiedYears =
-      unique(
-        Vehicles.DATABASE.flatMap(
-          vehicle =>
-            vehicleYears(
-              vehicle
-            )
-        )
-      );
-
-
-    const fuelRecords =
-      Vehicles.DATABASE.filter(
-        vehicle =>
-          vehicle.tankLiters !=
-          null
-      ).length;
-
-
-    const electricRecords =
-      Vehicles.DATABASE.filter(
-        vehicle =>
-          vehicle.batteryKWh !=
-          null
-      ).length;
+      Object.values(Vehicles.CATALOG)
+        .reduce(
+          (total, models) =>
+            total + models.length,
+          0
+        );
 
 
     return {
+      version: Vehicles.VERSION,
 
-      version:
-        Vehicles.VERSION,
+      minYear:
+        Vehicles.MIN_YEAR,
+
+      maxYear:
+        Vehicles.MAX_YEAR,
 
       catalogMakes:
-        catalogMakes.length,
+        makes.length,
 
       catalogModels,
 
       verifiedRecords:
-        Vehicles.DATABASE.length,
-
-      verifiedMakes:
-        verifiedMakes.length,
-
-      verifiedModels:
-        verifiedModels.length,
-
-      verifiedYears:
-        verifiedYears.length,
-
-      fuelRecords,
-
-      electricRecords
-
+        Vehicles.DATABASE.length
     };
 
   };
+
 
 
   /* =======================================================
      DEBUG
      ======================================================= */
 
-  Vehicles.debug =
-  function () {
+  Vehicles.debug = function () {
 
     const validation =
       Vehicles.validateDatabase();
@@ -3231,7 +2213,7 @@
 
 
     console.log(
-      "Example 2015 Chevrolet models:",
+      "2015 Chevrolet models:",
       Vehicles.getModels(
         2015,
         "Chevrolet"
@@ -3249,26 +2231,6 @@
     );
 
 
-    console.log(
-      "2025 Toyota Corolla configurations:",
-      Vehicles.getConfigurations(
-        2025,
-        "Toyota",
-        "Corolla"
-      )
-    );
-
-
-    console.log(
-      "2025 Ford Escape configurations:",
-      Vehicles.getConfigurations(
-        2025,
-        "Ford",
-        "Escape"
-      )
-    );
-
-
     console.groupEnd();
 
 
@@ -3280,68 +2242,39 @@
   };
 
 
-  /* =======================================================
-     COMPATIBILITY ALIASES
-     ======================================================= */
-
-  Vehicles.getTankLiters =
-  function (
-    options = {}
-  ) {
-
-    return Vehicles.getTankCapacity(
-      options
-    );
-
-  };
-
-
-  Vehicles.getBatteryKWh =
-  function (
-    options = {}
-  ) {
-
-    return Vehicles.getBatteryCapacity(
-      options
-    );
-
-  };
-
 
   /* =======================================================
-     FREEZE NOTHING
+     LOAD TEST
 
-     The database remains extensible so additional verified
-     records can be added later without rebuilding the
-     entire GasGo architecture.
+     This should print ALL Chevrolet models, not only Sonic.
      ======================================================= */
 
-
-  /* =======================================================
-     READY
-     ======================================================= */
-
-  const validation =
-    Vehicles.validateDatabase();
-
-
-  if (
-    !validation.valid
-  ) {
-
-    console.error(
-      "GasGo vehicles.js database validation failed:",
-      validation.errors
+  const testChevrolet =
+    Vehicles.getModels(
+      2015,
+      "Chevrolet"
     );
-
-  }
 
 
   console.log(
-    "GasGo vehicles.js v" +
-    Vehicles.VERSION +
-    " loaded 🚗⛽"
+    "GasGo vehicles.js v4.1.0 loaded 🚗"
   );
 
+
+  console.log(
+    "2015 Chevrolet catalog:",
+    testChevrolet
+  );
+
+
+  if (
+    testChevrolet.length <= 1
+  ) {
+
+    console.error(
+      "GasGo vehicle catalog error: Chevrolet model list did not load correctly."
+    );
+
+  }
 
 })();
